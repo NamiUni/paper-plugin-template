@@ -43,6 +43,7 @@ public final class MiniPlaceholdersExpansion {
         return Bukkit.getPluginManager().isPluginEnabled("MiniPlaceholders");
     }
 
+    @SuppressWarnings("unused")
     public void registerExpansion() {
         if (miniPlaceholdersLoaded()) {
             final var expansion = Expansion.builder(PLUGIN_NAME)
