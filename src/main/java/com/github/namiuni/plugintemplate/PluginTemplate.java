@@ -19,7 +19,6 @@
  */
 package com.github.namiuni.plugintemplate;
 
-import com.github.namiuni.plugintemplate.integration.MiniPlaceholdersExpansion;
 import com.google.inject.Inject;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
