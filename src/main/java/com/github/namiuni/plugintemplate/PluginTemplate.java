@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,21 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package com.github.namiuni.plugintemplate;
 
 import com.github.namiuni.plugintemplate.integration.MiniPlaceholdersExpansion;
 import com.google.inject.Inject;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Set;
 
-@DefaultQualifier(NonNull.class)
-// ToDo: Rename class to plugin name
-public final class PluginTemplate extends JavaPlugin {
+@NullMarked
+public final class PluginTemplate extends JavaPlugin { // TODO: rename
 
     private final MiniPlaceholdersExpansion miniPlaceholdersExpansion;
     private final Set<Listener> listeners;
@@ -51,6 +49,7 @@ public final class PluginTemplate extends JavaPlugin {
 //        this.miniPlaceholdersExpansion.registerExpansion();
 
         // Register listener classes
-        this.listeners.forEach(listener -> this.getServer().getPluginManager().registerEvents(listener, this));
+        this.listeners.forEach(listener ->
+                this.getServer().getPluginManager().registerEvents(listener, this));
     }
 }

@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,20 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-package com.github.namiuni.plugintemplate.message;
+package com.github.namiuni.plugintemplate.translation;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.moonshine.annotation.Message;
+import org.jspecify.annotations.NullMarked;
 
-public interface MessageService {
+@NullMarked
+public interface TranslationService {
 
-    /*
-     * ☆彡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☆彡
-     *  ✧･ﾟ: *✧･ﾟ:* ✨✨✨ Reload ✨✨✨ *:･ﾟ✧*:･ﾟ✧
-     * ☆彡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━☆彡
-     */
-
-    @Message("plugin_template.command.config.reload")
+    @Message("plugin.command.reload.success") //TODO: change
     void configReloadSuccess(final Audience audience);
+
+    @Message("plugin.command.reload.failed") //TODO: change
+    void configReloadFailed(final Audience audience);
 }

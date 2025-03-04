@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,29 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package com.github.namiuni.plugintemplate;
 
-import com.github.namiuni.plugintemplate.command.BaseCommand;
+import com.github.namiuni.plugintemplate.command.CommandManager;
+import com.github.namiuni.plugintemplate.configuration.ConfigurationManager;
+import com.github.namiuni.plugintemplate.translation.TranslationSource;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.TypeLiteral;
-import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
-import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
 
-import java.util.Set;
-
-@DefaultQualifier(NonNull.class)
-@SuppressWarnings("UnstableApiUsage")
+@NullMarked
+@SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class PaperBootstrap implements PluginBootstrap {
 
     private @MonotonicNonNull Injector injector;
@@ -46,18 +40,14 @@ public final class PaperBootstrap implements PluginBootstrap {
     @Override
     public void bootstrap(final BootstrapContext bootstrapContext) {
         this.injector = Guice.createInjector(new BootstrapModule(bootstrapContext));
-        bootstrapContext.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, this::registerCommands);
+
+        this.injector.getInstance(ConfigurationManager.class).loadConfigurations();
+        this.injector.getInstance(TranslationSource.class).loadTranslations();
+        this.injector.getInstance(CommandManager.class).register();
     }
 
     @Override
     public JavaPlugin createPlugin(final PluginProviderContext context) {
-        return this.injector.getInstance(PluginTemplate.class);
-    }
-
-    private void registerCommands(final ReloadableRegistrarEvent<Commands> event) {
-        final var commandRegistrar = event.registrar();
-        final var commands = this.injector.getInstance(Key.get(new TypeLiteral<Set<BaseCommand>>() {}));
-
-        commands.forEach(command -> commandRegistrar.register(command.create() ,command.description(), command.aliases()));
+        return this.injector.getInstance(JavaPlugin.class);
     }
 }

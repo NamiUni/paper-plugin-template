@@ -17,20 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.github.namiuni.plugintemplate;
+package com.github.namiuni.plugintemplate.configuration;
 
-import jakarta.inject.Qualifier;
+import org.jspecify.annotations.NullMarked;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+@NullMarked
+@ConfigSerializable
+public final class PrimaryConfig {
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+    private String messagePrefix = "<gradient:#090979:#00d4ff>[PluginTemplate]</gradient> "; // TODO change
 
-@Qualifier
-@Target({FIELD, PARAMETER})
-@Retention(RUNTIME)
-public @interface DataDirectory {
-
+    public String messagePrefix() {
+        return this.messagePrefix;
+    }
 }

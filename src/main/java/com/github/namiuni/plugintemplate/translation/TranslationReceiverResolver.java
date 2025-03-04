@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,21 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-package com.github.namiuni.plugintemplate.message;
+package com.github.namiuni.plugintemplate.translation;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.moonshine.receiver.IReceiverLocator;
 import net.kyori.moonshine.receiver.IReceiverLocatorResolver;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
-@DefaultQualifier(NonNull.class)
-public final class AudienceReceiverResolver implements IReceiverLocatorResolver<Audience> {
+@NullMarked
+public final class TranslationReceiverResolver implements IReceiverLocatorResolver<Audience> {
 
     @Override
     public IReceiverLocator<Audience> resolve(final Method method, final Type proxy) {
@@ -41,8 +40,7 @@ public final class AudienceReceiverResolver implements IReceiverLocatorResolver<
 
         @Override
         public Audience locate(final Method method, final Object proxy, final @Nullable Object[] parameters) {
-
-            for (final var param : parameters) {
+            for (final Object param : parameters) {
                 if (param instanceof final Audience audience) {
                     return audience;
                 }

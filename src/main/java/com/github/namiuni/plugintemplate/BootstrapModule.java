@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,39 +17,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package com.github.namiuni.plugintemplate;
 
-import com.github.namiuni.plugintemplate.command.BaseCommand;
+import com.github.namiuni.plugintemplate.command.commands.PluginCommand;
 import com.github.namiuni.plugintemplate.command.commands.ReloadCommand;
-import com.github.namiuni.plugintemplate.message.AudienceReceiverResolver;
-import com.github.namiuni.plugintemplate.message.MessageRenderer;
-import com.github.namiuni.plugintemplate.message.MessageService;
-import com.github.namiuni.plugintemplate.message.TranslatableMessageSource;
-import com.github.namiuni.plugintemplate.message.placeholders.ComponentPlaceholderResolver;
-import com.github.namiuni.plugintemplate.message.placeholders.StringPlaceholderResolver;
+import com.github.namiuni.plugintemplate.translation.TranslationServiceProvider;
+import com.github.namiuni.plugintemplate.translation.TranslationService;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
+import com.google.inject.Key;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
-import io.leangen.geantyref.TypeToken;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.configuration.PluginMeta;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.text.Component;
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import net.kyori.moonshine.Moonshine;
-import net.kyori.moonshine.exception.scan.UnscannableMethodException;
-import net.kyori.moonshine.strategy.StandardPlaceholderResolverStrategy;
-import net.kyori.moonshine.strategy.supertype.StandardSupertypeThenInterfaceSupertypeStrategy;
 import org.bukkit.event.Listener;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.jspecify.annotations.NullMarked;
 
 import java.nio.file.Path;
 
-@DefaultQualifier(NonNull.class)
+@NullMarked
 @SuppressWarnings("UnstableApiUsage")
 public final class BootstrapModule extends AbstractModule {
 
@@ -58,43 +48,28 @@ public final class BootstrapModule extends AbstractModule {
         this.bootstrapContext = bootstrapContext;
     }
 
-    @Provides
-    @Singleton
-    public MessageService messageService(
-            final AudienceReceiverResolver audienceReceiverResolver,
-            final TranslatableMessageSource messageSource,
-            final MessageRenderer messageRenderer,
-            final ComponentPlaceholderResolver componentPlaceholderResolver,
-            final StringPlaceholderResolver stringPlaceholderResolver
-    ) throws UnscannableMethodException {
-        return Moonshine.<MessageService, Audience>builder(new TypeToken<>() {})
-                .receiverLocatorResolver(audienceReceiverResolver, 0)
-                .sourced(messageSource)
-                .rendered(messageRenderer)
-                .sent(Audience::sendMessage)
-                .resolvingWithStrategy(new StandardPlaceholderResolverStrategy<>(new StandardSupertypeThenInterfaceSupertypeStrategy(false)))
-                .weightedPlaceholderResolver(Component.class, componentPlaceholderResolver, 0)
-                .weightedPlaceholderResolver(String.class, stringPlaceholderResolver, 0)
-                .create(this.getClass().getClassLoader());
-    }
-
     @Override
     protected void configure() {
-        this.bind(PluginMeta.class).toInstance(this.bootstrapContext.getPluginMeta());
         this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.bootstrapContext.getDataDirectory());
+        this.bind(Path.class).annotatedWith(PluginSource.class).toInstance(this.bootstrapContext.getPluginSource());
         this.bind(ComponentLogger.class).toInstance(this.bootstrapContext.getLogger());
+        this.bind(PluginMeta.class).toInstance(this.bootstrapContext.getPluginMeta());
+        this.bind(Key.get(new TypeLiteral<LifecycleEventManager<BootstrapContext>>() {})).toInstance(this.bootstrapContext.getLifecycleManager());
 
+        this.bind(TranslationService.class).toProvider(TranslationServiceProvider.class).in(Scopes.SINGLETON);
         this.configureListeners();
         this.configureCommands();
+
+        this.bind(JavaPlugin.class).to(PluginTemplate.class).in(Scopes.SINGLETON);
     }
 
     private void configureListeners() {
-        final var listeners = Multibinder.newSetBinder(this.binder(), Listener.class);
-//        listeners.addBinding().to(YourListener.class).in(Scopes.SINGLETON);
+        final Multibinder<Listener> listeners = Multibinder.newSetBinder(this.binder(), Listener.class);
+//        listeners.addBinding().to(MyListener.class).in(Scopes.SINGLETON);
     }
 
     private void configureCommands() {
-        final var commands = Multibinder.newSetBinder(this.binder(), BaseCommand.class);
+        final Multibinder<PluginCommand> commands = Multibinder.newSetBinder(this.binder(), PluginCommand.class);
         commands.addBinding().to(ReloadCommand.class).in(Scopes.SINGLETON);
     }
 }

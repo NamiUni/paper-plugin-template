@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
-package com.github.namiuni.plugintemplate.message.placeholders;
+package com.github.namiuni.plugintemplate.translation.placeholders;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -25,26 +25,25 @@ import net.kyori.moonshine.placeholder.ConclusionValue;
 import net.kyori.moonshine.placeholder.ContinuanceValue;
 import net.kyori.moonshine.placeholder.IPlaceholderResolver;
 import net.kyori.moonshine.util.Either;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-@DefaultQualifier(NonNull.class)
-public class ComponentPlaceholderResolver implements IPlaceholderResolver<Audience, Component, Component> {
+@NullMarked
+public final class StringPlaceholderResolver implements IPlaceholderResolver<Audience, String, Component> {
 
     @Override
-    public @Nullable Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(
-            final String placeholderName,
-            final Component value,
-            final Audience receiver,
-            final Type owner,
-            final Method method,
-            final @Nullable Object[] parameters
+    public Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(
+        final String placeholderName,
+        final String value,
+        final Audience receiver,
+        final Type owner,
+        final Method method,
+        final @Nullable Object[] parameters
     ) {
-        return Map.of(placeholderName, Either.left(ConclusionValue.conclusionValue(value)));
+        return Map.of(placeholderName, Either.left(ConclusionValue.conclusionValue(Component.text(value))));
     }
 }

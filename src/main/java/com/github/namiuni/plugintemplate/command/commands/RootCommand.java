@@ -17,20 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.github.namiuni.plugintemplate;
+package com.github.namiuni.plugintemplate.command.commands;
 
-import jakarta.inject.Qualifier;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
+import org.jspecify.annotations.NullMarked;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-@Qualifier
-@Target({FIELD, PARAMETER})
-@Retention(RUNTIME)
-public @interface DataDirectory {
-
+@NullMarked
+@SuppressWarnings("UnstableApiUsage")
+public final class RootCommand implements PluginCommand {
+    @Override
+    public LiteralArgumentBuilder<CommandSourceStack> node() {
+        return Commands.literal("plugin"); // TODO: change
+    }
 }

@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,62 +17,53 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-
 package com.github.namiuni.plugintemplate.command.commands;
 
-import com.github.namiuni.plugintemplate.command.BaseCommand;
-import com.github.namiuni.plugintemplate.config.ConfigManager;
-import com.github.namiuni.plugintemplate.message.MessageService;
-import com.github.namiuni.plugintemplate.message.TranslationManager;
+import com.github.namiuni.plugintemplate.configuration.ConfigurationManager;
+import com.github.namiuni.plugintemplate.exception.PluginConfigurationException;
+import com.github.namiuni.plugintemplate.exception.PluginTranslationException;
+import com.github.namiuni.plugintemplate.translation.TranslationService;
+import com.github.namiuni.plugintemplate.translation.TranslationSource;
 import com.google.inject.Inject;
 import com.mojang.brigadier.Command;
-import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.plugin.configuration.PluginMeta;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
 
-import java.util.List;
-
-@DefaultQualifier(NonNull.class)
+@NullMarked
 @SuppressWarnings("UnstableApiUsage")
-public final class ReloadCommand implements BaseCommand {
+public final class ReloadCommand implements PluginCommand {
 
-    private final PluginMeta pluginMeta;
-    private final ConfigManager configManager;
-    private final TranslationManager translationManager;
-    private final MessageService messageService;
+    private final ConfigurationManager configManager;
+    private final TranslationSource translationSource;
+    private final TranslationService translationService;
 
     @Inject
     public ReloadCommand(
-            final PluginMeta pluginMeta,
-            final ConfigManager configManager,
-            final TranslationManager translationManager,
-            final MessageService messageService
+            final ConfigurationManager configManager,
+            final TranslationSource translationSource,
+            final TranslationService translationService
     ) {
-        this.pluginMeta = pluginMeta;
         this.configManager = configManager;
-        this.translationManager = translationManager;
-        this.messageService = messageService;
+        this.translationSource = translationSource;
+        this.translationService = translationService;
     }
 
     @Override
-    public LiteralCommandNode<CommandSourceStack> create() {
-        return Commands.literal(this.pluginMeta.getName().toLowerCase())
-                .then(Commands.literal("reload")
-                        .requires(context -> context.getSender().hasPermission("plugintemplate.reload"))
-                        .executes(context -> {
-                            this.configManager.reloadPrimaryConfig();
-                            this.translationManager.reloadTranslations();
-                            this.messageService.configReloadSuccess(context.getSource().getSender());
-                            return Command.SINGLE_SUCCESS;
-                        }))
-                .build();
-    }
-
-    @Override
-    public List<String> aliases() {
-        return List.of("pt");
+    public LiteralArgumentBuilder<CommandSourceStack> node() {
+        return Commands.literal("reload")
+                .requires(context -> context.getSender().hasPermission("plugin.reload")) //TODO change
+                .executes(context -> {
+                    try {
+                        this.configManager.loadConfigurations();
+                        this.translationSource.loadTranslations();
+                        this.translationService.configReloadSuccess(context.getSource().getSender());
+                        return Command.SINGLE_SUCCESS;
+                    } catch (final PluginTranslationException | PluginConfigurationException exception) {
+                        this.translationService.configReloadFailed(context.getSource().getSender());
+                        return PluginCommand.ZERO_FAILED;
+                    }
+                });
     }
 }

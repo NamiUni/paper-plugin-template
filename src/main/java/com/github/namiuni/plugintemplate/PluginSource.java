@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,24 +17,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package com.github.namiuni.plugintemplate;
 
-package com.github.namiuni.plugintemplate.config;
+import jakarta.inject.Qualifier;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
-import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-import org.spongepowered.configurate.objectmapping.meta.Comment;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
-import java.util.Locale;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-@ConfigSerializable
-@DefaultQualifier(NonNull.class)
-public final class PrimaryConfig {
+@Qualifier
+@Target({FIELD, PARAMETER})
+@Retention(RUNTIME)
+public @interface PluginSource {
 
-    @Comment("Default locale for plguin messages")
-    private Locale defaultLocale = Locale.US;
-
-    public Locale defaultLocale() {
-        return this.defaultLocale;
-    }
 }

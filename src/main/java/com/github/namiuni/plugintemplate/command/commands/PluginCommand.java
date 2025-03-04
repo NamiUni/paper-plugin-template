@@ -1,7 +1,8 @@
 /*
- * plugin-template
+ * PluginTemplate
  *
- * Copyright (c) 2024. Namiu (Unitarou)
+ * Copyright (c) 2025. Namiu/Unitarou
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,27 +17,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package com.github.namiuni.plugintemplate.command.commands;
 
-package com.github.namiuni.plugintemplate.command;
-
-import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.framework.qual.DefaultQualifier;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
+@NullMarked
 @SuppressWarnings("UnstableApiUsage")
-@DefaultQualifier(NonNull.class)
-public interface BaseCommand {
+public interface PluginCommand { //TODO change
 
-    LiteralCommandNode<CommandSourceStack> create();
+    int ZERO_FAILED = 0;
+
+    LiteralArgumentBuilder<CommandSourceStack> node();
 
     default List<String> aliases() {
         return List.of();
     }
 
     default String description() {
-        return "A PluginTemplate provided command"; // ToDo: rename plugin name
+        return "A PluginTemplate provided command"; // TODO: change
     }
 }

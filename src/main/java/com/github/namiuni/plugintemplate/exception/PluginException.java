@@ -17,20 +17,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.github.namiuni.plugintemplate;
+package com.github.namiuni.plugintemplate.exception;
 
-import jakarta.inject.Qualifier;
+import org.jspecify.annotations.NullMarked;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+@NullMarked
+public abstract class PluginException extends RuntimeException { // TODO: change
+    public PluginException() {
+        super();
+    }
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.PARAMETER;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
+    public PluginException(final String message) {
+        super(message);
+    }
 
-@Qualifier
-@Target({FIELD, PARAMETER})
-@Retention(RUNTIME)
-public @interface DataDirectory {
+    public PluginException(final Throwable cause) {
+        super(cause);
+    }
 
+    public PluginException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
+
+    public PluginException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }
