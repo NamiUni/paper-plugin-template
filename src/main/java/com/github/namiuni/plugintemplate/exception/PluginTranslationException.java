@@ -22,6 +22,7 @@ package com.github.namiuni.plugintemplate.exception;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
+@SuppressWarnings("unused")
 public final class PluginTranslationException extends PluginException {
     public PluginTranslationException() {
         super();

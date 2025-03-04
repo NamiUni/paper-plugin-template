@@ -21,6 +21,7 @@ package com.github.namiuni.plugintemplate;
 
 import com.github.namiuni.plugintemplate.command.commands.PluginCommand;
 import com.github.namiuni.plugintemplate.command.commands.ReloadCommand;
+import com.github.namiuni.plugintemplate.listeners.PluginTemplateListener;
 import com.github.namiuni.plugintemplate.translation.TranslationServiceProvider;
 import com.github.namiuni.plugintemplate.translation.TranslationService;
 import com.google.inject.AbstractModule;
@@ -65,7 +66,7 @@ public final class BootstrapModule extends AbstractModule {
 
     private void configureListeners() {
         final Multibinder<Listener> listeners = Multibinder.newSetBinder(this.binder(), Listener.class);
-//        listeners.addBinding().to(MyListener.class).in(Scopes.SINGLETON);
+        listeners.addBinding().to(PluginTemplateListener.class).in(Scopes.SINGLETON);
     }
 
     private void configureCommands() {

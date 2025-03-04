@@ -30,15 +30,15 @@ import java.util.Set;
 @NullMarked
 public final class PluginTemplate extends JavaPlugin { // TODO: rename
 
-    private final MiniPlaceholdersExpansion miniPlaceholdersExpansion;
+//    private final MiniPlaceholdersExpansion miniPlaceholdersExpansion;
     private final Set<Listener> listeners;
 
     @Inject
     public PluginTemplate(
-            final MiniPlaceholdersExpansion miniPlaceholdersExpansion,
+//            final MiniPlaceholdersExpansion miniPlaceholdersExpansion,
             final Set<Listener> listeners
     ) {
-        this.miniPlaceholdersExpansion = miniPlaceholdersExpansion;
+//        this.miniPlaceholdersExpansion = miniPlaceholdersExpansion;
         this.listeners = listeners;
     }
 

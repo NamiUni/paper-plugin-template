@@ -24,6 +24,7 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
 @NullMarked
 @ConfigSerializable
+@SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"})
 public final class PrimaryConfig {
 
     private String messagePrefix = "<gradient:#090979:#00d4ff>[PluginTemplate]</gradient> "; // TODO change

@@ -23,6 +23,7 @@ import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.ConfigurateException;
 
 @NullMarked
+@SuppressWarnings("unused")
 public final class PluginConfigurationException extends PluginException {
     public PluginConfigurationException() {
         super();
