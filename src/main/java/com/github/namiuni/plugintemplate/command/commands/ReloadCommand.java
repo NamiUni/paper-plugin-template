@@ -40,7 +40,7 @@ public final class ReloadCommand implements PluginCommand {
     private final TranslationService translationService;
 
     @Inject
-    public ReloadCommand(
+    private ReloadCommand(
             final ConfigurationManager configManager,
             final TranslationSource translationSource,
             final TranslationService translationService

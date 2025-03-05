@@ -34,6 +34,7 @@ import java.util.stream.Stream;
 public final class MoreFiles {
 
     private MoreFiles() {
+
     }
 
     public static void createDirectoriesIfNotExists(final Path path) throws IOException {

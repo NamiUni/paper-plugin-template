@@ -33,7 +33,7 @@ public final class PluginTemplate extends JavaPlugin { // TODO: rename
     private final Set<Listener> listeners;
 
     @Inject
-    public PluginTemplate(
+    private PluginTemplate(
 //            final MiniPlaceholdersExpansion miniPlaceholdersExpansion,
             final Set<Listener> listeners
     ) {

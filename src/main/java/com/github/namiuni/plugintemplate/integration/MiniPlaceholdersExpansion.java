@@ -35,7 +35,7 @@ public final class MiniPlaceholdersExpansion {
     private final ComponentLogger logger;
 
     @Inject
-    public MiniPlaceholdersExpansion(final ComponentLogger logger) {
+    private MiniPlaceholdersExpansion(final ComponentLogger logger) {
         this.logger = logger;
     }
 

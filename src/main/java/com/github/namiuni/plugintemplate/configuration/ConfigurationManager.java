@@ -46,7 +46,7 @@ public final class ConfigurationManager {
     private @MonotonicNonNull PrimaryConfig primaryConfig = null;
 
     @Inject
-    public ConfigurationManager(
+    private ConfigurationManager(
             final @DataDirectory Path dataDirectory,
             final ComponentLogger logger
     ) {

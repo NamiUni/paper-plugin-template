@@ -19,6 +19,7 @@
  */
 package com.github.namiuni.plugintemplate.translation.placeholders;
 
+import com.google.inject.Inject;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.moonshine.placeholder.ConclusionValue;
@@ -34,6 +35,11 @@ import java.util.Map;
 
 @NullMarked
 public final class StringPlaceholderResolver implements IPlaceholderResolver<Audience, String, Component> {
+
+    @Inject
+    private StringPlaceholderResolver() {
+
+    }
 
     @Override
     public Map<String, Either<ConclusionValue<? extends Component>, ContinuanceValue<?>>> resolve(

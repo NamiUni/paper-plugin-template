@@ -19,6 +19,7 @@
  */
 package com.github.namiuni.plugintemplate.translation;
 
+import com.google.inject.Inject;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.moonshine.receiver.IReceiverLocator;
 import net.kyori.moonshine.receiver.IReceiverLocatorResolver;
@@ -30,6 +31,11 @@ import java.lang.reflect.Type;
 
 @NullMarked
 public final class TranslationReceiverResolver implements IReceiverLocatorResolver<Audience> {
+
+    @Inject
+    private TranslationReceiverResolver() {
+
+    }
 
     @Override
     public IReceiverLocator<Audience> resolve(final Method method, final Type proxy) {
