@@ -24,6 +24,7 @@ import com.github.namiuni.plugintemplate.configuration.ConfigurationManager;
 import com.github.namiuni.plugintemplate.translation.TranslationSource;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
@@ -38,8 +39,9 @@ public final class PaperBootstrap implements PluginBootstrap {
     private @MonotonicNonNull Injector injector;
 
     @Override
-    public void bootstrap(final BootstrapContext bootstrapContext) {
-        this.injector = Guice.createInjector(new BootstrapModule(bootstrapContext));
+    public void bootstrap(final BootstrapContext context) {
+        final Module module = new BootstrapModule(context);
+        this.injector = Guice.createInjector(module);
 
         this.injector.getInstance(ConfigurationManager.class).loadConfigurations();
         this.injector.getInstance(TranslationSource.class).loadTranslations();

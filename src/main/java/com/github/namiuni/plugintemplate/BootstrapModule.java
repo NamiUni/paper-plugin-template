@@ -30,7 +30,6 @@ import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
-import io.papermc.paper.plugin.configuration.PluginMeta;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.event.Listener;
@@ -54,7 +53,6 @@ public final class BootstrapModule extends AbstractModule {
         this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.bootstrapContext.getDataDirectory());
         this.bind(Path.class).annotatedWith(PluginSource.class).toInstance(this.bootstrapContext.getPluginSource());
         this.bind(ComponentLogger.class).toInstance(this.bootstrapContext.getLogger());
-        this.bind(PluginMeta.class).toInstance(this.bootstrapContext.getPluginMeta());
         this.bind(Key.get(new TypeLiteral<LifecycleEventManager<BootstrapContext>>() {})).toInstance(this.bootstrapContext.getLifecycleManager());
 
         this.bind(TranslationService.class).toProvider(TranslationServiceProvider.class).in(Scopes.SINGLETON);
