@@ -28,7 +28,4 @@ public interface TranslationService {
 
     @Message("plugin.command.reload.success") //TODO: change
     void configReloadSuccess(final Audience audience);
-
-    @Message("plugin.command.reload.failed") //TODO: change
-    void configReloadFailed(final Audience audience);
 }
