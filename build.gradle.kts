@@ -95,7 +95,6 @@ tasks {
     }
 
     writeDependencies {
-        outputFileName = "${rootProject.name.lowercase()}-dependencies.txt" //TODO: check
         repos.add("https://repo.papermc.io/repository/maven-public/")
         repos.add("https://repo.maven.apache.org/maven2/")
     }
