@@ -20,7 +20,6 @@
 package com.github.namiuni.plugintemplate.configuration;
 
 import com.github.namiuni.plugintemplate.DataDirectory;
-import com.github.namiuni.plugintemplate.exception.PluginConfigurationException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
@@ -54,9 +53,13 @@ public final class ConfigurationManager {
         this.logger = logger;
     }
 
-    public void loadConfigurations() throws PluginConfigurationException {
+    public void loadConfigurations() {
         this.logger.info("Loading configurations...");
-        this.primaryConfig = this.load(PrimaryConfig.class, PRIMARY_CONFIG_FILE_NAME);
+        try {
+            this.primaryConfig = this.load(PrimaryConfig.class, PRIMARY_CONFIG_FILE_NAME);
+        } catch (final ConfigurateException exception) {
+            throw new UncheckedConfigurateException("Unable to load configurations", exception);
+        }
         this.logger.info("Successfully loaded configurations: {}", PRIMARY_CONFIG_FILE_NAME);
     }
 
@@ -78,24 +81,18 @@ public final class ConfigurationManager {
                 .build();
     }
 
-    public <T> T load(final Class<T> clazz, final String fileName) throws PluginConfigurationException {
+    public <T> T load(final Class<T> clazz, final String fileName) throws ConfigurateException {
         final Path file = this.dataDirectory.resolve(fileName);
-        final var loader = this.configurationLoader(file);
+        final ConfigurationLoader<CommentedConfigurationNode> loader = this.configurationLoader(file);
 
-        final CommentedConfigurationNode node;
-        final T config;
-        try {
-            node = loader.load();
-            config = node.get(clazz);
-            if (config == null) {
-                throw new ConfigurateException(node, "Failed to deserialize " + clazz.getName() + " from node");
-            }
-
-            node.set(clazz, config);
-            loader.save(node);
-        } catch (final ConfigurateException exception) {
-            throw new PluginConfigurationException("Failed to load configuration", exception);
+        final CommentedConfigurationNode node = loader.load();
+        final T config = node.get(clazz);
+        if (config == null) {
+            throw new ConfigurateException(node, "Failed to deserialize " + clazz.getName() + " from node");
         }
+
+        node.set(clazz, config);
+        loader.save(node);
 
         return config;
     }

@@ -83,6 +83,7 @@ tasks {
     }
 
     runServer {
+        systemProperty("log4j.configurationFile", "log4j2.xml")
 //        systemProperty("com.mojang.eula.agree", "true")
         minecraftVersion("1.21.4")
         downloadPlugins {

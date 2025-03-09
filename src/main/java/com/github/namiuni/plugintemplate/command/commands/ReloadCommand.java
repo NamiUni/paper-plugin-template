@@ -20,8 +20,6 @@
 package com.github.namiuni.plugintemplate.command.commands;
 
 import com.github.namiuni.plugintemplate.configuration.ConfigurationManager;
-import com.github.namiuni.plugintemplate.exception.PluginConfigurationException;
-import com.github.namiuni.plugintemplate.exception.PluginTranslationException;
 import com.github.namiuni.plugintemplate.translation.TranslationService;
 import com.github.namiuni.plugintemplate.translation.TranslationSource;
 import com.google.inject.Inject;
@@ -36,19 +34,16 @@ import org.jspecify.annotations.NullMarked;
 @SuppressWarnings("UnstableApiUsage")
 public final class ReloadCommand implements PluginCommand {
 
-    private final ComponentLogger logger;
     private final ConfigurationManager configManager;
     private final TranslationSource translationSource;
     private final TranslationService translationService;
 
     @Inject
     private ReloadCommand(
-            final ComponentLogger logger,
             final ConfigurationManager configManager,
             final TranslationSource translationSource,
             final TranslationService translationService
     ) {
-        this.logger = logger;
         this.configManager = configManager;
         this.translationSource = translationSource;
         this.translationService = translationService;
@@ -59,16 +54,10 @@ public final class ReloadCommand implements PluginCommand {
         return Commands.literal("reload")
                 .requires(context -> context.getSender().hasPermission("plugin.reload")) //TODO change
                 .executes(context -> {
-                    try {
-                        this.configManager.loadConfigurations();
-                        this.translationSource.loadTranslations();
-                        this.translationService.configReloadSuccess(context.getSource().getSender());
-                        return Command.SINGLE_SUCCESS;
-                    } catch (final PluginTranslationException | PluginConfigurationException exception) {
-                        this.translationService.configReloadFailed(context.getSource().getSender());
-                        this.logger.error("Failed to reload config", exception);
-                        return PluginCommand.ZERO_FAILED;
-                    }
+                    this.configManager.loadConfigurations();
+                    this.translationSource.loadTranslations();
+                    this.translationService.configReloadSuccess(context.getSource().getSender());
+                    return Command.SINGLE_SUCCESS;
                 });
     }
 }

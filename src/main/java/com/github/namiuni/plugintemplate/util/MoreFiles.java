@@ -49,7 +49,7 @@ public final class MoreFiles {
         }
     }
 
-    public static void walkFileSystem(final Path path, final Consumer<Stream<Path>> consumer) throws IOException {
+    public static void walkAsDirectory(final Path path, final Consumer<Stream<Path>> consumer) throws IOException {
         if (Files.isDirectory(path)) {
             try (final Stream<Path> paths = Files.walk(path)) {
                 consumer.accept(paths);

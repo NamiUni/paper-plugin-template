@@ -21,7 +21,6 @@ package com.github.namiuni.plugintemplate.translation;
 
 import com.github.namiuni.plugintemplate.DataDirectory;
 import com.github.namiuni.plugintemplate.PluginSource;
-import com.github.namiuni.plugintemplate.exception.PluginTranslationException;
 import com.github.namiuni.plugintemplate.util.MoreFiles;
 import com.google.inject.Inject;
 import org.jspecify.annotations.NullMarked;
@@ -29,6 +28,7 @@ import org.jspecify.annotations.NullMarked;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -51,23 +51,23 @@ final class TranslationRepository {
     public void copyResourcesToDataDirectory() {
         try {
             MoreFiles.createDirectoriesIfNotExists(this.repositoryTranslationsDirectory);
-            MoreFiles.walkFileSystem(this.pluginSource, pathStream -> pathStream
+            MoreFiles.walkAsDirectory(this.pluginSource, pathStream -> pathStream
                     .filter(Files::isRegularFile)
                     .filter(path -> path.toString().startsWith("/translations/messages_"))
                     .filter(path -> path.toString().endsWith(".properties"))
                     .forEach(this::copyFile));
         } catch (final IOException exception) {
-            throw new PluginTranslationException("Failed to copy resources", exception);
+            throw new UncheckedIOException("Unable to copy resources", exception);
         }
     }
 
-    private void copyFile(final Path sourceFile) throws PluginTranslationException {
+    private void copyFile(final Path sourceFile) {
         final Path targetPath = this.repositoryTranslationsDirectory.resolve(sourceFile.getFileName().toString());
         try (final InputStream inputStream = Files.newInputStream(sourceFile);
              final OutputStream outputStream = Files.newOutputStream(targetPath)) {
             inputStream.transferTo(outputStream);
         } catch (final IOException exception) {
-            throw new PluginTranslationException("Failed to copy file: %s".formatted(sourceFile), exception);
+            throw new UncheckedIOException("Unable to copy file: %s".formatted(sourceFile), exception);
         }
     }
 }

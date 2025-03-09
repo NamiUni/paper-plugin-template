@@ -29,8 +29,6 @@ import java.util.List;
 @SuppressWarnings("UnstableApiUsage")
 public interface PluginCommand { //TODO change
 
-    int ZERO_FAILED = 0;
-
     LiteralArgumentBuilder<CommandSourceStack> node();
 
     default List<String> aliases() {

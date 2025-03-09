@@ -17,30 +17,36 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.github.namiuni.plugintemplate.exception;
+package com.github.namiuni.plugintemplate.configuration;
 
 import org.jspecify.annotations.NullMarked;
+import org.spongepowered.configurate.ConfigurateException;
+
+import java.io.Serial;
 
 @NullMarked
 @SuppressWarnings("unused")
-public final class PluginTranslationException extends PluginException {
-    public PluginTranslationException() {
+public final class UncheckedConfigurateException extends RuntimeException {
+    @Serial
+    private static final long serialVersionUID = -2214743499979182898L;
+
+    public UncheckedConfigurateException() {
         super();
     }
 
-    public PluginTranslationException(final String message) {
+    public UncheckedConfigurateException(final String message) {
         super(message);
     }
 
-    public PluginTranslationException(final Throwable cause) {
+    public UncheckedConfigurateException(final ConfigurateException cause) {
         super(cause);
     }
 
-    public PluginTranslationException(final String message, final Throwable cause) {
+    public UncheckedConfigurateException(final String message, final ConfigurateException cause) {
         super(message, cause);
     }
 
-    public PluginTranslationException(final String message, final Throwable cause, final boolean enableSuppression, final boolean writableStackTrace) {
+    public UncheckedConfigurateException(final String message, final ConfigurateException cause, final boolean enableSuppression, final boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
 }

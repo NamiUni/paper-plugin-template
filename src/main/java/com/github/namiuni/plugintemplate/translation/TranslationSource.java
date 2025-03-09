@@ -20,7 +20,6 @@
 package com.github.namiuni.plugintemplate.translation;
 
 import com.github.namiuni.plugintemplate.DataDirectory;
-import com.github.namiuni.plugintemplate.exception.PluginTranslationException;
 import com.github.namiuni.plugintemplate.util.MoreFiles;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -34,6 +33,7 @@ import org.jspecify.annotations.NullMarked;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -67,7 +67,7 @@ public final class TranslationSource implements IMessageSource<Audience, String>
             final @DataDirectory Path dataDirectory,
             final ComponentLogger logger,
             final TranslationRepository repository
-    ) throws PluginTranslationException {
+    ) {
         final Path translationsDirectory = dataDirectory.resolve("translations");
         this.customTranslationsDirectory = translationsDirectory.resolve("custom");
         this.repositoryTranslationsDirectory = translationsDirectory.resolve("repository");
@@ -76,12 +76,6 @@ public final class TranslationSource implements IMessageSource<Audience, String>
 
         this.translations = new ConcurrentHashMap<>();
         this.installedLocales = new HashSet<>();
-
-        try {
-            MoreFiles.createDirectoriesIfNotExists(this.customTranslationsDirectory);
-        } catch (final IOException exception) {
-            throw new PluginTranslationException("Failed to create plugin directory: %s".formatted(customTranslationsDirectory), exception);
-        }
     }
 
     @Override
@@ -91,7 +85,13 @@ public final class TranslationSource implements IMessageSource<Audience, String>
         return translation.message(locale);
     }
 
-    public void loadTranslations() throws PluginTranslationException {
+    public void loadTranslations() {
+        try {
+            MoreFiles.createDirectoriesIfNotExists(this.customTranslationsDirectory);
+        } catch (final IOException exception) {
+            throw new UncheckedIOException("Unable to create plugin directory", exception);
+        }
+
         if (!this.translations.isEmpty()) {
             this.translations.clear();
         }
@@ -105,29 +105,29 @@ public final class TranslationSource implements IMessageSource<Audience, String>
         this.logger.info("Successfully loaded {} translations: [{}]", this.installedLocales.size(), this.installedLocales.stream().map(Locale::getDisplayName).collect(Collectors.joining(", ")));
     }
 
-    private void loadFromFileSystem(final Path path) throws PluginTranslationException {
+    private void loadFromFileSystem(final Path path) {
         try (final Stream<Path> pathStream = Files.list(path)) {
             pathStream
                     .filter(Files::isRegularFile)
                     .forEach(this::loadTranslationFile);
         } catch (final IOException exception) {
-            throw new PluginTranslationException("Failed to load translation files", exception);
+            throw new UncheckedIOException("Unable to load translations", exception);
         }
     }
 
-    private void loadTranslationFile(final Path file) throws PluginTranslationException {
+    private void loadTranslationFile(final Path file) {
         final String localeString = extractLocaleString(file);
         final Locale locale = Translator.parseLocale(localeString);
         if (locale == null) {
-            throw new PluginTranslationException("Tried to load unknown locale %s: %s".formatted(localeString, file));
+            throw new IllegalStateException("Tried to load unknown locale %s: %s".formatted(localeString, file));
         }
 
         try (final BufferedReader reader = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             final ResourceBundle bundle = new PropertyResourceBundle(reader);
             this.registerTranslations(locale, bundle);
             this.installedLocales.add(locale);
-        } catch (final IOException | IllegalArgumentException exception) {
-            throw new PluginTranslationException("Failed to load translation file: %s".formatted(file.getFileName()), exception);
+        } catch (final IOException exception) {
+            throw new UncheckedIOException("Unable to load translation file: %s".formatted(file.getFileName()), exception);
         }
     }
 
