@@ -1,6 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
-rootProject.name = "PluginTemplate" // TODO: change
+rootProject.name = "paper-plugin-template" // TODO: change
 
 dependencyResolutionManagement {
     repositories {
