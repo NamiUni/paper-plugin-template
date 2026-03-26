@@ -21,23 +21,23 @@ package io.github.namiuni.paperplugintemplate.user;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.namiuni.paperplugintemplate.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.configuration.PrimaryConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.util.UUID;
+import java.util.function.Supplier;
 import org.jspecify.annotations.NullMarked;
 
 @Singleton
 @NullMarked
 public final class UserService {
 
-    private final ConfigurationHolder<PrimaryConfiguration> primaryConfig;
+    private final Supplier<PrimaryConfiguration> primaryConfig;
 
     private final Cache<UUID, TemplateUser> cache;
 
     @Inject
-    private UserService(final ConfigurationHolder<PrimaryConfiguration> primaryConfig) {
+    private UserService(final Supplier<PrimaryConfiguration> primaryConfig) {
         this.primaryConfig = primaryConfig;
         this.cache = Caffeine.newBuilder().build();
     }
