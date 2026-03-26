@@ -61,6 +61,11 @@ indraSpotlessLicenser {
 }
 
 tasks {
+    checkstyle {
+        toolVersion = libs.versions.check.style.get()
+        configDirectory = rootDir.resolve(".checkstyle")
+    }
+
     compileJava {
         options.compilerArgs.add("-parameters")
     }
