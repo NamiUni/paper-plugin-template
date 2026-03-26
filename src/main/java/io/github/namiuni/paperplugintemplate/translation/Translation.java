@@ -1,7 +1,7 @@
 /*
  * paper-plugin-template
  *
- * Copyright (c) 2025. Namiu/Unitarou
+ * Copyright (c) 2026. Namiu/Unitarou
  *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,10 +25,10 @@ import org.jspecify.annotations.NullMarked;
 
 /// Immutable value object representing a complete set of messages for one locale.
 ///
-/// A `Translation` groups all [Message] entries that belong to a
-/// specific [Locale]. It is produced by [Translations] and consumed by
-/// [TranslatorLoader] to register messages into Adventure's translation store
-/// and by [TranslationWriter] to persist them to disk.
+/// <p>A {@code Translation} groups all {@link Message} entries that belong to a
+/// specific {@link Locale}. It is produced by {@link TranslatorLoader} and consumed
+/// when registering messages into Adventure's translation store and when persisting
+/// them to disk.
 ///
 /// @param locale   the locale these messages apply to
 /// @param messages the ordered list of key-value message pairs for this locale
@@ -37,7 +37,8 @@ record Translation(Locale locale, List<Message> messages) {
 
     /// A single translation entry consisting of a message key and its localized content.
     ///
-    /// @param key     the dot-separated translation key (e.g. `template.command.reload.config.success`)
+    /// @param key     the dot-separated translation key
+    ///                (e.g. {@code template.command.reload.config.success})
     /// @param content the MiniMessage-formatted string for this key
     record Message(String key, String content) {
     }

@@ -1,7 +1,7 @@
 /*
  * paper-plugin-template
  *
- * Copyright (c) 2025. Namiu/Unitarou
+ * Copyright (c) 2026. Namiu/Unitarou
  *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
