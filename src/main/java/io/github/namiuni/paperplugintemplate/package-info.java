@@ -19,7 +19,4 @@
  */
 
 /// Root package of the paper-plugin-template.
-@NullMarked
 package io.github.namiuni.paperplugintemplate;
-
-import org.jspecify.annotations.NullMarked;

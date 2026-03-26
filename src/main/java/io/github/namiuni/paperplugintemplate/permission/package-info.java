@@ -19,7 +19,4 @@
  */
 
 /// Permission node definitions for the template plugin.
-@NullMarked
 package io.github.namiuni.paperplugintemplate.permission;
-
-import org.jspecify.annotations.NullMarked;

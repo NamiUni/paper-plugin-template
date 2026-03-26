@@ -19,7 +19,4 @@
  */
 
 /// Metadata annotations for configuration record types.
-@NullMarked
 package io.github.namiuni.paperplugintemplate.configuration.annotations;
-
-import org.jspecify.annotations.NullMarked;

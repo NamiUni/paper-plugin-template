@@ -19,7 +19,4 @@
  */
 
 /// Configuration loading, holding, and hot-reload infrastructure.
-@NullMarked
 package io.github.namiuni.paperplugintemplate.configuration;
-
-import org.jspecify.annotations.NullMarked;

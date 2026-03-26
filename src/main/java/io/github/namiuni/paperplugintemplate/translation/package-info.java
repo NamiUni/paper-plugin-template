@@ -19,7 +19,4 @@
  */
 
 /// Internationalisation (i18n) infrastructure for the template plugin.
-@NullMarked
 package io.github.namiuni.paperplugintemplate.translation;
-
-import org.jspecify.annotations.NullMarked;

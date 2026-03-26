@@ -19,7 +19,4 @@
  */
 
 /// Guice dependency injection configuration for the template plugin.
-@NullMarked
 package io.github.namiuni.paperplugintemplate.guice;
-
-import org.jspecify.annotations.NullMarked;

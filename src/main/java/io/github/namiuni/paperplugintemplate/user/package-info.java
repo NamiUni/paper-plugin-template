@@ -19,7 +19,4 @@
  */
 
 /// Domain model and service layer for players tracked by the template plugin.
-@NullMarked
 package io.github.namiuni.paperplugintemplate.user;
-
-import org.jspecify.annotations.NullMarked;

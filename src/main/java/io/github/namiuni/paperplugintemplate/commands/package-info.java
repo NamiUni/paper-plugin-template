@@ -19,7 +19,5 @@
  */
 
 /// Brigadier command definitions for the template plugin.
-@NullMarked
 package io.github.namiuni.paperplugintemplate.commands;
 
-import org.jspecify.annotations.NullMarked;
