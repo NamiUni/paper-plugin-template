@@ -27,7 +27,6 @@ dependencies {
     implementation(libs.adventure.serializer.configurate)
     implementation(libs.kotonoha.message)
     implementation(libs.kotonoha.message.extra.miniplaceholders)
-    implementation(libs.kotonoha.translator)
     implementation(libs.result4j)
 }
 

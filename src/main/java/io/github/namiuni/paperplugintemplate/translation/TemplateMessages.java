@@ -23,6 +23,8 @@ import io.github.namiuni.kotonoha.annotations.Key;
 import io.github.namiuni.kotonoha.annotations.Locales;
 import io.github.namiuni.kotonoha.annotations.Message;
 import io.github.namiuni.kotonoha.annotations.ResourceBundle;
+import io.github.namiuni.kotonoha.translatable.message.extra.miniplaceholders.PlaceholderScope;
+import io.github.namiuni.kotonoha.translatable.message.extra.miniplaceholders.WithPlaceholders;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 
@@ -46,6 +48,7 @@ public interface TemplateMessages {
     @Key("template.command.reload.config.success")
     @Message(locale = Locales.ROOT, content = "<info>Configuration reloaded successfully.")
     @Message(locale = Locales.JA_JP, content = "<info>設定の再読み込みに成功しました。")
+    @WithPlaceholders(PlaceholderScope.AUDIENCE_GLOBAL)
     Component configurationReloadSuccess();
 
     /// Returns the message sent to a command sender when the configuration reload fails.
@@ -54,6 +57,7 @@ public interface TemplateMessages {
     @Key("template.command.reload.config.failure")
     @Message(locale = Locales.ROOT, content = "<error>Failed to reload configuration. See the console for details.")
     @Message(locale = Locales.JA_JP, content = "<error>設定の再読み込みに失敗しました。詳細はコンソールを確認してください。")
+    @WithPlaceholders(PlaceholderScope.AUDIENCE_GLOBAL)
     Component configurationReloadFailure();
 
     /// Returns the message sent to a command sender when the translation files are
@@ -63,6 +67,7 @@ public interface TemplateMessages {
     @Key("template.command.reload.translation.success")
     @Message(locale = Locales.ROOT, content = "<info>Configuration reloaded successfully.")
     @Message(locale = Locales.JA_JP, content = "<info>翻訳の再読み込みに成功しました。")
+    @WithPlaceholders(PlaceholderScope.AUDIENCE_GLOBAL)
     Component translationReloadSuccess();
 
     /// Returns the message sent to a command sender when the translation reload fails.
@@ -71,5 +76,6 @@ public interface TemplateMessages {
     @Key("template.command.reload.translation.failure")
     @Message(locale = Locales.ROOT, content = "<error>Failed to reload configuration. See the console for details.")
     @Message(locale = Locales.JA_JP, content = "<error>翻訳の再読み込みに失敗しました。詳細はコンソールを確認してください。")
+    @WithPlaceholders(PlaceholderScope.AUDIENCE_GLOBAL)
     Component translationReloadFailure();
 }

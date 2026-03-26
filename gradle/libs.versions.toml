@@ -27,8 +27,6 @@ configurate-yaml = { group = "org.spongepowered", name = "configurate-yaml", ver
 adventure-serializer-configurate = { group = "net.kyori", name = "adventure-serializer-configurate4", version.ref = "adventure-serializer-configurate" }
 kotonoha-message = { group = "io.github.namiuni", name = "kotonoha-message", version.ref = "kotonoha" }
 kotonoha-message-extra-miniplaceholders = { group = "io.github.namiuni", name = "kotonoha-message-extra-miniplaceholders", version.ref = "kotonoha" }
-kotonoha-translator = { group = "io.github.namiuni", name = "kotonoha-translator", version.ref = "kotonoha" }
-kotonoha-resourcebundle-generator = { group = "io.github.namiuni", name = "kotonoha-resourcebundle-generator-processor", version.ref = "kotonoha" }
 
 [plugins]
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
