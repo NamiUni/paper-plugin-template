@@ -23,18 +23,28 @@ import jakarta.inject.Inject;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
+/// Main plugin class for the template plugin.
+///
+/// This class is instantiated by the Guice injector via [TemplateBootstrap]
+/// rather than by the Paper plugin framework directly. The `@Inject` constructor
+/// enforces that all dependencies are satisfied before the plugin becomes active.
 @NullMarked
 public final class TemplatePlugin extends JavaPlugin {
 
+    /// Constructs a new `TemplatePlugin` instance.
+    ///
+    /// This constructor is package-private and intended for use by the Guice injector only.
     @Inject
     private TemplatePlugin() {
     }
 
+    /// {@inheritDoc}
     @Override
     public void onEnable() {
         super.onEnable();
     }
 
+    /// {@inheritDoc}
     @Override
     public void onDisable() {
         super.onDisable();

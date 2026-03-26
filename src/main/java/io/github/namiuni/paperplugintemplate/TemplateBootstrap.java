@@ -36,12 +36,21 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jspecify.annotations.NullMarked;
 
+/// Bootstrap entry point for the template plugin.
+///
+/// Responsible for creating the Guice [Injector], registering Brigadier commands
+/// via the Paper lifecycle API, and initializing Adventure's [GlobalTranslator] with
+/// the plugin's translation sources before the server fully starts.
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class TemplateBootstrap implements PluginBootstrap {
 
     private @MonotonicNonNull Injector injector;
 
+    /// Bootstraps the plugin by creating the Guice injector, registering commands,
+    /// and initializing translations.
+    ///
+    /// @param context the bootstrap context provided by the Paper server
     @Override
     public void bootstrap(final BootstrapContext context) {
         this.injector = Guice.createInjector(new TemplateModule(context));
@@ -58,11 +67,19 @@ public final class TemplateBootstrap implements PluginBootstrap {
         });
     }
 
+    /// Creates the plugin instance via the Guice injector.
+    ///
+    /// @param context the plugin provider context provided by the Paper server
+    /// @return the fully-injected [JavaPlugin] instance
     @Override
     public JavaPlugin createPlugin(final PluginProviderContext context) {
         return this.injector.getInstance(JavaPlugin.class);
     }
 
+    /// Performs one-time initialization tasks that must run before the server starts.
+    ///
+    /// Currently registers the plugin's [net.kyori.adventure.translation.Translator]
+    /// with Adventure's [GlobalTranslator].
     private void initialize() {
         final TranslatorHolder translatorHolder = this.injector.getInstance(TranslatorHolder.class);
         GlobalTranslator.translator().addSource(translatorHolder.get());

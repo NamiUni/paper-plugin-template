@@ -44,6 +44,11 @@ import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
+/// Root Guice module for the template plugin.
+///
+/// Binds all core services, configuration loaders, message proxies, and command
+/// factories. Instances are extracted from the [BootstrapContext] at construction
+/// time so that they remain available as singletons throughout the plugin's lifetime.
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class TemplateModule extends AbstractModule {
@@ -51,11 +56,19 @@ public final class TemplateModule extends AbstractModule {
     private final ComponentLogger logger;
     private final Path dataDirectory;
 
+    /// Creates a new `TemplateModule` backed by the given bootstrap context.
+    ///
+    /// @param context the Paper bootstrap context from which the logger and data
+    ///                directory are obtained
     public TemplateModule(final BootstrapContext context) {
         this.logger = context.getLogger();
         this.dataDirectory = context.getDataDirectory();
     }
 
+    /// Provides a singleton [ConfigurationLoader] for the [PrimaryConfiguration].
+    ///
+    /// @param dataDirectory the plugin's data directory, injected via [DataDirectory]
+    /// @return a fully constructed configuration loader
     @Provides
     @Singleton
     private ConfigurationLoader<PrimaryConfiguration> primaryConfigLoader(final @DataDirectory Path dataDirectory) {
@@ -66,6 +79,10 @@ public final class TemplateModule extends AbstractModule {
         );
     }
 
+    /// Provides a singleton [TemplateMessages] proxy backed by Kotonoha's
+    /// MiniMessage-based translation engine.
+    ///
+    /// @return a proxied implementation of [TemplateMessages]
     @Provides
     @Singleton
     private TemplateMessages translations() {
@@ -78,6 +95,7 @@ public final class TemplateModule extends AbstractModule {
         return KotonohaMessage.createProxy(TemplateMessages.class, config);
     }
 
+    /// {@inheritDoc}
     @Override
     protected void configure() {
         this.bind(ComponentLogger.class).toInstance(this.logger);
@@ -90,6 +108,10 @@ public final class TemplateModule extends AbstractModule {
         this.bindCommands();
     }
 
+    /// Registers all [CommandFactory] implementations into a Guice [Multibinder].
+    ///
+    /// Add new command factories here to have them automatically registered with
+    /// the Paper command system during bootstrap.
     private void bindCommands() {
         final Multibinder<CommandFactory> commands = Multibinder.newSetBinder(this.binder(), CommandFactory.class);
         commands.addBinding().to(AdminCommand.class).in(Scopes.SINGLETON);

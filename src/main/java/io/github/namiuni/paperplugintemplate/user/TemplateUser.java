@@ -27,9 +27,26 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
+/// Domain model representing a player tracked by this plugin.
+///
+/// Identified solely by [UUID] so that the record remains valid across
+/// reconnections and does not hold a strong reference to the online [Player]
+/// object. Implements [ForwardingAudience.Single] so that Adventure messages
+/// can be sent directly to a `TemplateUser` regardless of whether the underlying
+/// player is currently online; messages sent while the player is offline are silently
+/// discarded via [Audience#empty()].
+///
+/// @param uuid the unique identifier that permanently identifies this player
 @NullMarked
 public record TemplateUser(UUID uuid) implements ForwardingAudience.Single {
 
+    /// Returns the Adventure [Audience] to which messages are forwarded.
+    ///
+    /// If the player is currently online the live [Player] instance is
+    /// returned; otherwise [Audience#empty()] is returned so that messages are
+    /// silently dropped.
+    ///
+    /// @return the live player audience, or [Audience#empty()] when offline
     @Override
     public Audience audience() {
         return this.player()
@@ -37,6 +54,9 @@ public record TemplateUser(UUID uuid) implements ForwardingAudience.Single {
                 .orElse(Audience.empty());
     }
 
+    /// Returns the online [Player] corresponding to this user, if present.
+    ///
+    /// @return an [Optional] containing the online player, or empty if offline
     public Optional<Player> player() {
         return Optional.ofNullable(Bukkit.getPlayer(this.uuid()));
     }

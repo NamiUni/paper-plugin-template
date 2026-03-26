@@ -22,12 +22,19 @@ package io.github.namiuni.paperplugintemplate.translation;
 import java.io.Serial;
 import org.jspecify.annotations.NullMarked;
 
+/// Thrown when a translation-related value (such as a locale tag embedded in a file name)
+/// cannot be parsed into the expected type.
+///
+/// @see TranslationFileNames#parseLocale(java.nio.file.Path)
 @NullMarked
 public final class ParsingException extends RuntimeException {
 
     @Serial
     private static final long serialVersionUID = -5299203683492438055L;
 
+    /// Constructs a new `ParsingException` with the given detail message.
+    ///
+    /// @param message a human-readable description of the parsing failure
     public ParsingException(final String message) {
         super(message);
     }

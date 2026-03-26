@@ -25,24 +25,45 @@ import java.util.function.Supplier;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.ConfigurateException;
 
+/// Thread-safe holder for a live configuration instance.
+///
+/// Wraps a [ConfigurationLoader] and stores the most recently loaded
+/// configuration in an [AtomicReference], allowing the value to be atomically
+/// replaced during a hot-reload without blocking readers.
+///
+/// Implements [Supplier] so that consumers can obtain the current configuration
+/// value without a direct dependency on this holder class.
+///
+/// @param <T> the configuration record type managed by this holder
 @NullMarked
 public final class ConfigurationHolder<T extends Record> implements Supplier<T> {
 
     private final ConfigurationLoader<T> configLoader;
     private final AtomicReference<T> config;
 
+    /// Constructs a new holder by performing an initial load from disk.
+    ///
+    /// @param configLoader the loader used for both initial and subsequent loads
+    /// @throws ConfigurateException if the initial configuration load fails
     @Inject
     private ConfigurationHolder(final ConfigurationLoader<T> configLoader) throws ConfigurateException {
         this.configLoader = configLoader;
         this.config = new AtomicReference<>(configLoader.loadConfiguration());
     }
 
+    /// Reloads the configuration from disk and atomically updates the stored value.
+    ///
+    /// @return the freshly loaded configuration instance
+    /// @throws ConfigurateException if the configuration file cannot be read or parsed
     public T reload() throws ConfigurateException {
         final T loaded = this.configLoader.loadConfiguration();
         this.config.set(loaded);
         return loaded;
     }
 
+    /// Returns the currently active configuration instance.
+    ///
+    /// @return the current configuration, never `null`
     @Override
     public T get() {
         return this.config.get();

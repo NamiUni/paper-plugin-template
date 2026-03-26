@@ -32,6 +32,17 @@ import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.yaml.NodeStyle;
 import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 
+/// Loads and saves a typed configuration record backed by a YAML file on disk.
+///
+/// The file name and optional header comment are taken from the [ConfigName]
+/// and [ConfigHeader] annotations on the configuration class. Missing keys are
+/// filled in from the supplied `defaultConfig` and the file is immediately
+/// re-saved so that new options become visible to the server operator.
+///
+/// Adventure [net.kyori.adventure.text.Component] values are supported as
+/// configuration field types via the Configurate Adventure serializer.
+///
+/// @param <T> the configuration record type; must extend [Record]
 @NullMarked
 public final class ConfigurationLoader<T extends Record> {
 
@@ -40,6 +51,16 @@ public final class ConfigurationLoader<T extends Record> {
 
     private final org.spongepowered.configurate.loader.ConfigurationLoader<CommentedConfigurationNode> configLoader;
 
+    /// Constructs a new loader for the given configuration class.
+    ///
+    /// The [ConfigName] annotation on `configClass` is used to determine
+    /// the file name relative to `dataDirectory`. The [ConfigHeader]
+    /// annotation, if present, provides a comment written at the top of the file.
+    ///
+    /// @param configClass   the configuration record class; must be annotated with
+    ///                      [ConfigName] and [ConfigHeader]
+    /// @param defaultConfig the fallback instance used when a key is absent from the file
+    /// @param dataDirectory the plugin data directory where the file will be stored
     public ConfigurationLoader(
             final Class<T> configClass,
             final T defaultConfig,
@@ -74,6 +95,11 @@ public final class ConfigurationLoader<T extends Record> {
                 .build();
     }
 
+    /// Loads the configuration from disk, populates missing keys with defaults, and
+    /// saves the result back to the file.
+    ///
+    /// @return the deserialized configuration instance
+    /// @throws ConfigurateException if the file cannot be read, parsed, or written
     T loadConfiguration() throws ConfigurateException {
         final ConfigurationNode node = this.configLoader.load();
         final T config = node.get(this.configClass, this.defaultConfig);

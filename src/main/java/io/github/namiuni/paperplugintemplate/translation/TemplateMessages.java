@@ -26,25 +26,48 @@ import io.github.namiuni.kotonoha.annotations.ResourceBundle;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 
+/// Centralised message definitions for the template plugin.
+///
+/// Each method corresponds to a single translatable message identified by its
+/// [Key] annotation. Locale-specific content is declared via [Message]
+/// annotations; the Kotonoha library generates a proxy implementation that resolves
+/// the appropriate locale at call time.
+///
+/// Instances are obtained from the Guice injector; use constructor injection
+/// rather than accessing this interface statically.
 @NullMarked
 @ResourceBundle(baseName = "messages")
 public interface TemplateMessages {
 
+    /// Returns the message sent to a command sender when the configuration is
+    /// reloaded successfully.
+    ///
+    /// @return a localized [Component] indicating success
     @Key("template.command.reload.config.success")
     @Message(locale = Locales.ROOT, content = "<info>Configuration reloaded successfully.")
     @Message(locale = Locales.JA_JP, content = "<info>設定の再読み込みに成功しました。")
     Component configurationReloadSuccess();
 
+    /// Returns the message sent to a command sender when the configuration reload fails.
+    ///
+    /// @return a localized [Component] indicating failure
     @Key("template.command.reload.config.failure")
     @Message(locale = Locales.ROOT, content = "<error>Failed to reload configuration. See the console for details.")
     @Message(locale = Locales.JA_JP, content = "<error>設定の再読み込みに失敗しました。詳細はコンソールを確認してください。")
     Component configurationReloadFailure();
 
+    /// Returns the message sent to a command sender when the translation files are
+    /// reloaded successfully.
+    ///
+    /// @return a localized [Component] indicating success
     @Key("template.command.reload.translation.success")
     @Message(locale = Locales.ROOT, content = "<info>Configuration reloaded successfully.")
     @Message(locale = Locales.JA_JP, content = "<info>翻訳の再読み込みに成功しました。")
     Component translationReloadSuccess();
 
+    /// Returns the message sent to a command sender when the translation reload fails.
+    ///
+    /// @return a localized [Component] indicating failure
     @Key("template.command.reload.translation.failure")
     @Message(locale = Locales.ROOT, content = "<error>Failed to reload configuration. See the console for details.")
     @Message(locale = Locales.JA_JP, content = "<error>翻訳の再読み込みに失敗しました。詳細はコンソールを確認してください。")

@@ -24,6 +24,15 @@ import io.github.namiuni.paperplugintemplate.configuration.annotations.ConfigNam
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
+/// Root configuration record for the template plugin.
+///
+/// This record is automatically serialized to and deserialized from
+/// `config.conf` in the plugin data directory by
+/// [ConfigurationLoader]. Add configuration fields as record components
+/// and Configurate will handle the file mapping.
+///
+/// Use [#DEFAULT] as the fallback value when the file does not yet exist
+/// or when a field is missing from an existing file.
 @NullMarked
 @ConfigSerializable
 @ConfigName("config.conf")
@@ -32,5 +41,6 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
         """)
 public record PrimaryConfiguration() {
 
+    /// Default instance used as a fallback when no configuration file is present.
     public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration();
 }

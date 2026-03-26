@@ -21,9 +21,16 @@ package io.github.namiuni.paperplugintemplate.permission;
 
 import org.jspecify.annotations.NullMarked;
 
+/// Enumeration of all permission nodes used by the template plugin.
+///
+/// Each constant wraps the dot-separated permission string that must be granted
+/// to a player (or inherited via a permission plugin) before the associated feature
+/// becomes accessible. Use [#node()] to retrieve the raw string for calls such
+/// as [org.bukkit.command.CommandSender#hasPermission(String)].
 @NullMarked
 public enum TemplatePermission {
 
+    /// Grants access to the `/template reload` administration command.
     COMMAND_RELOAD("template.command.admin.reload"); // TODO change the prefix
 
     private final String node;
@@ -32,6 +39,9 @@ public enum TemplatePermission {
         this.node = node;
     }
 
+    /// Returns the raw permission node string.
+    ///
+    /// @return the dot-separated permission node, never `null`
     public String node() {
         return this.node;
     }

@@ -40,13 +40,42 @@ import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationSt
 import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 
+/// Loads a fully initialised [Translator] from annotation-embedded defaults and
+/// overrides stored in the plugin's translation directory.
+///
+/// The loading strategy follows a three-step priority order:
+/// <ol>
+///     - **ROOT locale** – always sourced from the compile-time annotations on
+///     [TemplateMessages]; these act as the ultimate fallback.
+///     - **Disk files** – `.properties` files found under the
+///     `translation/` sub-directory override the annotation defaults for their
+///     respective locales, allowing server operators to customise messages.
+///     - **Annotation fill-in** – any locale defined in annotations but absent from
+///     disk is registered programmatically and also written to disk so operators can
+///     edit it later.
+/// </ol>
+///
+/// Custom MiniMessage tags registered by this loader:
+///
+///     - `<e>` – [#RED] (JIS Z 9103 safety red)
+///     - `<warn>` – [#YELLOW] (JIS Z 9103 safety yellow)
+///     - `<info>` – [#GREEN] (JIS Z 9103 safety green)
+///     - `<debug>` – [#BLUE] (JIS Z 9103 safety blue)
+///
 @NullMarked
 final class TranslatorLoader {
 
     // JIS Z 9103 https://ja.wikipedia.org/wiki/JIS%E5%AE%89%E5%85%A8%E8%89%B2
+    /// JIS Z 9103 safety red used for error messages.
     private static final TextColor RED = TextColor.color(0xFF4B00);
+
+    /// JIS Z 9103 safety yellow used for warning messages.
     private static final TextColor YELLOW = TextColor.color(0xF2E700);
+
+    /// JIS Z 9103 safety green used for informational messages.
     private static final TextColor GREEN = TextColor.color(0x00B06B);
+
+    /// JIS Z 9103 safety blue used for debug messages.
     private static final TextColor BLUE = TextColor.color(0x1971FF);
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.builder()
@@ -63,6 +92,11 @@ final class TranslatorLoader {
 
     private final Path translationDir;
 
+    /// Constructs a new loader, creating the `translation/` directory if it does
+    /// not already exist.
+    ///
+    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
+    /// @throws UncheckedIOException if the translation directory cannot be created
     @Inject
     private TranslatorLoader(final @DataDirectory Path dataDirectory) {
         this.translationDir = dataDirectory.resolve("translation");
@@ -73,6 +107,14 @@ final class TranslatorLoader {
         }
     }
 
+    /// Builds and returns a fresh [Translator] instance containing all registered
+    /// message translations.
+    ///
+    /// Calling this method more than once produces independent translator instances;
+    /// the previous instance is not modified.
+    ///
+    /// @return a fully populated [Translator]
+    /// @throws IOException if reading translation files from disk fails
     Translator loadTranslator() throws IOException {
         final var store = MiniMessageTranslationStore.create(TRANSLATION_KEY, MINI_MESSAGE);
 

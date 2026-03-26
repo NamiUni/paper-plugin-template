@@ -26,12 +26,30 @@ import java.nio.file.Path;
 import java.util.Locale;
 import org.jspecify.annotations.NullMarked;
 
+/// Utility class for writing [Translation] objects to `.properties` files.
+///
+/// Each message is written as a single `key=content` line. The output file is
+/// named using the convention defined by [TranslationFileNames]. If the locale is
+/// [Locale#ROOT], the file is written as if it were [Locale#US] because the
+/// root locale has no standard BCP-47 tag suitable for a file name.
+///
+/// This class is non-instantiable; all members are static.
 @NullMarked
 final class TranslationWriter {
 
     private TranslationWriter() {
     }
 
+    /// Writes a [Translation] to a `.properties` file inside `parentDir`.
+    ///
+    /// The file name is derived from [Translation#locale()] via
+    /// [TranslationFileNames#fromLocale(Locale)]. Any existing file with the same
+    /// name is overwritten. The method does not create parent directories; the caller is
+    /// responsible for ensuring that `parentDir` exists.
+    ///
+    /// @param parentDir   the directory in which the file will be created
+    /// @param translation the translation to persist
+    /// @throws IOException if the file cannot be created or written
     static void write(final Path parentDir, final Translation translation) throws IOException {
         final Locale locale = translation.locale() == Locale.ROOT ? Locale.US : translation.locale();
         final String fileName = TranslationFileNames.fromLocale(locale);

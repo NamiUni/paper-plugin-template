@@ -28,14 +28,28 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import org.jspecify.annotations.NullMarked;
 
+/// Application service responsible for managing the lifecycle of [TemplateUser] instances.
+///
+/// Uses a Caffeine [Cache] as an in-memory store keyed by player [UUID].
+/// Entries are automatically evicted by Caffeine according to the configured eviction
+/// policy, so callers should never assume a user is present in the cache without
+/// checking first.
+///
+/// The primary configuration is injected as a [Supplier] rather than a direct
+/// value so that configuration hot-reloads performed via
+/// [io.github.namiuni.paperplugintemplate.commands.AdminCommand] are reflected
+/// transparently without restarting this service.
 @Singleton
 @NullMarked
 public final class UserService {
 
     private final Supplier<PrimaryConfiguration> primaryConfig;
-
     private final Cache<UUID, TemplateUser> cache;
 
+    /// Constructs a new `UserService` and initialises the in-memory Caffeine cache.
+    ///
+    /// @param primaryConfig supplier of the current primary plugin configuration;
+    ///                      evaluated lazily on each access so hot-reloads are respected
     @Inject
     private UserService(final Supplier<PrimaryConfiguration> primaryConfig) {
         this.primaryConfig = primaryConfig;

@@ -27,6 +27,16 @@ import java.util.function.Supplier;
 import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 
+/// Thread-safe holder for the plugin's active Adventure [Translator].
+///
+/// On first construction the translator is loaded from disk via
+/// [TranslatorLoader]. During a hot-reload the old translator must first be
+/// removed from [net.kyori.adventure.translation.GlobalTranslator] and the
+/// new instance obtained from [#reload()] must be added, as shown in
+/// [io.github.namiuni.paperplugintemplate.commands.AdminCommand].
+///
+/// Implements [Supplier] so that consumers can obtain the current translator
+/// without a direct compile-time dependency on this holder.
 @Singleton
 @NullMarked
 public final class TranslatorHolder implements Supplier<Translator> {
@@ -34,6 +44,10 @@ public final class TranslatorHolder implements Supplier<Translator> {
     private final TranslatorLoader translatorLoader;
     private final AtomicReference<Translator> translator;
 
+    /// Constructs a new holder by performing an initial translation load.
+    ///
+    /// @param translatorLoader the loader used for both the initial and subsequent loads
+    /// @throws IOException if the translation files cannot be read during initial load
     @Inject
     private TranslatorHolder(final TranslatorLoader translatorLoader) throws IOException {
         this.translatorLoader = translatorLoader;
@@ -42,10 +56,22 @@ public final class TranslatorHolder implements Supplier<Translator> {
         this.translator = new AtomicReference<>(initial);
     }
 
+    /// Loads a fresh [Translator] from disk and returns it.
+    ///
+    /// The stored reference is _not_ updated by this method; callers are
+    /// responsible for replacing the old source in
+    /// [net.kyori.adventure.translation.GlobalTranslator] and updating any
+    /// references as needed.
+    ///
+    /// @return a newly constructed [Translator]
+    /// @throws IOException if the translation files cannot be read
     public Translator reload() throws IOException {
         return this.translatorLoader.loadTranslator();
     }
 
+    /// Returns the currently active [Translator].
+    ///
+    /// @return the current translator, never `null`
     @Override
     public Translator get() {
         return this.translator.get();

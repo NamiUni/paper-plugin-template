@@ -36,6 +36,13 @@ import org.bukkit.command.CommandSender;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.ConfigurateException;
 
+/// Administration command that exposes plugin management actions to operators.
+///
+/// Currently provides a `/template reload` sub-command that hot-reloads
+/// both the primary configuration file and the translation files without restarting
+/// the server.
+///
+/// Requires the [TemplatePermission#COMMAND_RELOAD] permission node.
 @NullMarked
 public final class AdminCommand implements CommandFactory {
 
@@ -43,6 +50,11 @@ public final class AdminCommand implements CommandFactory {
     private final TranslatorHolder translatorHolder;
     private final TemplateMessages templateMessages;
 
+    /// Constructs a new `AdminCommand` with all required dependencies.
+    ///
+    /// @param configHolder     holder for the primary plugin configuration
+    /// @param translatorHolder holder for the active Adventure translator
+    /// @param templateMessages message provider for localised feedback
     @Inject
     private AdminCommand(
             final ConfigurationHolder<PrimaryConfiguration> configHolder,
@@ -54,6 +66,18 @@ public final class AdminCommand implements CommandFactory {
         this.templateMessages = templateMessages;
     }
 
+    /// Builds the `/template` command tree.
+    ///
+    /// The tree currently contains a single `reload` sub-command that:
+    /// <ol>
+    ///     - Reloads the primary configuration from disk.
+    ///     - Replaces the registered translation source in [GlobalTranslator]
+    ///     with a freshly loaded instance.
+    /// </ol>
+    /// Both operations report success or failure to the executing sender via
+    /// localised messages.
+    ///
+    /// @return the root [LiteralCommandNode] for the `/template` command
     @Override
     public LiteralCommandNode<CommandSourceStack> command() {
         return Commands.literal("template") // TODO: change the command name

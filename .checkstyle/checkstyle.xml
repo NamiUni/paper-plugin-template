@@ -18,9 +18,9 @@
 
     <module name="TreeWalker">
         <!--Annotations-->
-        <module name="AnnotationOnSameLine">
-            <!--matches all annotations, but most are suppressed in above-->
-            <property name="tokens" value="METHOD_DEF"/>
+        <module name="AnnotationLocation">
+            <property name="tokens" value="METHOD_DEF, CTOR_DEF, CLASS_DEF"/>
+            <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
         </module>
         <module name="AnnotationUseStyle"/>
         <module name="MissingDeprecated"/>
