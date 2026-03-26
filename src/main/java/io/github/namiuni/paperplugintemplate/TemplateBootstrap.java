@@ -30,11 +30,12 @@ import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import java.util.Objects;
 import java.util.Set;
 import net.kyori.adventure.translation.GlobalTranslator;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /// Bootstrap entry point for the template plugin.
 ///
@@ -45,7 +46,7 @@ import org.jspecify.annotations.NullMarked;
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class TemplateBootstrap implements PluginBootstrap {
 
-    private @MonotonicNonNull Injector injector;
+    private @Nullable Injector injector;
 
     /// Bootstraps the plugin by creating the Guice injector, registering commands,
     /// and initializing translations.
@@ -57,8 +58,8 @@ public final class TemplateBootstrap implements PluginBootstrap {
         this.initialize();
 
         context.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final Set<CommandFactory> commands = this.injector.getInstance(Key.get(new TypeLiteral<>() {
-            }));
+            Objects.requireNonNull(this.injector);
+            final Set<CommandFactory> commands = this.injector.getInstance(Key.get(new TypeLiteral<>() { }));
             commands.forEach(command -> event.registrar().register(
                     command.command(),
                     command.description(),
@@ -73,6 +74,7 @@ public final class TemplateBootstrap implements PluginBootstrap {
     /// @return the fully-injected [JavaPlugin] instance
     @Override
     public JavaPlugin createPlugin(final PluginProviderContext context) {
+        Objects.requireNonNull(this.injector);
         return this.injector.getInstance(JavaPlugin.class);
     }
 
@@ -81,6 +83,7 @@ public final class TemplateBootstrap implements PluginBootstrap {
     /// Currently registers the plugin's [net.kyori.adventure.translation.Translator]
     /// with Adventure's [GlobalTranslator].
     private void initialize() {
+        Objects.requireNonNull(this.injector);
         final TranslatorHolder translatorHolder = this.injector.getInstance(TranslatorHolder.class);
         GlobalTranslator.translator().addSource(translatorHolder.get());
     }
