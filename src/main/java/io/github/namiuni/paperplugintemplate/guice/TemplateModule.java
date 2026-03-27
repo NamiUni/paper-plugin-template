@@ -29,7 +29,7 @@ import io.github.namiuni.kotonoha.translatable.message.configuration.FormatTypes
 import io.github.namiuni.kotonoha.translatable.message.policy.argument.TranslationArgumentAdaptationPolicy;
 import io.github.namiuni.kotonoha.translatable.message.policy.argument.tag.TagNameResolver;
 import io.github.namiuni.kotonoha.translatable.message.utility.TranslationArgumentAdapter;
-import io.github.namiuni.paperplugintemplate.TemplatePlugin;
+import io.github.namiuni.paperplugintemplate.JavaPluginImpl;
 import io.github.namiuni.paperplugintemplate.commands.AdminCommand;
 import io.github.namiuni.paperplugintemplate.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.configuration.ConfigurationHolder;
@@ -104,7 +104,7 @@ public final class TemplateModule extends AbstractModule {
                 })
                 .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() {
                 });
-        this.bind(JavaPlugin.class).to(TemplatePlugin.class).in(Scopes.SINGLETON);
+        this.bind(JavaPlugin.class).to(JavaPluginImpl.class).in(Scopes.SINGLETON);
         this.bindCommands();
     }
 

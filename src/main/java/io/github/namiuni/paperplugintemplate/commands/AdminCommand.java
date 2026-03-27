@@ -75,38 +75,43 @@ public final class AdminCommand implements CommandFactory {
     ///     with a freshly loaded instance.
     /// </ol>
     /// Both operations report success or failure to the executing sender via
-    /// localised messages.
+    /// localized messages.
     ///
     /// @return the root [LiteralCommandNode] for the `/template` command
     @Override
     public LiteralCommandNode<CommandSourceStack> command() {
         return Commands.literal("template") // TODO: change the command name
-                .then(Commands.literal("reload")
-                        .requires(source -> source.getSender().hasPermission(TemplatePermission.COMMAND_RELOAD.node()))
-                        .executes(context -> {
-                            final CommandSender sender = context.getSource().getSender();
+                .then(this.reloadNode())
+                .build();
+    }
 
-                            try {
-                                this.configHolder.reload();
-                                sender.sendMessage(this.templateMessages.configurationReloadSuccess());
-                            } catch (final ConfigurateException exception) {
-                                sender.sendMessage(this.templateMessages.configurationReloadFailure());
-                                throw new UncheckedIOException(exception);
-                            }
+    public LiteralCommandNode<CommandSourceStack> reloadNode() {
+        return Commands.literal("reload")
+                .requires(source -> source.getSender().hasPermission(TemplatePermission.COMMAND_RELOAD.node()))
+                .executes(context -> {
+                    final CommandSender sender = context.getSource().getSender();
 
-                            try {
-                                final var oldTranslator = this.translatorHolder.get();
-                                final var newTranslator = this.translatorHolder.reload();
-                                GlobalTranslator.translator().removeSource(oldTranslator);
-                                GlobalTranslator.translator().addSource(newTranslator);
-                                sender.sendMessage(this.templateMessages.translationReloadSuccess());
-                            } catch (final IOException exception) {
-                                sender.sendMessage(this.templateMessages.translationReloadFailure());
-                                throw new UncheckedIOException(exception);
-                            }
+                    try {
+                        this.configHolder.reload();
+                        sender.sendMessage(this.templateMessages.configurationReloadSuccess());
+                    } catch (final ConfigurateException exception) {
+                        sender.sendMessage(this.templateMessages.configurationReloadFailure());
+                        throw new UncheckedIOException(exception);
+                    }
 
-                            return Command.SINGLE_SUCCESS;
-                        }))
+                    try {
+                        final var oldTranslator = this.translatorHolder.get();
+                        final var newTranslator = this.translatorHolder.reload();
+                        GlobalTranslator.translator().removeSource(oldTranslator);
+                        GlobalTranslator.translator().addSource(newTranslator);
+                        sender.sendMessage(this.templateMessages.translationReloadSuccess());
+                    } catch (final IOException exception) {
+                        sender.sendMessage(this.templateMessages.translationReloadFailure());
+                        throw new UncheckedIOException(exception);
+                    }
+
+                    return Command.SINGLE_SUCCESS;
+                })
                 .build();
     }
 }

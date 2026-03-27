@@ -20,6 +20,7 @@
 package io.github.namiuni.paperplugintemplate.commands;
 
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.github.namiuni.paperplugintemplate.PluginBootstrapImpl;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import java.util.List;
 import org.jspecify.annotations.NullMarked;
@@ -27,7 +28,7 @@ import org.jspecify.annotations.NullMarked;
 /// Factory interface for creating Brigadier command trees.
 ///
 /// Implementations are bound via Guice's [com.google.inject.multibindings.Multibinder]
-/// and registered with the Paper command system during [io.github.namiuni.paperplugintemplate.TemplateBootstrap#bootstrap].
+/// and registered with the Paper command system during [PluginBootstrapImpl#bootstrap].
 ///
 /// Each implementation should produce a single [LiteralCommandNode] that
 /// represents the root of a command tree. Sub-commands are added as children of

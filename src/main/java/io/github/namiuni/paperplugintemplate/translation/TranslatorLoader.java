@@ -126,6 +126,7 @@ final class TranslatorLoader {
     /// @throws IOException if reading or writing translation files fails
     Translator loadTranslator() throws IOException {
         final var store = MiniMessageTranslationStore.create(TRANSLATION_KEY, MINI_MESSAGE);
+        store.defaultLocale(Locale.ROOT);
 
         // 1. Register ROOT locale from compile-time annotations (ultimate fallback)
         final Map<String, String> rootTranslations = readAnnotations(TemplateMessages.class, Locale.ROOT)

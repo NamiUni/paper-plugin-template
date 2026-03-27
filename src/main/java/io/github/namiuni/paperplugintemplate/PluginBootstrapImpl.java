@@ -44,7 +44,7 @@ import org.jspecify.annotations.Nullable;
 /// the plugin's translation sources before the server fully starts.
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
-public final class TemplateBootstrap implements PluginBootstrap {
+public final class PluginBootstrapImpl implements PluginBootstrap {
 
     private @Nullable Injector injector;
 

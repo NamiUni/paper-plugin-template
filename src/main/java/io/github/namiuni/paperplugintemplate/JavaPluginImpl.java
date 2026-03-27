@@ -25,17 +25,17 @@ import org.jspecify.annotations.NullMarked;
 
 /// Main plugin class for the template plugin.
 ///
-/// This class is instantiated by the Guice injector via [TemplateBootstrap]
+/// This class is instantiated by the Guice injector via [PluginBootstrapImpl]
 /// rather than by the Paper plugin framework directly. The `@Inject` constructor
 /// enforces that all dependencies are satisfied before the plugin becomes active.
 @NullMarked
-public final class TemplatePlugin extends JavaPlugin {
+public final class JavaPluginImpl extends JavaPlugin {
 
-    /// Constructs a new `TemplatePlugin` instance.
+    /// Constructs a new `JavaPluginImpl` instance.
     ///
     /// This constructor is package-private and intended for use by the Guice injector only.
     @Inject
-    private TemplatePlugin() {
+    private JavaPluginImpl() {
     }
 
     /// {@inheritDoc}

@@ -19,26 +19,35 @@ java {
 }
 
 dependencies {
-    implementation(libs.caffeine)
-    implementation(libs.guice)
     compileOnly(libs.paper.api)
     compileOnly(libs.mini.placeholders)
     compileOnly(libs.configurate.yaml)
-    implementation(libs.adventure.serializer.configurate)
-    implementation(libs.kotonoha.message)
-    implementation(libs.kotonoha.message.extra.miniplaceholders)
-    implementation(libs.result4j)
+
+    runtimeDownload(libs.caffeine)
+    runtimeDownload(libs.guice) {
+        exclude(group = "org.checkerframework", module = "checker-qual")
+    }
+    runtimeDownload(libs.adventure.serializer.configurate) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.kotonoha.message) {
+        exclude(group = "org.jspecify", module = "jspecify")
+    }
+    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders) {
+        exclude(group = "org.jspecify", module = "jspecify")
+    }
 }
 
-val mainPackage = "$group.paperplugintemplate"
+val mainPackage = "$group.paperplugintemplate" // TODO: change the package
 paperPluginYaml {
-    name = "TemplatePlugin" // TODO: change the name
+    name = "PaperPluginTemplate" // TODO: change the name
     author = "Namiu/Unitarou"
     website = "https://github.com/NamiUni"
     apiVersion = "1.21.11"
 
-    main = "$mainPackage.${this.name.get()}"
-    bootstrapper = "$mainPackage.TemplateBootstrap" // TODO: change the class name
+    main = "$mainPackage.JavaPluginImpl"
+    bootstrapper = "$mainPackage.PluginBootstrapImpl"
+    loader = "$mainPackage.PluginLoaderImpl"
 
     permissions {
         register("templateplugin.command.reload") { // TODO: change the root node
@@ -57,6 +66,12 @@ indraSpotlessLicenser {
     property("name", rootProject.name)
     property("author", paperPluginYaml.author)
     property("contributors", paperPluginYaml.contributors)
+}
+
+configurations {
+    compileOnly {
+        extendsFrom(configurations.runtimeDownload.get())
+    }
 }
 
 tasks {
