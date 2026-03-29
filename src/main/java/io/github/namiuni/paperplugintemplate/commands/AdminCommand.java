@@ -38,7 +38,7 @@ import org.spongepowered.configurate.ConfigurateException;
 
 /// Administration command that exposes plugin management actions to operators.
 ///
-/// Currently provides a `/template reload` sub-command that hot-reloads
+/// Currently, provides a `/template reload` sub-command that hot-reloads
 /// both the primary configuration file and the translation files without restarting
 /// the server.
 ///
@@ -69,11 +69,8 @@ public final class AdminCommand implements CommandFactory {
     /// Builds the `/template` command tree.
     ///
     /// The tree currently contains a single `reload` sub-command that:
-    /// <ol>
-    ///     - Reloads the primary configuration from disk.
-    ///     - Replaces the registered translation source in [GlobalTranslator]
-    ///     with a freshly loaded instance.
-    /// </ol>
+    /// - Reloads the primary configuration from disk.
+    /// - Replaces the registered translation source in [GlobalTranslator] with a freshly loaded instance.
     /// Both operations report success or failure to the executing sender via
     /// localized messages.
     ///

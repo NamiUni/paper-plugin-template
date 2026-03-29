@@ -24,8 +24,9 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import io.github.namiuni.paperplugintemplate.commands.CommandFactory;
-import io.github.namiuni.paperplugintemplate.guice.TemplateModule;
 import io.github.namiuni.paperplugintemplate.translation.TranslatorHolder;
+import io.github.namiuni.paperplugintemplate.user.storage.StorageModule;
+import io.github.namiuni.paperplugintemplate.user.storage.UserRepository;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
@@ -54,7 +55,7 @@ public final class PluginBootstrapImpl implements PluginBootstrap {
     /// @param context the bootstrap context provided by the Paper server
     @Override
     public void bootstrap(final BootstrapContext context) {
-        this.injector = Guice.createInjector(new TemplateModule(context));
+        this.injector = Guice.createInjector(new PluginModule(context), new StorageModule());
         this.initialize();
 
         context.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -79,12 +80,15 @@ public final class PluginBootstrapImpl implements PluginBootstrap {
     }
 
     /// Performs one-time initialization tasks that must run before the server starts.
-    ///
-    /// Currently registers the plugin's [net.kyori.adventure.translation.Translator]
-    /// with Adventure's [GlobalTranslator].
     private void initialize() {
         Objects.requireNonNull(this.injector);
+
+        // Translator
         final TranslatorHolder translatorHolder = this.injector.getInstance(TranslatorHolder.class);
         GlobalTranslator.translator().addSource(translatorHolder.get());
+
+        // Repository
+        final UserRepository userRepository = this.injector.getInstance(UserRepository.class);
+        userRepository.initialize();
     }
 }

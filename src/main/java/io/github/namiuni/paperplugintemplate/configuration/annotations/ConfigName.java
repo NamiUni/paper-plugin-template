@@ -38,7 +38,7 @@ import org.jspecify.annotations.NullMarked;
 public @interface ConfigName {
 
     /**
-     * The configuration file name, including extension (e.g. {@code "config.conf"}).
+     * The configuration file name, including extension (e.g. `"config.conf"`).
      *
      * @return the file name relative to the plugin data directory
      */

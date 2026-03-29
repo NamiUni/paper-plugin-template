@@ -19,34 +19,58 @@
  */
 package io.github.namiuni.paperplugintemplate;
 
+import io.github.namiuni.paperplugintemplate.listener.PaperEventHandler;
+import io.github.namiuni.paperplugintemplate.user.storage.UserRepository;
+import io.github.namiuni.paperplugintemplate.user.storage.sql.JdbiUserRepository;
 import jakarta.inject.Inject;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
 /// Main plugin class for the template plugin.
 ///
-/// This class is instantiated by the Guice injector via [PluginBootstrapImpl]
-/// rather than by the Paper plugin framework directly. The `@Inject` constructor
-/// enforces that all dependencies are satisfied before the plugin becomes active.
+/// Instantiated by the Guice injector inside [PluginBootstrapImpl] rather
+/// than directly by the Paper framework. All dependencies are supplied through the
+/// `@Inject` constructor; no static accessors or service-locator calls are
+/// needed.
 @NullMarked
 public final class JavaPluginImpl extends JavaPlugin {
 
-    /// Constructs a new `JavaPluginImpl` instance.
+    private final PaperEventHandler paperEventHandler;
+    private final UserRepository userRepository;
+
+    /// Constructs a new [JavaPluginImpl] instance.
     ///
-    /// This constructor is package-private and intended for use by the Guice injector only.
+    /// This constructor is invoked exclusively by the Guice injector.
+    ///
+    /// @param paperEventHandler   the event listener that drives user data loading/saving
+    /// @param userRepository the active storage backend; closed on [#onDisable()]
     @Inject
-    private JavaPluginImpl() {
+    private JavaPluginImpl(
+            final PaperEventHandler paperEventHandler,
+            final UserRepository userRepository
+    ) {
+        this.paperEventHandler = paperEventHandler;
+        this.userRepository = userRepository;
     }
 
     /// {@inheritDoc}
+    ///
+    /// Registers event listeners. Everything else (commands, translations) is
+    /// already set up by [PluginBootstrapImpl] before this method is called.
     @Override
     public void onEnable() {
-        super.onEnable();
+        this.getServer().getPluginManager().registerEvents(this.paperEventHandler, this);
     }
 
     /// {@inheritDoc}
+    ///
+    /// Closes the [UserRepository] to release connection pool resources
+    /// (HikariCP threads and JDBC connections, or file handles) before the server
+    /// shuts down.
     @Override
     public void onDisable() {
-        super.onDisable();
+        if (this.userRepository instanceof final JdbiUserRepository jdbiUserRepository) {
+            jdbiUserRepository.close();
+        }
     }
 }

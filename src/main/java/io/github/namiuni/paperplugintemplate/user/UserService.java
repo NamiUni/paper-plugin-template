@@ -19,40 +19,54 @@
  */
 package io.github.namiuni.paperplugintemplate.user;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import io.github.namiuni.paperplugintemplate.configuration.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.user.storage.UserProfile;
+import io.github.namiuni.paperplugintemplate.user.storage.UserRepository;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import java.time.Instant;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
+import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
-/// Application service responsible for managing the lifecycle of [TemplateUser] instances.
-///
-/// Uses a Caffeine [Cache] as an in-memory store keyed by player [UUID].
-/// Entries are automatically evicted by Caffeine according to the configured eviction
-/// policy, so callers should never assume a user is present in the cache without
-/// checking first.
-///
-/// The primary configuration is injected as a [Supplier] rather than a direct
-/// value so that configuration hot-reloads performed via
-/// [io.github.namiuni.paperplugintemplate.commands.AdminCommand] are reflected
-/// transparently without restarting this service.
+/// TODO: Javadoc
 @Singleton
 @NullMarked
 public final class UserService {
 
-    private final Supplier<PrimaryConfiguration> primaryConfig;
-    private final Cache<UUID, TemplateUser> cache;
+    private final UserRepository repository;
 
-    /// Constructs a new `UserService` and initialises the in-memory Caffeine cache.
-    ///
-    /// @param primaryConfig supplier of the current primary plugin configuration;
-    ///                      evaluated lazily on each access so hot-reloads are respected
+    /// TODO: Javadoc
     @Inject
-    private UserService(final Supplier<PrimaryConfiguration> primaryConfig) {
-        this.primaryConfig = primaryConfig;
-        this.cache = Caffeine.newBuilder().build();
+    private UserService(final UserRepository repository) {
+        this.repository = repository;
+    }
+
+    // -------------------------------------------------------------------------
+    // Queries
+    // -------------------------------------------------------------------------
+
+    /// TODO: Javadoc
+    public CompletableFuture<UserProfile> getOrCreateUser(final UUID uuid, final @Nullable String username) {
+        return this.getUser(uuid)
+                .thenApply(userProfile -> userProfile
+                        .orElse(new UserProfile(uuid, Objects.requireNonNullElse(username, "Unknown"), Instant.now())));
+    }
+
+    /// TODO: Javadoc
+    public CompletableFuture<Optional<UserProfile>> getUser(final UUID uuid) {
+        return this.repository.findById(uuid);
+    }
+
+    // TODO: Javadoc
+    public CompletableFuture<Void> upsertUser(final UserProfile userProfile) {
+        return this.repository.upsert(userProfile);
+    }
+
+    // TODO: Javadoc
+    public CompletableFuture<Void> deleteUser(final UserProfile userProfile) {
+        return this.repository.delete(userProfile.uuid());
     }
 }

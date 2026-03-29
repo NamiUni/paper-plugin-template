@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.guice;
+package io.github.namiuni.paperplugintemplate;
 
 import com.google.inject.BindingAnnotation;
 import java.lang.annotation.ElementType;
