@@ -44,10 +44,6 @@ public final class UserService {
         this.repository = repository;
     }
 
-    // -------------------------------------------------------------------------
-    // Queries
-    // -------------------------------------------------------------------------
-
     /// TODO: Javadoc
     public CompletableFuture<UserProfile> getOrCreateUser(final UUID uuid, final @Nullable String username) {
         return this.getUser(uuid)
