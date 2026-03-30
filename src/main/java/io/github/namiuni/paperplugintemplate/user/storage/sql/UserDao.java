@@ -31,75 +31,69 @@ import org.jdbi.v3.sqlobject.statement.UseRowMapper;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.jspecify.annotations.NullMarked;
 
-/// JDBI SQL Object defining low-level data access operations for the `users` table.
+/// JDBI SQL Object for low-level access to the `users` table.
 ///
-/// All statements use ANSI-compatible SQL so the same interface works against H2
-/// (`MODE=MySQL`) and MySQL without modification. The upsert pattern avoids
-/// database-vendor-specific syntax (`ON DUPLICATE KEY UPDATE`, `ON CONFLICT DO UPDATE`)
-/// by using a portable update-then-insert `default` method.
+/// All statements use ANSI-compatible SQL so the same interface works against H2,
+/// MySQL, and PostgreSQL. The upsert pattern uses a `default` method that attempts
+/// `UPDATE` first and falls back to `INSERT`, avoiding vendor-specific syntax such
+/// as `ON DUPLICATE KEY UPDATE` or `ON CONFLICT DO UPDATE`.
 ///
-/// Record components are bound via [@BindMethods], which calls each no-arg
-/// accessor on the record and maps the method name to the matching SQL parameter.
-/// For example, [UserProfile#uuid()] binds `:uuid`, [UserProfile#name()] binds
-/// `:name`, and [UserProfile#lastSeen()] binds `:lastSeen`.
+/// Record components are bound via `@BindMethods`, which calls each no-arg
+/// accessor on the record and maps the method name to the SQL parameter.
+/// For example, [UserProfile#uuid()] binds `:uuid` and [UserProfile#name()] binds `:name`.
 ///
-/// Extends [SqlObject] so that the `upsert` default method can call sibling
-/// statements within the same transactional handle.
+/// Extends [SqlObject] so that [#upsert] can call sibling statements on the
+/// same transactional handle.
 @NullMarked
 public interface UserDao extends SqlObject {
 
     /// Creates the `users` table if it does not already exist.
-    ///
-    /// The `last_seen` column stores the disconnect timestamp as an epoch-millisecond
-    /// `BIGINT` to maintain cross-database compatibility without relying on
-    /// database-specific `TIMESTAMP` semantics.
     @SqlUpdate("""
             CREATE TABLE IF NOT EXISTS users (
-                uuid      VARCHAR(36)  NOT NULL,
-                name      VARCHAR(16)  NOT NULL,
-                last_seen BIGINT       NOT NULL,
+                uuid VARCHAR(36) NOT NULL,
+                name VARCHAR(16) NOT NULL,
                 PRIMARY KEY (uuid)
             )
             """)
     void createTable();
 
-    /// Looks up a user by their UUID string.
+    /// Returns the profile for `uuid`.
     ///
-    /// @param uuid the UUID to look up
-    /// @return an [Optional] containing the mapped [UserProfile], or empty if absent
-    @SqlQuery("SELECT uuid, name, last_seen FROM users WHERE uuid = :uuid")
+    /// @param uuid the player UUID to look up
+    /// @return the mapped [UserProfile], or empty if absent
+    @SqlQuery("SELECT uuid, name FROM users WHERE uuid = :uuid")
     @UseRowMapper(UserProfileMapper.class)
     Optional<UserProfile> findByUuid(@Bind("uuid") UUID uuid);
 
     /// Inserts a new user row.
     ///
-    /// Callers should prefer [#upsert(UserProfile)] over this method.
+    /// Prefer [#upsert] over calling this method directly.
     ///
-    /// @param userProfile the record whose components are bound via [@BindMethods]
-    @SqlUpdate("INSERT INTO users (uuid, name, last_seen) VALUES (:uuid, :name, :lastSeen)")
+    /// @param userProfile the record to insert; components bound via `@BindMethods`
+    @SqlUpdate("INSERT INTO users (uuid, name) VALUES (:uuid, :name)")
     void insert(@BindMethods UserProfile userProfile);
 
-    /// Updates `name` and `last_seen` for an existing user row.
+    /// Updates the `name` column for an existing user.
     ///
-    /// Callers should prefer [#upsert(UserProfile)] over this method.
+    /// Prefer [#upsert] over calling this method directly.
     ///
-    /// @param userProfile the record whose components are bound via [@BindMethods]
-    /// @return the number of rows affected; `0` means no row existed for this UUID
-    @SqlUpdate("UPDATE users SET name = :name, last_seen = :lastSeen WHERE uuid = :uuid")
+    /// @param userProfile the record to update; components bound via `@BindMethods`
+    /// @return the number of affected rows; `0` means no row existed for this UUID
+    @SqlUpdate("UPDATE users SET name = :name WHERE uuid = :uuid")
     int update(@BindMethods UserProfile userProfile);
 
-    /// Removes the row for the given UUID, if it exists.
+    /// Removes the row for `uuid`, if it exists.
     ///
-    /// @param uuid the UUID whose row should be removed
+    /// @param uuid the player UUID to delete
     @SqlUpdate("DELETE FROM users WHERE uuid = :uuid")
     void deleteByUuid(@Bind("uuid") UUID uuid);
 
-    /// Inserts or updates a user in a single database-portable transaction.
+    /// Inserts or updates a user in a portable, database-agnostic transaction.
     ///
-    /// Attempts `UPDATE` first. If no row was affected (new player), falls back to
-    /// `INSERT`. A narrow race where two concurrent callers both see zero rows from
-    /// `UPDATE` is handled by catching the duplicate-key violation on `INSERT` and
-    /// retrying the `UPDATE`.
+    /// Attempts `UPDATE` first; if no row was affected the player is new, so
+    /// `INSERT` is performed. A narrow race where two concurrent callers both
+    /// see zero rows from `UPDATE` is resolved by catching the resulting
+    /// duplicate-key violation and retrying the `UPDATE`.
     ///
     /// @param userProfile the user data to persist
     @Transaction

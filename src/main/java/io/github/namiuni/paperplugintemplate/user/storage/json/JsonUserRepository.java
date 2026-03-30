@@ -38,6 +38,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,21 +48,20 @@ import org.jspecify.annotations.NullMarked;
 /// [UserRepository] implementation that stores each user as an individual
 /// JSON file under `<dataDirectory>/users/<uuid>.json`.
 ///
-/// All I/O is asynchronous and delegated to a virtual-thread executor. This
-/// implementation is suitable for low-traffic servers; for anything beyond that,
-/// prefer the H2 or MySQL backend.
+/// Suitable only for low-traffic servers. Prefer the H2 or MySQL backend for
+/// anything beyond that.
 ///
 /// ## Thread safety
 ///
-/// `synchronized` blocks are avoided to prevent virtual-thread carrier pinning.
-/// Instead, per-user [ReentrantReadWriteLock] instances are maintained in a
-/// Caffeine [Cache] with `expireAfterAccess`, which bounds map growth without
-/// requiring explicit eviction on [#delete(UUID)]:
+/// `synchronized` blocks are avoided to prevent carrier-thread pinning on virtual threads.
+/// Instead, a per-user [ReentrantReadWriteLock] is maintained in a [ConcurrentHashMap]:
 ///
-///   - Multiple concurrent reads for the same UUID proceed in parallel.
-///   - Write (upsert or delete) for a given UUID is exclusive against all other
-///     reads and writes for that UUID.
-///   - Operations on different UUIDs are fully independent.
+/// - Multiple concurrent reads for the same UUID proceed in parallel.
+/// - A write operation (upsert or delete) for a given UUID excludes all
+///   other reads and writes for that same UUID.
+/// - Operations on different UUIDs are fully independent.
+///
+/// The lock entry for a UUID is removed on [#delete] to prevent unbounded map growth.
 @NullMarked
 public final class JsonUserRepository implements UserRepository {
 
@@ -80,14 +80,13 @@ public final class JsonUserRepository implements UserRepository {
             .registerTypeAdapter(UUID.class, (JsonDeserializer<UUID>) (json, _, _) ->
                     UUID.fromString(json.getAsString()))
             .create();
-
     private static final String EXTENSION = ".json";
 
     private final Path storageDir;
+
     private final Cache<UUID, ReentrantReadWriteLock> locks;
 
-    /// Constructs a new repository whose files will live under
-    /// `<dataDirectory>/users/`.
+    /// Constructs a new repository whose files live under `<dataDirectory>/users/`.
     ///
     /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
     public JsonUserRepository(final @DataDirectory Path dataDirectory) {

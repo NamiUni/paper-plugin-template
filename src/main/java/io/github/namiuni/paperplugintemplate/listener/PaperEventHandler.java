@@ -29,22 +29,32 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.jspecify.annotations.NullMarked;
 
-/// Bukkit event handler.
+/// Bukkit event listener that bridges Paper network events to [UserService].
+///
+/// ## Threading notes
+///
+/// [#onConnection] intentionally blocks the Paper network configuration thread
+/// via [java.util.concurrent.CompletableFuture#join()] to guarantee that a
+/// [io.github.namiuni.paperplugintemplate.user.storage.UserProfile] is available
+/// before the play phase begins. This is the correct pattern for
+/// [AsyncPlayerConnectionConfigureEvent]: the event fires on a dedicated async
+/// thread, not the main server thread, so blocking it is safe.
 @NullMarked
 @SuppressWarnings("UnstableApiUsage")
 public final class PaperEventHandler implements Listener {
 
     private final UserService userService;
 
-    /// Constructs a new `EventHandler`.
-    ///
-    /// @param userService the service managing user data and the in-memory cache
+    /// @param userService the service managing user data
     @Inject
     private PaperEventHandler(final UserService userService) {
         this.userService = userService;
     }
 
-    /// Starts a background cache warm-up for the connecting player.
+    /// Loads (or creates) the player's profile before the play phase starts.
+    ///
+    /// Blocks until the profile is available so that downstream handlers in the
+    /// play phase can always find it in the repository.
     ///
     /// @param event the connection-configuration event
     @EventHandler
@@ -59,15 +69,11 @@ public final class PaperEventHandler implements Listener {
         this.userService.loadUser(uuid, name).join(); // TODO: エラーハンドリング connection.disconnect();
     }
 
-    /// Persists the quitting player's updated `lastSeen` timestamp and evicts their
-    /// profile from the cache.
+    /// Persists the player's profile on disconnect.
     ///
-    /// [UserService#saveUser] is submitted as a fire-and-forget virtual-thread task.
-    /// [UserService#discardUser] is called synchronously immediately after; this is
-    /// safe because `saveUser` captures the profile reference before returning the
-    /// future.
+    /// The upsert is fire-and-forget; failures are not propagated to the event thread.
     ///
-    /// @param event the player-quit event
+    /// @param event the quit event
     @EventHandler
     public void onLeft(final PlayerQuitEvent event) {
         final UUID uuid = event.getPlayer().getUniqueId();

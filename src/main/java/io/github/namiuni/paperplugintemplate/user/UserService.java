@@ -33,19 +33,15 @@ import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/// Application-layer service managing the lifecycle and in-memory cache of
-/// [UserProfile] instances.
+/// Application service for managing player [UserProfile] data.
 ///
-/// ## Layered caching
+/// Delegates all persistence to the injected [UserRepository]. This service
+/// does not maintain its own cache; caching is the responsibility of the
+/// active repository implementation.
 ///
-/// `UserService` sits directly above [UserRepository] and maintains a
-/// synchronous Caffeine [Cache] keyed by player [UUID]. All reads served from
-/// the cache are non-blocking and avoid database round-trips; repository I/O is
-/// only triggered during [#loadUser] (on connection) and [#saveUser] / [#deleteUser]
-/// (on disconnect or administrative removal).
+/// All returned futures complete on the executor owned by the repository.
 ///
-/// Callers must not infer state from commands; use [#getUser] to read the
-/// cached profile after a command completes.
+/// @see UserRepository
 @Singleton
 @NullMarked
 public final class UserService {
@@ -67,16 +63,10 @@ public final class UserService {
     // Queries
     // -------------------------------------------------------------------------
 
-    /// Returns the cached [UserProfile] for the given UUID, if present.
-    ///
-    /// This method is purely a cache read; it never performs any I/O. A profile
-    /// is guaranteed to be present for any player who has passed through
-    /// [#loadUser] and has not yet been evicted via [#discardUser] or
-    /// [#deleteUser].
+    /// Returns the stored profile for `uuid`.
     ///
     /// @param uuid the player UUID to look up
-    /// @return an [Optional] containing the cached profile, or empty if the UUID
-    ///         is not present in the cache
+    /// @return a future resolving to the profile, or empty if none is stored
     public Optional<UserProfile> getUser(final UUID uuid) {
         return Optional.ofNullable(this.cache.getIfPresent(uuid));
     }
@@ -85,24 +75,11 @@ public final class UserService {
     // Commands
     // -------------------------------------------------------------------------
 
-    /// Loads a user's data from the repository, creating a new record if none exists,
-    /// then populates the in-memory cache.
+    /// Returns the stored profile for `uuid`, or syntheses a new one if absent.
     ///
-    /// This method is intended to be called during
-    /// [io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent]
-    /// with `.join()` to ensure the cache is warm before the play phase begins.
-    ///
-    /// Behavior on each connection:
-    ///
-    ///   - **Existing player, same name** — profile is loaded and cached; no write occurs.
-    ///   - **Existing player, name changed** — cached profile is updated with the new name
-    ///     and persisted to storage.
-    ///   - **New player** — a fresh [UserProfile] is created, cached, and persisted.
-    ///
-    /// @param uuid the player UUID obtained from the connection profile
-    /// @param name the player's current display name; `null` is treated as `"Unknown"`
-    /// @return a future that completes when the cache has been populated and any
-    ///         necessary write has been committed to storage
+    /// @param uuid the player UUID to look up
+    /// @param name the player's current username; `null` falls back to `"Unknown"`
+    /// @return a future resolving to the existing or synthesized profile
     public CompletableFuture<Void> loadUser(final UUID uuid, final @Nullable String name) {
         final String resolvedName = Objects.requireNonNullElse(name, "Unknown");
         return this.repository.findById(uuid)
@@ -157,11 +134,9 @@ public final class UserService {
         this.cache.invalidate(uuid);
     }
 
-    /// Permanently removes the given UUID from both the cache and storage.
+    /// Removes all persisted data for the player identified by `userProfile.uuid()`.
     ///
-    /// This is an administrative operation intended for data-deletion commands, not
-    /// for the normal disconnect flow (use [#saveUser] followed by [#discardUser]
-    /// for disconnects).
+    /// No-op if no record exists.
     ///
     /// @param uuid the player UUID to delete
     /// @return a future that completes when the record has been removed from storage

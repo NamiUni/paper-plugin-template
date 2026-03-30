@@ -35,11 +35,10 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// Supports H2 (`MODE=MySQL`) and MySQL using identical SQL statements.
 /// Database-vendor-specific upsert syntax is avoided; the portable
-/// update-then-insert strategy is encapsulated in [UserDao#upsert(UserProfile)].
+/// update-then-insert strategy is encapsulated in [UserDao#upsert].
 ///
-/// The [HikariDataSource] is owned by this repository. Call [#close()] during
-/// plugin disable to release all pooled connections; no other method may be called
-/// afterwards.
+/// The [HikariDataSource] is owned by this repository.
+/// Call [#close()] on plugin disable to release pooled connections.
 @NullMarked
 public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
@@ -52,10 +51,8 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
     /// Constructs a new repository.
     ///
-    /// @param jdbi       the configured JDBI instance with all required plugins and
-    ///                   mappers already installed
-    /// @param dataSource the connection pool; this repository takes ownership and will
-    ///                   close it via [#close()]
+    /// @param jdbi       the configured JDBI instance with all plugins and mappers installed
+    /// @param dataSource the connection pool; this repository takes ownership and closes it
     public JdbiUserRepository(final Jdbi jdbi, final HikariDataSource dataSource) {
         this.jdbi = JdbiExecutor.create(jdbi, VIRTUAL_EXECUTOR);
         this.dataSource = dataSource;
@@ -86,8 +83,6 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
     }
 
     /// Closes the underlying [HikariDataSource], terminating all pooled connections.
-    ///
-    /// Must be called exactly once during plugin disable.
     @Override
     public void close() {
         this.dataSource.close();

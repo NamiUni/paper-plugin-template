@@ -18,12 +18,5 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Paper event listeners that translate platform events into domain-service calls.
-///
-/// Listeners in this package must not contain business logic; they act purely as
-/// adapters between the Paper event bus and the application layer. All substantive
-/// behavior lives in the service classes of other packages.
-@NullMarked
+/// Bukkit event listeners that bridge Paper API events to plugin services.
 package io.github.namiuni.paperplugintemplate.listener;
-
-import org.jspecify.annotations.NullMarked;

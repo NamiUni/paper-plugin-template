@@ -26,42 +26,40 @@ import org.jspecify.annotations.NullMarked;
 
 /// Storage-agnostic data access contract for [UserProfile].
 ///
-/// Implementations must be thread-safe. The active implementation is selected at
-/// startup by [io.github.namiuni.paperplugintemplate.user.storage.StorageModule]
-/// based on the configured [StorageType].
+/// All methods are non-blocking and return [CompletableFuture]; implementations
+/// must be thread-safe. The active implementation is selected at startup based on
+/// the configured [StorageType].
 ///
-/// Callers should not invoke this interface directly; prefer
-/// [io.github.namiuni.paperplugintemplate.user.UserService], which layers an
-/// in-memory Caffeine cache on top of any repository implementation.
+/// Callers should prefer [io.github.namiuni.paperplugintemplate.user.UserService]
+/// over using this interface directly.
 @NullMarked
 public interface UserRepository {
 
-    /// Retrieves a user by their unique identifier.
+    /// Returns the profile for `uuid`.
     ///
     /// @param uuid the player UUID to look up
-    /// @return a future that completes with the matching profile wrapped in
-    ///         [Optional], or [Optional#empty()] if no record exists for the given UUID
+    /// @return a future resolving to the profile, or [Optional#empty()] if absent
     CompletableFuture<Optional<UserProfile>> findById(UUID uuid);
 
-    /// Persists the given user data, inserting a new record or updating the existing one.
+    /// Persists `userProfile`, inserting or updating as necessary.
     ///
-    /// This operation must be idempotent: calling it multiple times with the same
+    /// This operation must be idempotent: repeated calls with the same
     /// [UserProfile#uuid()] must not produce duplicate rows.
     ///
-    /// @param userProfile the user data to persist
-    /// @return a future that completes with `null` when the write has been committed
+    /// @param userProfile the profile to persist
+    /// @return a future that completes when the write finishes
     CompletableFuture<Void> upsert(UserProfile userProfile);
 
-    /// Removes all persisted data for the given player UUID.
+    /// Removes all persisted data for `uuid`.
     ///
-    /// No-op if the UUID is not present in storage.
+    /// No-op if `uuid` is not present in storage.
     ///
-    /// @param uuid the player UUID whose record should be removed
-    /// @return a future that completes with `null` when the deletion has been committed
+    /// @param uuid the player UUID to remove
+    /// @return a future that completes when the deletion finishes
     CompletableFuture<Void> delete(UUID uuid);
 
-    /// Initializes the underlying storage backend (e.g. creates tables or directories).
+    /// Initializes the underlying storage (e.g. creates tables or directories).
     ///
-    /// Called once at plugin startup before any other method on this repository is invoked.
+    /// Called once at plugin startup before any other method on this repository.
     void initialize();
 }
