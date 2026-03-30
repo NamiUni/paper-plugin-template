@@ -37,22 +37,25 @@ import org.jspecify.annotations.NullMarked;
 /// Database-vendor-specific upsert syntax is avoided; the portable
 /// update-then-insert strategy is encapsulated in [UserDao#upsert(UserProfile)].
 ///
-/// The [HikariDataSource] is owned by this repository. Calling [#close()]
-/// shuts it down and must only happen when the plugin disables.
+/// The [HikariDataSource] is owned by this repository. Call [#close()] during
+/// plugin disable to release all pooled connections; no other method may be called
+/// afterwards.
 @NullMarked
 public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
     private static final Executor VIRTUAL_EXECUTOR = Executors.newThreadPerTaskExecutor(
             Thread.ofVirtual().name("YourPlugin-DB-User-Repo-", 0).factory()
-    ); // TODO: implements factory
+    );
 
     private final JdbiExecutor jdbi;
     private final HikariDataSource dataSource;
 
     /// Constructs a new repository.
     ///
-    /// @param jdbi       the configured JDBI instance with all plugins and mappers installed
-    /// @param dataSource the connection pool; this repository takes ownership and will close it
+    /// @param jdbi       the configured JDBI instance with all required plugins and
+    ///                   mappers already installed
+    /// @param dataSource the connection pool; this repository takes ownership and will
+    ///                   close it via [#close()]
     public JdbiUserRepository(final Jdbi jdbi, final HikariDataSource dataSource) {
         this.jdbi = JdbiExecutor.create(jdbi, VIRTUAL_EXECUTOR);
         this.dataSource = dataSource;
@@ -71,22 +74,21 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
     }
 
     /// {@inheritDoc}
-    ///
-    /// @return TODO
     @Override
     public CompletableFuture<Void> upsert(final UserProfile userProfile) {
         return this.jdbi.useExtension(UserDao.class, dao -> dao.upsert(userProfile)).toCompletableFuture();
     }
 
     /// {@inheritDoc}
-    ///
-    /// @return TODO
     @Override
     public CompletableFuture<Void> delete(final UUID uuid) {
         return this.jdbi.useExtension(UserDao.class, dao -> dao.deleteByUuid(uuid)).toCompletableFuture();
     }
 
     /// Closes the underlying [HikariDataSource], terminating all pooled connections.
+    ///
+    /// Must be called exactly once during plugin disable.
+    @Override
     public void close() {
         this.dataSource.close();
     }

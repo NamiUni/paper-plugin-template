@@ -30,13 +30,13 @@ import org.jspecify.annotations.NullMarked;
 
 /// JDBI [RowMapper] that converts a SQL result row into a [UserProfile] record.
 ///
-/// Timestamps are stored as epoch-millisecond [BIGINT] values to maintain
-/// cross-database compatibility between H2 and MySQL without relying on
-/// database-specific `TIMESTAMP` semantics.
+/// UUIDs are read as `VARCHAR(36)` strings and parsed via [UUID#fromString(String)].
+/// Timestamps are stored and read as epoch-millisecond `BIGINT` values to maintain
+/// cross-database compatibility between H2 and MySQL.
 @NullMarked
 public final class UserProfileMapper implements RowMapper<UserProfile> {
 
-    /// Constructs a new `UserDataMapper`.
+    /// Constructs a new `UserProfileMapper`.
     public UserProfileMapper() {
     }
 
@@ -44,7 +44,7 @@ public final class UserProfileMapper implements RowMapper<UserProfile> {
     @Override
     public UserProfile map(final ResultSet rs, final StatementContext ctx) throws SQLException {
         return new UserProfile(
-                UUID.fromString(rs.getString("uuid")), // TODO: replace fast-json
+                UUID.fromString(rs.getString("uuid")),
                 rs.getString("name"),
                 Instant.ofEpochMilli(rs.getLong("last_seen"))
         );

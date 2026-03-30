@@ -23,6 +23,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.github.namiuni.paperplugintemplate.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.configuration.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.configuration.UncheckedConfigurateException;
 import io.github.namiuni.paperplugintemplate.permission.TemplatePermission;
 import io.github.namiuni.paperplugintemplate.translation.TemplateMessages;
 import io.github.namiuni.paperplugintemplate.translation.TranslatorHolder;
@@ -38,9 +39,8 @@ import org.spongepowered.configurate.ConfigurateException;
 
 /// Administration command that exposes plugin management actions to operators.
 ///
-/// Currently, provides a `/template reload` sub-command that hot-reloads
-/// both the primary configuration file and the translation files without restarting
-/// the server.
+/// Provides a `/template reload` sub-command that hot-reloads both the primary
+/// configuration file and the translation files without restarting the server.
 ///
 /// Requires the [TemplatePermission#COMMAND_RELOAD] permission node.
 @NullMarked
@@ -54,7 +54,7 @@ public final class AdminCommand implements CommandFactory {
     ///
     /// @param configHolder     holder for the primary plugin configuration
     /// @param translatorHolder holder for the active Adventure translator
-    /// @param templateMessages message provider for localised feedback
+    /// @param templateMessages message provider for localized feedback
     @Inject
     private AdminCommand(
             final ConfigurationHolder<PrimaryConfiguration> configHolder,
@@ -69,8 +69,11 @@ public final class AdminCommand implements CommandFactory {
     /// Builds the `/template` command tree.
     ///
     /// The tree currently contains a single `reload` sub-command that:
-    /// - Reloads the primary configuration from disk.
-    /// - Replaces the registered translation source in [GlobalTranslator] with a freshly loaded instance.
+    ///
+    ///   1. Reloads the primary configuration from disk.
+    ///   2. Replaces the registered translation source in [GlobalTranslator] with a
+    ///      freshly loaded instance.
+    ///
     /// Both operations report success or failure to the executing sender via
     /// localized messages.
     ///
@@ -82,7 +85,7 @@ public final class AdminCommand implements CommandFactory {
                 .build();
     }
 
-    public LiteralCommandNode<CommandSourceStack> reloadNode() {
+    private LiteralCommandNode<CommandSourceStack> reloadNode() {
         return Commands.literal("reload")
                 .requires(source -> source.getSender().hasPermission(TemplatePermission.COMMAND_RELOAD.node()))
                 .executes(context -> {
@@ -93,7 +96,7 @@ public final class AdminCommand implements CommandFactory {
                         sender.sendMessage(this.templateMessages.configurationReloadSuccess());
                     } catch (final ConfigurateException exception) {
                         sender.sendMessage(this.templateMessages.configurationReloadFailure());
-                        throw new UncheckedIOException(exception);
+                        throw new UncheckedConfigurateException(exception);
                     }
 
                     try {

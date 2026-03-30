@@ -18,5 +18,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Domain model and service layer for players tracked by the template plugin.
+/// Defines user-domain services and types that work with asynchronous
+/// user-profile snapshots.
 package io.github.namiuni.paperplugintemplate.user;

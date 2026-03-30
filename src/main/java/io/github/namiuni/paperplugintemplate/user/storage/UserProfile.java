@@ -23,6 +23,21 @@ import java.time.Instant;
 import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
+/// Persistent data record for a player tracked by this plugin.
+///
+/// Stored in the configured backend (H2, MySQL, or JSON) and cached in memory by
+/// [io.github.namiuni.paperplugintemplate.user.UserService]. All components are
+/// immutable; to reflect a change create a new instance via the canonical constructor.
+///
+/// Timestamps are stored as epoch milliseconds (`BIGINT`) to maintain identical
+/// semantics across H2 and MySQL without relying on database-specific `TIMESTAMP`
+/// behaviour.
+///
+/// @param uuid     the permanent unique identifier for this player
+/// @param name     the most recently observed display name; updated on each connection
+///                 if the player has renamed since their last session
+/// @param lastSeen the timestamp of the player's most recent disconnect event,
+///                 or the time of first registration for brand-new players
 @NullMarked
 public record UserProfile(
         UUID uuid,

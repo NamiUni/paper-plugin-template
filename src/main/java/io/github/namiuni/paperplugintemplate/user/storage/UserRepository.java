@@ -26,20 +26,21 @@ import org.jspecify.annotations.NullMarked;
 
 /// Storage-agnostic data access contract for [UserProfile].
 ///
-/// Implementations must be thread-safe. The active implementation is selected
-/// at startup by [io.github.namiuni.paperplugintemplate.guice.StorageModule]
-/// based on the configured [io.github.namiuni.paperplugintemplate.user.storage.StorageType].
+/// Implementations must be thread-safe. The active implementation is selected at
+/// startup by [io.github.namiuni.paperplugintemplate.user.storage.StorageModule]
+/// based on the configured [StorageType].
 ///
-/// Callers should not invoke this interface directly; use
-/// [io.github.namiuni.paperplugintemplate.user.UserService] instead, which
-/// adds an in-memory Caffeine cache on top of any repository implementation.
+/// Callers should not invoke this interface directly; prefer
+/// [io.github.namiuni.paperplugintemplate.user.UserService], which layers an
+/// in-memory Caffeine cache on top of any repository implementation.
 @NullMarked
 public interface UserRepository {
 
     /// Retrieves a user by their unique identifier.
     ///
     /// @param uuid the player UUID to look up
-    /// @return TODO
+    /// @return a future that completes with the matching profile wrapped in
+    ///         [Optional], or [Optional#empty()] if no record exists for the given UUID
     CompletableFuture<Optional<UserProfile>> findById(UUID uuid);
 
     /// Persists the given user data, inserting a new record or updating the existing one.
@@ -48,20 +49,19 @@ public interface UserRepository {
     /// [UserProfile#uuid()] must not produce duplicate rows.
     ///
     /// @param userProfile the user data to persist
-    /// @return TODO
+    /// @return a future that completes with `null` when the write has been committed
     CompletableFuture<Void> upsert(UserProfile userProfile);
 
     /// Removes all persisted data for the given player UUID.
     ///
     /// No-op if the UUID is not present in storage.
     ///
-    /// @param uuid the player UUID to remove
-    /// @return TODO
+    /// @param uuid the player UUID whose record should be removed
+    /// @return a future that completes with `null` when the deletion has been committed
     CompletableFuture<Void> delete(UUID uuid);
 
-    /// Initializes the underlying storage (e.g. creates tables or directories).
+    /// Initializes the underlying storage backend (e.g. creates tables or directories).
     ///
-    /// Called once at plugin startup before any other method on this repository
-    /// is invoked.
+    /// Called once at plugin startup before any other method on this repository is invoked.
     void initialize();
 }

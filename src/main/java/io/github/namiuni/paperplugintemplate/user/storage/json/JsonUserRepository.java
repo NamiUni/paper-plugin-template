@@ -19,7 +19,6 @@
  */
 package io.github.namiuni.paperplugintemplate.user.storage.json;
 
-import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.Gson;
@@ -39,38 +38,33 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /// [UserRepository] implementation that stores each user as an individual
 /// JSON file under `<dataDirectory>/users/<uuid>.json`.
 ///
-/// All I/O is synchronous. This implementation is suitable only for
-/// low-traffic servers; for anything beyond that, prefer the H2 or MySQL backend.
+/// All I/O is asynchronous and delegated to a virtual-thread executor. This
+/// implementation is suitable for low-traffic servers; for anything beyond that,
+/// prefer the H2 or MySQL backend.
 ///
 /// ## Thread safety
 ///
-/// Because this repository is consumed from virtual threads, `synchronized`
-/// blocks are avoided to prevent carrier-thread pinning. Instead, a per-user
-/// [ReentrantReadWriteLock] is maintained in a [ConcurrentHashMap]:
+/// `synchronized` blocks are avoided to prevent virtual-thread carrier pinning.
+/// Instead, per-user [ReentrantReadWriteLock] instances are maintained in a
+/// Caffeine [Cache] with `expireAfterAccess`, which bounds map growth without
+/// requiring explicit eviction on [#delete(UUID)]:
 ///
-/// - Multiple concurrent reads for the same UUID proceed in parallel.
-/// - A write (upsert or delete) for a given UUID is exclusive against all // FIXME: The verb 'write' does not usually follow articles like 'A'. Check that 'write' is spelled correctly; using 'write' as a noun may be non-standard.
-///   other reads and writes for that same UUID.
-/// - Operations on different UUIDs are fully independent.
-///
-/// The lock for a UUID is removed from the map on [#delete(UUID)] to prevent
-/// unbounded map growth on servers where players are routinely removed.
+///   - Multiple concurrent reads for the same UUID proceed in parallel.
+///   - Write (upsert or delete) for a given UUID is exclusive against all other
+///     reads and writes for that UUID.
+///   - Operations on different UUIDs are fully independent.
 @NullMarked
 public final class JsonUserRepository implements UserRepository {
 
-    private static final long CACHE_MAX_SIZE = 512L;
-    private static final long CACHE_EXPIRE_MINUTES = 15L;
     private static final Executor IO_EXECUTOR = Executors.newThreadPerTaskExecutor(
             Thread.ofVirtual().name("YourPlugin-Json-User-Repo-", 0).factory()
     );
@@ -86,12 +80,11 @@ public final class JsonUserRepository implements UserRepository {
             .registerTypeAdapter(UUID.class, (JsonDeserializer<UUID>) (json, _, _) ->
                     UUID.fromString(json.getAsString()))
             .create();
+
     private static final String EXTENSION = ".json";
 
     private final Path storageDir;
-
     private final Cache<UUID, ReentrantReadWriteLock> locks;
-    private final AsyncCache<UUID, @Nullable UserProfile> cache;
 
     /// Constructs a new repository whose files will live under
     /// `<dataDirectory>/users/`.
@@ -103,11 +96,6 @@ public final class JsonUserRepository implements UserRepository {
         this.locks = Caffeine.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)
                 .build();
-        this.cache = Caffeine.newBuilder()
-                .maximumSize(CACHE_MAX_SIZE)
-                .expireAfterAccess(CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES)
-                .executor(IO_EXECUTOR)
-                .buildAsync();
     }
 
     /// {@inheritDoc}
@@ -125,39 +113,36 @@ public final class JsonUserRepository implements UserRepository {
     /// {@inheritDoc}
     @Override
     public CompletableFuture<Optional<UserProfile>> findById(final UUID uuid) {
-        return this.cache.get(uuid, _ -> {
-            final ReentrantReadWriteLock.ReadLock lock = lockFor(uuid).readLock();
+        return CompletableFuture.supplyAsync(() -> {
+            final ReentrantReadWriteLock.ReadLock lock = this.lockFor(uuid).readLock();
             lock.lock();
             try {
                 final Path file = this.fileFor(uuid);
                 if (!Files.exists(file)) {
-                    return null;
+                    return Optional.empty();
                 }
 
                 final String json = Files.readString(file);
                 if (json.isBlank()) {
-                    return null;
+                    return Optional.empty();
                 }
 
-                return GSON.fromJson(json, UserProfile.class);
+                return Optional.of(GSON.fromJson(json, UserProfile.class));
             } catch (final IOException exception) {
                 throw new UncheckedIOException("Failed to read user file for UUID: " + uuid, exception);
             } finally {
                 lock.unlock();
             }
-        }).thenApply(Optional::ofNullable);
+        }, IO_EXECUTOR);
     }
 
     /// {@inheritDoc}
-    ///
-    /// @return TODO
     @Override
     public CompletableFuture<Void> upsert(final UserProfile userProfile) {
         final UUID uuid = userProfile.uuid();
-        this.cache.put(uuid, CompletableFuture.completedFuture(userProfile));
 
         return CompletableFuture.runAsync(() -> {
-            final ReentrantReadWriteLock.WriteLock lock = lockFor(uuid).writeLock();
+            final ReentrantReadWriteLock.WriteLock lock = this.lockFor(uuid).writeLock();
             lock.lock();
             try {
                 final Path file = this.fileFor(uuid);
@@ -174,16 +159,10 @@ public final class JsonUserRepository implements UserRepository {
     }
 
     /// {@inheritDoc}
-    ///
-    /// Also removes the per-user lock entry to prevent unbounded map growth.
-    ///
-    /// @return TODO
     @Override
     public CompletableFuture<Void> delete(final UUID uuid) {
-        this.cache.synchronous().invalidate(uuid);
-
         return CompletableFuture.runAsync(() -> {
-            final ReentrantReadWriteLock.WriteLock lock = lockFor(uuid).writeLock();
+            final ReentrantReadWriteLock.WriteLock lock = this.lockFor(uuid).writeLock();
             lock.lock();
             try {
                 Files.deleteIfExists(this.fileFor(uuid));

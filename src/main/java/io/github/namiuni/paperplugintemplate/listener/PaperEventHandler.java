@@ -56,12 +56,22 @@ public final class PaperEventHandler implements Listener {
             return;
         }
 
-        this.userService.getOrCreateUser(uuid, name).join(); // TODO: エラーハンドリング connection.disconnect();
+        this.userService.loadUser(uuid, name).join(); // TODO: エラーハンドリング connection.disconnect();
     }
 
+    /// Persists the quitting player's updated `lastSeen` timestamp and evicts their
+    /// profile from the cache.
+    ///
+    /// [UserService#saveUser] is submitted as a fire-and-forget virtual-thread task.
+    /// [UserService#discardUser] is called synchronously immediately after; this is
+    /// safe because `saveUser` captures the profile reference before returning the
+    /// future.
+    ///
+    /// @param event the player-quit event
     @EventHandler
     public void onLeft(final PlayerQuitEvent event) {
-        this.userService.getUser(event.getPlayer().getUniqueId())
-                .thenAccept(user -> user.ifPresent(this.userService::upsertUser));
+        final UUID uuid = event.getPlayer().getUniqueId();
+        this.userService.saveUser(uuid)
+                .thenRun(() -> this.userService.discardUser(uuid));
     }
 }
