@@ -24,7 +24,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.github.namiuni.paperplugintemplate.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.permission.TemplatePermission;
-import io.github.namiuni.paperplugintemplate.translation.TemplateMessages;
+import io.github.namiuni.paperplugintemplate.translation.Messages;
 import io.github.namiuni.paperplugintemplate.translation.TranslatorHolder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -36,48 +36,43 @@ import org.bukkit.command.CommandSender;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.ConfigurateException;
 
-/// Administration command that exposes plugin management actions to operators.
+/// Administration command exposing plugin management actions to operators.
 ///
-/// Currently provides a `/template reload` sub-command that hot-reloads
-/// both the primary configuration file and the translation files without restarting
-/// the server.
+/// Requires [TemplatePermission#COMMAND_RELOAD].
 ///
-/// Requires the [TemplatePermission#COMMAND_RELOAD] permission node.
+/// @see TemplatePermission#COMMAND_RELOAD
 @NullMarked
 public final class AdminCommand implements CommandFactory {
 
     private final ConfigurationHolder<PrimaryConfiguration> configHolder;
     private final TranslatorHolder translatorHolder;
-    private final TemplateMessages templateMessages;
+    private final Messages messages;
 
-    /// Constructs a new `AdminCommand` with all required dependencies.
-    ///
     /// @param configHolder     holder for the primary plugin configuration
     /// @param translatorHolder holder for the active Adventure translator
-    /// @param templateMessages message provider for localised feedback
+    /// @param messages message provider for localised feedback
     @Inject
     private AdminCommand(
             final ConfigurationHolder<PrimaryConfiguration> configHolder,
             final TranslatorHolder translatorHolder,
-            final TemplateMessages templateMessages
+            final Messages messages
     ) {
         this.configHolder = configHolder;
         this.translatorHolder = translatorHolder;
-        this.templateMessages = templateMessages;
+        this.messages = messages;
     }
 
-    /// Builds the `/template` command tree.
+    /// Builds the `/template` command tree with a single `reload` sub-command.
     ///
-    /// The tree currently contains a single `reload` sub-command that:
-    /// <ol>
-    ///     - Reloads the primary configuration from disk.
-    ///     - Replaces the registered translation source in [GlobalTranslator]
-    ///     with a freshly loaded instance.
-    /// </ol>
-    /// Both operations report success or failure to the executing sender via
-    /// localized messages.
+    /// The `reload` sub-command:
     ///
-    /// @return the root [LiteralCommandNode] for the `/template` command
+    /// - Reloads the primary configuration from disk.
+    /// - Replaces the active translation source in [GlobalTranslator] with a
+    ///   freshly loaded instance.
+    ///
+    /// Both operations send a localised success or failure message to the sender.
+    ///
+    /// @return the root `/template` [LiteralCommandNode]
     @Override
     public LiteralCommandNode<CommandSourceStack> command() {
         return Commands.literal("template") // TODO: change the command name
@@ -85,6 +80,12 @@ public final class AdminCommand implements CommandFactory {
                 .build();
     }
 
+    /// Builds the `reload` sub-command node.
+    ///
+    /// Requires [TemplatePermission#COMMAND_RELOAD]. Reports success or failure
+    /// to the sender via [Messages].
+    ///
+    /// @return the `reload` [LiteralCommandNode]
     public LiteralCommandNode<CommandSourceStack> reloadNode() {
         return Commands.literal("reload")
                 .requires(source -> source.getSender().hasPermission(TemplatePermission.COMMAND_RELOAD.node()))
@@ -93,9 +94,9 @@ public final class AdminCommand implements CommandFactory {
 
                     try {
                         this.configHolder.reload();
-                        sender.sendMessage(this.templateMessages.configurationReloadSuccess());
+                        sender.sendMessage(this.messages.configurationReloadSuccess());
                     } catch (final ConfigurateException exception) {
-                        sender.sendMessage(this.templateMessages.configurationReloadFailure());
+                        sender.sendMessage(this.messages.configurationReloadFailure());
                         throw new UncheckedIOException(exception);
                     }
 
@@ -104,9 +105,9 @@ public final class AdminCommand implements CommandFactory {
                         final var newTranslator = this.translatorHolder.reload();
                         GlobalTranslator.translator().removeSource(oldTranslator);
                         GlobalTranslator.translator().addSource(newTranslator);
-                        sender.sendMessage(this.templateMessages.translationReloadSuccess());
+                        sender.sendMessage(this.messages.translationReloadSuccess());
                     } catch (final IOException exception) {
-                        sender.sendMessage(this.templateMessages.translationReloadFailure());
+                        sender.sendMessage(this.messages.translationReloadFailure());
                         throw new UncheckedIOException(exception);
                     }
 

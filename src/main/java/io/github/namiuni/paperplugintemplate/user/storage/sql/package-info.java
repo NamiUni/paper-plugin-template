@@ -1,7 +1,7 @@
 /*
  * paper-plugin-template
  *
- * Copyright (c) 2025. Namiu/Unitarou
+ * Copyright (c) 2026. Namiu/Unitarou
  *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,5 +18,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Guice dependency injection configuration for the template plugin.
-package io.github.namiuni.paperplugintemplate.guice;
+/// SQL-backed [io.github.namiuni.paperplugintemplate.user.storage.UserRepository]
+/// implementation using JDBI and HikariCP.
+package io.github.namiuni.paperplugintemplate.user.storage.sql;

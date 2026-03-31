@@ -17,24 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.guice;
+package io.github.namiuni.paperplugintemplate.user.storage;
 
-import com.google.inject.BindingAnnotation;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.time.Instant;
+import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
-/// Guice binding annotation that qualifies a [java.nio.file.Path] injection point
-/// as the plugin's data directory.
+/// Persistent data for a tracked player.
 ///
-/// Apply this annotation to [java.nio.file.Path] parameters or fields to
-/// distinguish the plugin data directory binding from other `Path` bindings in the
-/// Guice injector.
+/// Stored and retrieved by [UserRepository]; consumed by [io.github.namiuni.paperplugintemplate.user.UserService]
+/// as the unit of I/O between the service layer and the storage backend.
+///
+/// @param uuid     the player's permanent unique identifier
+/// @param name     the player's last-known username
+/// @param lastSeen the instant this record was last written to storage
 @NullMarked
-@BindingAnnotation
-@Target(ElementType.PARAMETER)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DataDirectory {
+public record UserProfile(
+        UUID uuid,
+        String name,
+        Instant lastSeen
+) {
 }

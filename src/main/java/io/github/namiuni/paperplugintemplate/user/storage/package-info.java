@@ -1,7 +1,7 @@
 /*
  * paper-plugin-template
  *
- * Copyright (c) 2025. Namiu/Unitarou
+ * Copyright (c) 2026. Namiu/Unitarou
  *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Defines user-domain services and types that work with asynchronous
-/// user-profile snapshots.
-package io.github.namiuni.paperplugintemplate.user;
+/// Storage abstraction layer: [io.github.namiuni.paperplugintemplate.user.storage.UserRepository]
+/// interface, [io.github.namiuni.paperplugintemplate.user.storage.UserProfile] record,
+/// and [io.github.namiuni.paperplugintemplate.user.storage.StorageType] enum.
+@NullMarked
+package io.github.namiuni.paperplugintemplate.user.storage;
+
+import org.jspecify.annotations.NullMarked;

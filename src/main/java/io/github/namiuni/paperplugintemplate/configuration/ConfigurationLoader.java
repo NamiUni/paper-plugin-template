@@ -19,9 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.configuration;
 
+import io.github.namiuni.paperplugintemplate.DataDirectory;
 import io.github.namiuni.paperplugintemplate.configuration.annotations.ConfigHeader;
 import io.github.namiuni.paperplugintemplate.configuration.annotations.ConfigName;
-import io.github.namiuni.paperplugintemplate.guice.DataDirectory;
 import java.nio.file.Path;
 import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
 import net.kyori.adventure.text.minimessage.MiniMessage;

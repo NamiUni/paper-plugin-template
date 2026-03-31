@@ -21,7 +21,7 @@ package io.github.namiuni.paperplugintemplate.translation;
 
 import io.github.namiuni.kotonoha.annotations.Key;
 import io.github.namiuni.kotonoha.annotations.Message;
-import io.github.namiuni.paperplugintemplate.guice.DataDirectory;
+import io.github.namiuni.paperplugintemplate.DataDirectory;
 import jakarta.inject.Inject;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -44,28 +44,26 @@ import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationSt
 import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 
-/// Loads a fully initialised {@link Translator} from annotation-embedded defaults and
+/// Loads a fully initialized [Translator] from annotation-embedded defaults and
 /// overrides stored in the plugin's translation directory.
 ///
-/// <p>The loading strategy follows a three-step priority order:
-/// <ol>
-///   <li><b>ROOT locale</b> – always sourced from the compile-time annotations on
-///       {@link TemplateMessages}; these act as the ultimate fallback.</li>
-///   <li><b>Disk files</b> – {@code .properties} files found under the
-///       {@code translation/} sub-directory override the annotation defaults for their
-///       respective locales, allowing server operators to customise messages.</li>
-///   <li><b>Annotation fill-in</b> – any locale defined in annotations but absent from
-///       disk is registered programmatically and also written to disk so operators can
-///       edit it later.</li>
-/// </ol>
+/// The loading strategy follows a three-step priority order:
 ///
-/// <p>Custom MiniMessage tags registered by this loader:
-/// <ul>
-///   <li>{@code <error>} – {@link #RED} (JIS Z 9103 safety red)</li>
-///   <li>{@code <warn>}  – {@link #YELLOW} (JIS Z 9103 safety yellow)</li>
-///   <li>{@code <info>}  – {@link #GREEN} (JIS Z 9103 safety green)</li>
-///   <li>{@code <debug>} – {@link #BLUE} (JIS Z 9103 safety blue)</li>
-/// </ul>
+///   1. **ROOT locale** – always sourced from the compile-time annotations on
+///     [Messages]; these act as the ultimate fallback.
+///   2. **Disk files** – `.properties` files found under the
+///     `translation/` sub-directory override the annotation defaults for their
+///     respective locales, allowing server operators to customize messages.
+///   3. **Annotation fill-in** – any locale defined in annotations but absent from
+///     disk is registered programmatically and also written to disk so operators can
+///     edit it later.
+///
+/// Custom MiniMessage tags registered by this loader:
+///
+///   - `<error>` – [#RED] (JIS Z 9103 safety red)
+///   - `<warn>`  – [#YELLOW] (JIS Z 9103 safety yellow)
+///   - `<info>`  – [#GREEN] (JIS Z 9103 safety green)
+///   - `<debug>` – [#BLUE] (JIS Z 9103 safety blue)
 @NullMarked
 final class TranslatorLoader {
 
@@ -101,10 +99,10 @@ final class TranslatorLoader {
 
     private final Path translationDir;
 
-    /// Constructs a new loader, creating the {@code translation/} directory if it does
+    /// Constructs a new loader, creating the `translation/` directory if it does
     /// not already exist.
     ///
-    /// @param dataDirectory the plugin data directory, injected via {@link DataDirectory}
+    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
     /// @throws UncheckedIOException if the translation directory cannot be created
     @Inject
     private TranslatorLoader(final @DataDirectory Path dataDirectory) {
@@ -116,20 +114,20 @@ final class TranslatorLoader {
         }
     }
 
-    /// Builds and returns a fresh {@link Translator} instance containing all registered
+    /// Builds and returns a fresh [Translator] instance containing all registered
     /// message translations.
     ///
-    /// <p>Calling this method more than once produces independent translator instances;
+    /// Calling this method more than once produces independent translator instances;
     /// the previous instance is not modified.
     ///
-    /// @return a fully populated {@link Translator}
+    /// @return a fully populated [Translator]
     /// @throws IOException if reading or writing translation files fails
     Translator loadTranslator() throws IOException {
         final var store = MiniMessageTranslationStore.create(TRANSLATION_KEY, MINI_MESSAGE);
         store.defaultLocale(Locale.ROOT);
 
         // 1. Register ROOT locale from compile-time annotations (ultimate fallback)
-        final Map<String, String> rootTranslations = readAnnotations(TemplateMessages.class, Locale.ROOT)
+        final Map<String, String> rootTranslations = readAnnotations(Messages.class, Locale.ROOT)
                 .messages()
                 .stream()
                 .collect(Collectors.toUnmodifiableMap(Translation.Message::key, Translation.Message::content));
@@ -148,7 +146,7 @@ final class TranslatorLoader {
         }
 
         // 3. Fill in locales defined in annotations but absent on disk, and write them out
-        for (final Translation translation : readAllAnnotations(TemplateMessages.class)) {
+        for (final Translation translation : readAllAnnotations(Messages.class)) {
             translation.messages().stream()
                     .filter(msg -> !store.contains(msg.key(), translation.locale()))
                     .forEach(msg -> store.register(msg.key(), translation.locale(), msg.content()));
@@ -165,10 +163,10 @@ final class TranslatorLoader {
     // Annotation reading
     // -------------------------------------------------------------------------
 
-    /// Reads all non-empty {@link Translation} instances from the given interface
+    /// Reads all non-empty [Translation] instances from the given interface
     /// across every locale available in the JVM.
     ///
-    /// @param translationClass the interface annotated with {@link Key} and {@link Message}
+    /// @param translationClass the interface annotated with [Key] and [Message]
     /// @return an unordered set of non-empty translations; one entry per locale
     private static Set<Translation> readAllAnnotations(final Class<?> translationClass) {
         return Locale.availableLocales()
@@ -177,11 +175,11 @@ final class TranslatorLoader {
                 .collect(Collectors.toSet());
     }
 
-    /// Reads the {@link Translation} for a single locale from the given interface.
+    /// Reads the [Translation] for a single locale from the given interface.
     ///
-    /// @param translationClass the interface whose methods carry {@link Key} and {@link Message}
+    /// @param translationClass the interface whose methods carry [Key] and [Message]
     /// @param locale           the target locale to extract messages for
-    /// @return a {@link Translation} for the locale; message list may be empty
+    /// @return a [Translation] for the locale; message list may be empty
     private static Translation readAnnotations(final Class<?> translationClass, final Locale locale) {
         final List<Translation.Message> messages = new ArrayList<>();
 
@@ -205,23 +203,23 @@ final class TranslatorLoader {
     // File name helpers
     // -------------------------------------------------------------------------
 
-    /// Returns {@code true} if the given path looks like a translation file.
+    /// Returns `true` if the given path looks like a translation file.
     ///
-    /// <p>A file matches when its name starts with {@value #FILE_PREFIX} and ends
-    /// with {@value #FILE_SUFFIX}.
+    /// A file matches when its name starts with [#FILE_PREFIX] and ends
+    /// with [#FILE_SUFFIX].
     ///
     /// @param file the path to test; only the file name component is examined
-    /// @return {@code true} if the file is a candidate translation file
+    /// @return `true` if the file is a candidate translation file
     private static boolean isTranslationFile(final Path file) {
         final String name = file.getFileName().toString();
         return name.startsWith(FILE_PREFIX) && name.endsWith(FILE_SUFFIX);
     }
 
-    /// Parses and returns the {@link Locale} encoded in the given file's name.
+    /// Parses and returns the [Locale] encoded in the given file's name.
     ///
-    /// <p>The locale tag is the substring between the trailing {@code '_'} after
-    /// {@value #FILE_PREFIX} and the leading {@code '.'} of {@value #FILE_SUFFIX}.
-    /// For example, {@code messages_ja_JP.properties} yields {@code ja_JP}.
+    /// The locale tag is the substring between the trailing `'_'` after
+    /// [#FILE_PREFIX] and the leading `'.'` of [#FILE_SUFFIX].
+    /// For example, `messages_ja_JP.properties` yields `ja_JP`.
     ///
     /// @param file the translation file whose name encodes the locale
     /// @return the parsed locale
@@ -239,8 +237,8 @@ final class TranslatorLoader {
     /// Returns the file name for the given locale.
     ///
     /// @param locale the locale to convert
-    /// @return the file name (e.g. {@code messages_ja_JP.properties}),
-    ///         or an empty string when {@code locale} is {@link Locale#ROOT}
+    /// @return the file name (e.g. `messages_ja_JP.properties`),
+    ///         or an empty string when `locale` is [Locale#ROOT]
     private static String fileNameFromLocale(final Locale locale) {
         if (locale == Locale.ROOT) {
             return "";
@@ -252,9 +250,9 @@ final class TranslatorLoader {
     // File writing
     // -------------------------------------------------------------------------
 
-    /// Writes a {@link Translation} to a {@code .properties} file inside {@code parentDir}.
+    /// Writes a [Translation] to a `.properties` file inside `parentDir`.
     ///
-    /// <p>{@link Locale#ROOT} is treated as {@link Locale#US} for the file name because
+    /// [Locale#ROOT] is treated as [Locale#US] for the file name because
     /// the root locale has no standard BCP-47 tag. If the resulting file name would be
     /// empty this method returns without writing anything.
     ///

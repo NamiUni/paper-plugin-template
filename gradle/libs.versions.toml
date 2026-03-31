@@ -17,16 +17,30 @@ configurate = "4.2.0"
 adventure-serializer-configurate = "4.26.1"
 kotonoha = "0.2.0"
 
+# Storage
+jdbi = "3.47.0"
+hikari = "5.1.0"
+h2 = "2.3.232"
+mysql-connector = "8.4.0"
+
 [libraries]
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
 guice = { group = "com.google.inject", name = "guice", version.ref = "guice" }
-result4j = { group = "com.github.sviperll", name = "result4j", version.ref = "result4j" }
 paper-api = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper-api" }
 mini-placeholders = { group = "io.github.miniplaceholders", name = "miniplaceholders-api", version.ref = "mini-placeholders" }
 configurate-yaml = { group = "org.spongepowered", name = "configurate-yaml", version.ref = "configurate" }
 adventure-serializer-configurate = { group = "net.kyori", name = "adventure-serializer-configurate4", version.ref = "adventure-serializer-configurate" }
 kotonoha-message = { group = "io.github.namiuni", name = "kotonoha-message", version.ref = "kotonoha" }
 kotonoha-message-extra-miniplaceholders = { group = "io.github.namiuni", name = "kotonoha-message-extra-miniplaceholders", version.ref = "kotonoha" }
+
+# Storage
+jdbi-core = { group = "org.jdbi", name = "jdbi3-core", version.ref = "jdbi" }
+jdbi-sqlobject = { group = "org.jdbi", name = "jdbi3-sqlobject", version.ref = "jdbi" }
+jdbi-caffeine-cache = { group = "org.jdbi", name = "jdbi3-caffeine-cache", version.ref = "jdbi" }
+jdbi-guice = { group = "org.jdbi", name = "jdbi3-guice", version.ref = "jdbi" }
+hikari = { group = "com.zaxxer", name = "HikariCP", version.ref = "hikari" }
+h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
+mysql-connector = { group = "com.mysql", name = "mysql-connector-j", version.ref = "mysql-connector" }
 
 [plugins]
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }

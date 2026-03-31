@@ -1,7 +1,7 @@
 /*
  * paper-plugin-template
  *
- * Copyright (c) 2025. Namiu/Unitarou
+ * Copyright (c) 2026. Namiu/Unitarou
  *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,6 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Defines user-domain services and types that work with asynchronous
-/// user-profile snapshots.
-package io.github.namiuni.paperplugintemplate.user;
+/// JSON flat-file [io.github.namiuni.paperplugintemplate.user.storage.UserRepository] implementation.
+package io.github.namiuni.paperplugintemplate.user.storage.json;
+

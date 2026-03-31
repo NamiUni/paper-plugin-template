@@ -30,28 +30,33 @@ dependencies {
     runtimeDownload(libs.adventure.serializer.configurate) {
         isTransitive = false
     }
-    runtimeDownload(libs.kotonoha.message) {
-        exclude(group = "org.jspecify", module = "jspecify")
-    }
-    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders) {
-        exclude(group = "org.jspecify", module = "jspecify")
-    }
+    runtimeDownload(libs.kotonoha.message)
+    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders)
+
+    // Storage
+    runtimeDownload(libs.jdbi.core)
+    runtimeDownload(libs.jdbi.sqlobject)
+    runtimeDownload(libs.jdbi.caffeine.cache)
+//    implementation(libs.jdbi.guice)
+    runtimeDownload(libs.hikari)
+    runtimeDownload(libs.h2)
+    runtimeDownload(libs.mysql.connector)
 }
 
-val mainPackage = "$group.paperplugintemplate" // TODO: change the package
+val mainPackage = "$group.paperplugintemplate"
 paperPluginYaml {
-    name = "PaperPluginTemplate" // TODO: change the name
+    name = "YourPlugin" // TODO: change the name
     author = "Namiu/Unitarou"
     website = "https://github.com/NamiUni"
     apiVersion = "1.21.11"
 
+    loader = "$mainPackage.PluginLoaderImpl"
     main = "$mainPackage.JavaPluginImpl"
     bootstrapper = "$mainPackage.PluginBootstrapImpl"
-    loader = "$mainPackage.PluginLoaderImpl"
 
     permissions {
-        register("templateplugin.command.reload") { // TODO: change the root node
-            description = "Reloads TemplatePlugin's config." // TODO: change the plugin name
+        register("your_plugin.command.reload") { // TODO: change the root node
+            description = "Reloads YourPlugin's config." // TODO: change the plugin name
             default = Permission.Default.OP
         }
     }

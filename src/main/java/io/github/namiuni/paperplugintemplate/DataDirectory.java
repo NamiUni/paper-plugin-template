@@ -17,30 +17,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.configuration.annotations;
+package io.github.namiuni.paperplugintemplate;
 
+import com.google.inject.BindingAnnotation;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jspecify.annotations.NullMarked;
 
-/// Specifies the file name used when persisting a configuration record to disk.
+/// Guice binding annotation that qualifies a [java.nio.file.Path] injection point
+/// as the plugin's data directory.
 ///
-/// Place this annotation on a configuration record class to declare the filename
-/// (relative to the plugin's data directory) that [io.github.namiuni.paperplugintemplate.configuration.ConfigurationLoader]
-/// will read from and write to.
-/// <pre>
-/// `record MyConfig(String someValue){}`</pre>
+/// Apply this annotation to [java.nio.file.Path] parameters or fields to
+/// distinguish the plugin data directory binding from other `Path` bindings in the
+/// Guice injector.
 @NullMarked
-@Target(ElementType.TYPE)
+@BindingAnnotation
+@Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ConfigName {
-
-    /**
-     * The configuration file name, including extension (e.g. `"config.conf"`).
-     *
-     * @return the file name relative to the plugin data directory
-     */
-    String value();
+public @interface DataDirectory {
 }
