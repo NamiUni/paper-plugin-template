@@ -24,7 +24,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.github.namiuni.paperplugintemplate.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.permission.TemplatePermission;
-import io.github.namiuni.paperplugintemplate.translation.TemplateMessages;
+import io.github.namiuni.paperplugintemplate.translation.Messages;
 import io.github.namiuni.paperplugintemplate.translation.TranslatorHolder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -46,20 +46,20 @@ public final class AdminCommand implements CommandFactory {
 
     private final ConfigurationHolder<PrimaryConfiguration> configHolder;
     private final TranslatorHolder translatorHolder;
-    private final TemplateMessages templateMessages;
+    private final Messages messages;
 
     /// @param configHolder     holder for the primary plugin configuration
     /// @param translatorHolder holder for the active Adventure translator
-    /// @param templateMessages message provider for localised feedback
+    /// @param messages message provider for localised feedback
     @Inject
     private AdminCommand(
             final ConfigurationHolder<PrimaryConfiguration> configHolder,
             final TranslatorHolder translatorHolder,
-            final TemplateMessages templateMessages
+            final Messages messages
     ) {
         this.configHolder = configHolder;
         this.translatorHolder = translatorHolder;
-        this.templateMessages = templateMessages;
+        this.messages = messages;
     }
 
     /// Builds the `/template` command tree with a single `reload` sub-command.
@@ -83,7 +83,7 @@ public final class AdminCommand implements CommandFactory {
     /// Builds the `reload` sub-command node.
     ///
     /// Requires [TemplatePermission#COMMAND_RELOAD]. Reports success or failure
-    /// to the sender via [TemplateMessages].
+    /// to the sender via [Messages].
     ///
     /// @return the `reload` [LiteralCommandNode]
     public LiteralCommandNode<CommandSourceStack> reloadNode() {
@@ -94,9 +94,9 @@ public final class AdminCommand implements CommandFactory {
 
                     try {
                         this.configHolder.reload();
-                        sender.sendMessage(this.templateMessages.configurationReloadSuccess());
+                        sender.sendMessage(this.messages.configurationReloadSuccess());
                     } catch (final ConfigurateException exception) {
-                        sender.sendMessage(this.templateMessages.configurationReloadFailure());
+                        sender.sendMessage(this.messages.configurationReloadFailure());
                         throw new UncheckedIOException(exception);
                     }
 
@@ -105,9 +105,9 @@ public final class AdminCommand implements CommandFactory {
                         final var newTranslator = this.translatorHolder.reload();
                         GlobalTranslator.translator().removeSource(oldTranslator);
                         GlobalTranslator.translator().addSource(newTranslator);
-                        sender.sendMessage(this.templateMessages.translationReloadSuccess());
+                        sender.sendMessage(this.messages.translationReloadSuccess());
                     } catch (final IOException exception) {
-                        sender.sendMessage(this.templateMessages.translationReloadFailure());
+                        sender.sendMessage(this.messages.translationReloadFailure());
                         throw new UncheckedIOException(exception);
                     }
 

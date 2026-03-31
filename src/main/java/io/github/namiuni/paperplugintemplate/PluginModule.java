@@ -35,7 +35,7 @@ import io.github.namiuni.paperplugintemplate.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.configuration.ConfigurationLoader;
 import io.github.namiuni.paperplugintemplate.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.listener.PaperEventHandler;
-import io.github.namiuni.paperplugintemplate.translation.TemplateMessages;
+import io.github.namiuni.paperplugintemplate.translation.Messages;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
@@ -86,18 +86,18 @@ public final class PluginModule extends AbstractModule {
         );
     }
 
-    /// Provides a singleton [TemplateMessages] proxy backed by Kotonoha.
+    /// Provides a singleton [Messages] proxy backed by Kotonoha.
     ///
-    /// @return a proxied implementation of [TemplateMessages]
+    /// @return a proxied implementation of [Messages]
     @Provides
     @Singleton
-    private TemplateMessages translations() {
+    private Messages translations() {
         final var argumentPolicy = TranslationArgumentAdaptationPolicy.miniMessage(
                 TranslationArgumentAdapter.standard(),
                 TagNameResolver.annotationOrParameterNameResolver()
         );
         final var config = FormatTypes.MINI_MESSAGE.withArgumentPolicy(argumentPolicy);
-        return KotonohaMessage.createProxy(TemplateMessages.class, config);
+        return KotonohaMessage.createProxy(Messages.class, config);
     }
 
     /// {@inheritDoc}

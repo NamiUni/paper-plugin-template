@@ -19,11 +19,13 @@
  */
 package io.github.namiuni.paperplugintemplate.listener;
 
+import io.github.namiuni.paperplugintemplate.translation.Messages;
 import io.github.namiuni.paperplugintemplate.user.UserService;
 import io.papermc.paper.connection.PlayerConfigurationConnection;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import jakarta.inject.Inject;
 import java.util.UUID;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -38,23 +40,39 @@ import org.jspecify.annotations.NullMarked;
 /// [io.github.namiuni.paperplugintemplate.user.storage.UserProfile] is available
 /// before the play phase begins. This is the correct pattern for
 /// [AsyncPlayerConnectionConfigureEvent]: the event fires on a dedicated async
-/// thread, not the main server thread, so blocking it is safe.
+/// configuration thread, not the main server thread, so blocking it is safe.
+///
+/// [#onLeft] uses [java.util.concurrent.CompletableFuture#whenComplete] so that
+/// the cache eviction via [UserService#discardUser] is always performed, regardless
+/// of whether the preceding persistence operation succeeded or failed.
 @NullMarked
 @SuppressWarnings("UnstableApiUsage")
 public final class PaperEventHandler implements Listener {
 
     private final UserService userService;
+    private final ComponentLogger logger;
+    private final Messages messages;
 
     /// @param userService the service managing user data
+    /// @param logger      the plugin logger used for error reporting
     @Inject
-    private PaperEventHandler(final UserService userService) {
+    private PaperEventHandler(
+            final UserService userService,
+            final ComponentLogger logger,
+            final Messages messages
+    ) {
         this.userService = userService;
+        this.logger = logger;
+        this.messages = messages;
     }
 
-    /// Loads (or creates) the player's profile before the play phase starts.
+    /// Loads or creates the player's [io.github.namiuni.paperplugintemplate.user.storage.UserProfile]
+    /// before the play phase starts.
     ///
-    /// Blocks until the profile is available so that downstream handlers in the
-    /// play phase can always find it in the repository.
+    /// Blocks the configuration thread until the profile is available so that
+    /// downstream play-phase handlers can always find it in the cache. If the
+    /// storage backend fails, the player is disconnected to prevent them from
+    /// joining in a broken state.
     ///
     /// @param event the connection-configuration event
     @EventHandler
@@ -66,18 +84,33 @@ public final class PaperEventHandler implements Listener {
             return;
         }
 
-        this.userService.loadUser(uuid, name).join(); // TODO: エラーハンドリング connection.disconnect();
+        this.userService.loadUser(uuid, name)
+                .whenComplete((userProfile, ex) -> {
+                    if (ex != null) {
+                        this.logger.error("Failed to load user profile for UUID: {}. Disconnecting player.", uuid, ex);
+                        connection.disconnect(this.messages.joinFailureProfile());
+                    } else {
+                        this.logger.debug(userProfile.toString());
+                    }
+                });
     }
 
-    /// Persists the player's profile on disconnect.
+    /// Persists the player's profile on disconnect, then evicts the cache entry.
     ///
-    /// The upsert is fire-and-forget; failures are not propagated to the event thread.
+    /// The eviction via [UserService#discardUser] runs unconditionally inside
+    /// `whenComplete`, ensuring the cache does not retain stale entries even when
+    /// the persistence operation fails. Failures are logged but not re-thrown.
     ///
     /// @param event the quit event
     @EventHandler
     public void onLeft(final PlayerQuitEvent event) {
         final UUID uuid = event.getPlayer().getUniqueId();
         this.userService.saveUser(uuid)
-                .thenRun(() -> this.userService.discardUser(uuid));
+                .whenComplete((_, ex) -> {
+                    if (ex != null) {
+                        this.logger.error("Failed to persist profile on disconnect for UUID: {}", uuid, ex);
+                    }
+                    this.userService.discardUser(uuid);
+                });
     }
 }

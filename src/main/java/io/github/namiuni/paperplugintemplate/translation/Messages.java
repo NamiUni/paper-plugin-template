@@ -39,7 +39,7 @@ import org.jspecify.annotations.NullMarked;
 /// rather than accessing this interface statically.
 @NullMarked
 @ResourceBundle(baseName = "messages")
-public interface TemplateMessages {
+public interface Messages {
 
     /// Returns the message sent to a command sender when the configuration is
     /// reloaded successfully.
@@ -78,4 +78,9 @@ public interface TemplateMessages {
     @Message(locale = Locales.JA_JP, content = "<error>翻訳の再読み込みに失敗しました。詳細はコンソールを確認してください。")
     @WithPlaceholders(PlaceholderScope.AUDIENCE_GLOBAL)
     Component translationReloadFailure();
+
+    @Key("template.join.failure.profile")
+    @Message(locale = Locales.ROOT, content = "<error>Failed to load your profile. Please try reconnecting.")
+    @Message(locale = Locales.JA_JP, content = "<error>プロフィールの読み込みに失敗しました。再接続してください。")
+    Component joinFailureProfile();
 }

@@ -50,7 +50,7 @@ import org.jspecify.annotations.NullMarked;
 /// The loading strategy follows a three-step priority order:
 ///
 ///   1. **ROOT locale** – always sourced from the compile-time annotations on
-///     [TemplateMessages]; these act as the ultimate fallback.
+///     [Messages]; these act as the ultimate fallback.
 ///   2. **Disk files** – `.properties` files found under the
 ///     `translation/` sub-directory override the annotation defaults for their
 ///     respective locales, allowing server operators to customize messages.
@@ -127,7 +127,7 @@ final class TranslatorLoader {
         store.defaultLocale(Locale.ROOT);
 
         // 1. Register ROOT locale from compile-time annotations (ultimate fallback)
-        final Map<String, String> rootTranslations = readAnnotations(TemplateMessages.class, Locale.ROOT)
+        final Map<String, String> rootTranslations = readAnnotations(Messages.class, Locale.ROOT)
                 .messages()
                 .stream()
                 .collect(Collectors.toUnmodifiableMap(Translation.Message::key, Translation.Message::content));
@@ -146,7 +146,7 @@ final class TranslatorLoader {
         }
 
         // 3. Fill in locales defined in annotations but absent on disk, and write them out
-        for (final Translation translation : readAllAnnotations(TemplateMessages.class)) {
+        for (final Translation translation : readAllAnnotations(Messages.class)) {
             translation.messages().stream()
                     .filter(msg -> !store.contains(msg.key(), translation.locale()))
                     .forEach(msg -> store.register(msg.key(), translation.locale(), msg.content()));

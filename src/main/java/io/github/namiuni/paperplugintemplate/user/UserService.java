@@ -2,7 +2,7 @@
  * paper-plugin-template
  *
  * Copyright (c) 2026. Namiu/Unitarou
- *                     Contributors []
+ * Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,16 +30,18 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /// Application service for managing player [UserProfile] data.
 ///
-/// Delegates all persistence to the injected [UserRepository]. This service
-/// does not maintain its own cache; caching is the responsibility of the
-/// active repository implementation.
+/// Maintains an in-memory cache of online or recently active players to provide
+/// strictly non-blocking reads. Cache misses and write operations are delegated
+/// asynchronously to the injected [UserRepository].
 ///
-/// All returned futures complete on the executor owned by the repository.
+/// Futures returned by write or load operations complete on the executor owned
+/// by the active repository implementation.
 ///
 /// @see UserRepository
 @Singleton
@@ -49,24 +51,31 @@ public final class UserService {
     private final UserRepository repository;
     private final Cache<UUID, UserProfile> cache;
 
-    /// Constructs a new `UserService` and initializes an unbounded in-memory cache.
+    /// Constructs a new `UserService` and initializes a bounded in-memory cache.
     ///
     /// @param repository the active storage backend, selected at startup by
     ///                   [io.github.namiuni.paperplugintemplate.user.storage.StorageModule]
     @Inject
     private UserService(final UserRepository repository) {
         this.repository = repository;
-        this.cache = Caffeine.newBuilder().build();
+        this.cache = Caffeine.newBuilder()
+                .maximumSize(512L)
+                .expireAfterAccess(15, TimeUnit.MINUTES)
+                .build();
     }
 
     // -------------------------------------------------------------------------
     // Queries
     // -------------------------------------------------------------------------
 
-    /// Returns the stored profile for `uuid`.
+    /// Retrieves the profile for `uuid` immediately from the in-memory cache.
+    ///
+    /// This method is strictly non-blocking and does not query the underlying storage.
+    /// If the player's data has not been loaded via [#loadUser] or has expired,
+    /// this will return [Optional#empty()].
     ///
     /// @param uuid the player UUID to look up
-    /// @return a future resolving to the profile, or empty if none is stored
+    /// @return an [Optional] containing the cached profile, or empty if not loaded
     public Optional<UserProfile> getUser(final UUID uuid) {
         return Optional.ofNullable(this.cache.getIfPresent(uuid));
     }
@@ -75,32 +84,42 @@ public final class UserService {
     // Commands
     // -------------------------------------------------------------------------
 
-    /// Returns the stored profile for `uuid`, or syntheses a new one if absent.
+    /// Loads the profile for `uuid`. Checks the in-memory cache first to avoid
+    /// redundant I/O; if absent, fetches from storage or creates a new record.
+    ///
+    /// If a profile is fetched from storage and the player's current name differs
+    /// from the stored one, the profile is updated and persisted before the future
+    /// resolves. The resolved value is always the authoritative post-load profile
+    /// which is also placed into the local cache.
     ///
     /// @param uuid the player UUID to look up
     /// @param name the player's current username; `null` falls back to `"Unknown"`
-    /// @return a future resolving to the existing or synthesized profile
-    public CompletableFuture<Void> loadUser(final UUID uuid, final @Nullable String name) {
+    /// @return a future resolving to the loaded or newly created [UserProfile]
+    public CompletableFuture<UserProfile> loadUser(final UUID uuid, final @Nullable String name) {
         final String resolvedName = Objects.requireNonNullElse(name, "Unknown");
-        return this.repository.findById(uuid)
-                .thenCompose(existing -> {
-                    if (existing.isPresent()) {
-                        final UserProfile found = existing.get();
-                        if (found.name().equals(resolvedName)) {
-                            // Name unchanged: cache only, no write.
-                            this.cache.put(uuid, found);
-                            return CompletableFuture.completedFuture(null);
-                        }
-                        // Name changed: update cache and persist.
-                        final UserProfile updated = new UserProfile(uuid, resolvedName, found.lastSeen());
-                        this.cache.put(uuid, updated);
-                        return this.repository.upsert(updated);
-                    }
-                    // New player: create, cache, and persist.
-                    final UserProfile created = new UserProfile(uuid, resolvedName, Instant.now());
-                    this.cache.put(uuid, created);
-                    return this.repository.upsert(created);
-                });
+
+        final Optional<UserProfile> cached = this.getUser(uuid);
+        return cached.map(CompletableFuture::completedFuture)
+                .orElseGet(() -> this.repository.findById(uuid)
+                        .thenCompose(existing -> {
+                            if (existing.isPresent()) {
+                                final UserProfile found = existing.get();
+                                if (found.name().equals(resolvedName)) {
+                                    // Name unchanged: cache only, no write.
+                                    this.cache.put(uuid, found);
+                                    return CompletableFuture.completedFuture(found);
+                                }
+                                // Name changed: update cache and persist.
+                                final UserProfile updated = new UserProfile(uuid, resolvedName, found.lastSeen());
+                                this.cache.put(uuid, updated);
+                                return this.repository.upsert(updated).thenApply(_ -> updated);
+                            }
+                            // New player: create, cache, and persist.
+                            final UserProfile created = new UserProfile(uuid, resolvedName, Instant.now());
+                            this.cache.put(uuid, created);
+                            return this.repository.upsert(created).thenApply(_ -> created);
+                        }));
+
     }
 
     /// Updates the [UserProfile#lastSeen()] timestamp to now and persists the
