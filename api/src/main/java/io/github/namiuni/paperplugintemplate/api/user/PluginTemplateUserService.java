@@ -35,23 +35,27 @@ import org.jspecify.annotations.NullMarked;
 /// [#loadUser] resolves through three tiers in order:
 ///
 /// 1. **In-memory user cache** — non-blocking, always preferred.
-/// 2. **Connection preload cache** — populated during
-///    `AsyncPlayerConnectionConfigureEvent` before the `Player` object exists;
-///    also non-blocking.
-/// 3. **Repository** — async I/O; only reached on a cold-cache miss. New
-///    players receive a default profile.
+/// 2. **Connection preload cache** — populated before the `Player` object
+///    exists; also non-blocking.
+/// 3. **Repository** — async I/O; only reached on a cold-cache miss.
+///    New players receive a default profile.
 ///
 /// ## Online-status contract
 ///
 /// The `onlineCheck` supplier passed to [#loadUser] is evaluated by the
-/// Caffeine expiry policy on **every** cache interaction after the initial
-/// insertion. Online players (`onlineCheck.getAsBoolean() == true`) are pinned
-/// in cache indefinitely; offline players are evicted 15 minutes after their
+/// cache's expiry policy on **every** cache interaction after the initial
+/// insertion. Online players (`onlineCheck.getAsBoolean() == true`) are
+/// pinned indefinitely; offline players are evicted 15 minutes after their
 /// last cache access.
+///
+/// ## Thread safety
+///
+/// All methods on this service are safe to call from any thread, including
+/// Paper's async event threads and virtual threads.
 ///
 /// @apiNote On the Paper platform, always pass `player::isOnline` as the
 ///          `onlineCheck` argument. For offline-player operations such as admin
-///          commands that modify absent players, pass `() -> false`.
+///          commands, pass `() -> false`.
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginTemplateUserService {
@@ -59,12 +63,14 @@ public interface PluginTemplateUserService {
     /// Returns the cached [PluginTemplateUser] for `player`, if present.
     ///
     /// This method never blocks and never triggers a repository lookup.
-    /// Returns [Optional#empty()] if the player has not yet been loaded or has
-    /// already been evicted from the cache.
+    /// Returns [Optional#empty()] if the player has not yet been loaded or
+    /// has already been evicted from the cache.
     ///
-    /// @param <P>    the platform player type; must extend both [Audience] and [Identified]
+    /// @param <P>    the platform player type; must extend both [Audience]
+    ///               and [Identified]
     /// @param player the player whose cached entry is requested
-    /// @return the cached user wrapped in [Optional], or [Optional#empty()] on a cache miss
+    /// @return the cached user wrapped in [Optional], or [Optional#empty()]
+    ///         on a cache miss
     <P extends Audience & Identified> Optional<PluginTemplateUser> getUser(P player);
 
     /// Returns the [PluginTemplateUser] for `player`, loading from the
@@ -73,28 +79,29 @@ public interface PluginTemplateUserService {
     /// See the class-level documentation for the full resolution order. The
     /// resolved entry is stored in the user cache with an expiry governed by
     /// `onlineCheck`: a `true` result pins the entry forever, while `false`
-    /// allows it to expire after 15 minutes of inactivity.
+    /// allows it to expire 15 minutes after the last cache access.
     ///
-    /// @param <P>         the platform player type
+    /// @param <P>         the platform player type; must extend both [Audience]
+    ///                    and [Identified]
     /// @param player      the player to load
     /// @param onlineCheck a supplier evaluated on every cache interaction;
-    ///                    use `player::isOnline` on Paper, `() -> false` for offline lookups
+    ///                    pass `player::isOnline` on Paper, `() -> false` for
+    ///                    offline-player lookups
     /// @return a future resolving to the user; may complete exceptionally if
-    ///         the repository is unreachable on a cold miss
-    /// @apiNote For event handlers that fire before a `Player` object exists,
-    ///          use the internal preload API instead of this method.
+    ///         the repository is unreachable on a cold cache miss
     /// @implNote The returned future completes on a virtual-thread executor for
-    ///           the repository path and on the calling thread for cache-hit paths.
-    ///           Callers must not assume a specific completion thread.
+    ///           the repository path and on the calling thread for cache-hit
+    ///           paths. Callers must not assume a specific completion thread.
     <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(
             P player, BooleanSupplier onlineCheck);
 
-    /// Removes all persisted data for `uuid` from both caches and the underlying
-    /// storage backend.
+    /// Permanently removes all data for `uuid` from both caches and the
+    /// underlying storage backend.
     ///
     /// Intended for administrative actions such as GDPR data deletion and
-    /// **not** for routine disconnect handling. For disconnect, cache eviction is
-    /// handled automatically by `PluginTemplateUserServiceInternal#persistOnlinePlayer`.
+    /// **not** for routine disconnect handling. Cache eviction on normal
+    /// disconnects is performed automatically by the service as part of the
+    /// player logout sequence.
     ///
     /// @param uuid the player UUID whose data should be permanently deleted
     /// @return a future that completes when the deletion finishes; may complete

@@ -33,19 +33,19 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Mutability contract
 ///
-/// Setters for user-configurable fields are added as the template is extended.
 /// `lastSeen` is **read-only** on this interface; it is a system-managed
-/// timestamp updated exclusively by the service layer on player disconnect and
-/// must not be exposed for external mutation.
+/// timestamp updated exclusively by the service layer on player disconnect
+/// and must not be exposed for external mutation.
 ///
 /// ## Thread safety
 ///
-/// Individual getter calls are guaranteed atomic because the underlying
-/// [java.util.concurrent.atomic.AtomicReference] wrapping the
-/// [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
-/// profile snapshot is updated via copy-on-write semantics.
-/// Compound read-modify-write sequences across multiple calls are **not** atomic
-/// and require external coordination when used from multiple threads.
+/// Individual getter calls are safe from any thread. The underlying profile
+/// snapshot is updated via copy-on-write semantics, guaranteeing that each
+/// call observes a fully constructed, consistent value without requiring
+/// external synchronization.
+///
+/// Compound read-modify-write sequences across multiple calls are **not**
+/// atomic and require external coordination when used concurrently.
 ///
 /// ## Lifecycle
 ///
@@ -69,8 +69,8 @@ public interface PluginTemplateUser extends Audience, Identified {
     ///
     /// The name reflects the value stored in the profile at the time this
     /// instance was constructed. It is updated to the current username on each
-    /// new login, but does **not** change in real-time if the player changes their
-    /// Minecraft username mid-session.
+    /// new login, but does **not** change in real-time if the player changes
+    /// their Minecraft username mid-session.
     ///
     /// @return the username, never `null`
     String name();
@@ -94,10 +94,10 @@ public interface PluginTemplateUser extends Audience, Identified {
 
     /// Returns the instant at which this profile was last persisted to storage.
     ///
-    /// This timestamp is updated by the service layer on each call to
-    /// [PluginTemplateUserService] disconnect persistence and must not be
-    /// modified by callers. It reflects the wall-clock time of the most recent
-    /// successful write, not the current moment.
+    /// This timestamp is updated by the service layer on player disconnect and
+    /// on periodic world-save checkpoints. It reflects the wall-clock time of
+    /// the most recent successful write, not the current moment, and must not
+    /// be modified externally.
     ///
     /// @return the last-seen timestamp, never `null`
     Instant lastSeen();
@@ -105,15 +105,13 @@ public interface PluginTemplateUser extends Audience, Identified {
     /// Returns `true` if the underlying platform player is currently connected
     /// to the server.
     ///
-    /// This method is evaluated by the Caffeine cache's
-    /// [com.github.benmanes.caffeine.cache.Expiry] policy on every cache
-    /// interaction. Online players are pinned indefinitely; offline players expire
-    /// 15 minutes after their last cache access.
-    ///
-    /// @implNote On the Paper platform the supplier delegates to
-    ///           `Player#isOnline()`, which is safe to call from any thread
-    ///           in Paper's threading model. No virtual-thread pinning occurs.
+    /// This method is evaluated by the cache expiry policy on every cache
+    /// interaction. Online players are pinned indefinitely; offline players
+    /// expire 15 minutes after their last cache access.
     ///
     /// @return `true` if the player is connected to the server
+    /// @implNote On the Paper platform this method delegates to
+    ///           `Player#isOnline()`, which is safe to call from any thread.
+    ///           No virtual-thread pinning occurs.
     boolean isOnline();
 }
