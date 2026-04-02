@@ -50,8 +50,9 @@ public interface UserDao extends SqlObject {
     /// Creates the `users` table if it does not already exist.
     @SqlUpdate("""
             CREATE TABLE IF NOT EXISTS users (
-                uuid VARCHAR(36) NOT NULL,
-                name VARCHAR(16) NOT NULL,
+                uuid     VARCHAR(36)  NOT NULL,
+                name     VARCHAR(16)  NOT NULL,
+                last_seen BIGINT      NOT NULL DEFAULT 0,
                 PRIMARY KEY (uuid)
             )
             """)
@@ -61,7 +62,7 @@ public interface UserDao extends SqlObject {
     ///
     /// @param uuid the player UUID to look up
     /// @return the mapped [UserProfile], or empty if absent
-    @SqlQuery("SELECT uuid, name FROM users WHERE uuid = :uuid")
+    @SqlQuery("SELECT uuid, name, last_seen FROM users WHERE uuid = :uuid")
     @UseRowMapper(UserProfileMapper.class)
     Optional<UserProfile> findByUuid(@Bind("uuid") UUID uuid);
 
@@ -70,7 +71,7 @@ public interface UserDao extends SqlObject {
     /// Prefer [#upsert] over calling this method directly.
     ///
     /// @param userProfile the record to insert; components bound via `@BindMethods`
-    @SqlUpdate("INSERT INTO users (uuid, name) VALUES (:uuid, :name)")
+    @SqlUpdate("INSERT INTO users (uuid, name, last_seen) VALUES (:uuid, :name, :lastSeen)")
     void insert(@BindMethods UserProfile userProfile);
 
     /// Updates the `name` column for an existing user.
@@ -79,7 +80,7 @@ public interface UserDao extends SqlObject {
     ///
     /// @param userProfile the record to update; components bound via `@BindMethods`
     /// @return the number of affected rows; `0` means no row existed for this UUID
-    @SqlUpdate("UPDATE users SET name = :name WHERE uuid = :uuid")
+    @SqlUpdate("UPDATE users SET name = :name, last_seen = :lastSeen WHERE uuid = :uuid")
     int update(@BindMethods UserProfile userProfile);
 
     /// Removes the row for `uuid`, if it exists.

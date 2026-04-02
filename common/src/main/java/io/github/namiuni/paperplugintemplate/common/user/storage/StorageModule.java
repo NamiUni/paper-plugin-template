@@ -33,10 +33,13 @@ import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRep
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.UserProfileMapper;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.jdbi.v3.cache.caffeine.CaffeineCacheBuilder;
 import org.jdbi.v3.cache.caffeine.CaffeineCachePlugin;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.argument.QualifiedArgumentFactory;
 import org.jdbi.v3.core.statement.SqlStatements;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.jspecify.annotations.NullMarked;
@@ -88,6 +91,13 @@ public final class StorageModule extends AbstractModule {
                 .installPlugin(new SqlObjectPlugin())
                 .installPlugin(new CaffeineCachePlugin())
                 .registerRowMapper(new UserProfileMapper())
+                .registerArgument((QualifiedArgumentFactory) (type, value, config) -> {
+                    if (!(value instanceof final Instant instant)) {
+                        return Optional.empty();
+                    }
+                    return Optional.of((position, statement, ctx) ->
+                            statement.setLong(position, instant.toEpochMilli()));
+                })
                 .configure(SqlStatements.class, config -> config.setTemplateCache(new CaffeineCacheBuilder(
                         Caffeine.newBuilder()
                                 .maximumSize(512L)

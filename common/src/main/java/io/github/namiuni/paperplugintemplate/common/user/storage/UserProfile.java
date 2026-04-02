@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,9 @@ import org.jspecify.annotations.NullMarked;
 /// Stored and retrieved by [UserRepository]; consumed by [PluginTemplateUserServiceInternal]
 /// as the unit of I/O between the service layer and the storage backend.
 ///
+/// This record is immutable. Use [#withLastSeen(Instant)] to derive an updated
+/// copy without modifying the original.
+///
 /// @param uuid     the player's permanent unique identifier
 /// @param name     the player's last-known username
 /// @param lastSeen the instant this record was last written to storage
@@ -39,7 +42,12 @@ public record UserProfile(
         Instant lastSeen
 ) {
 
+    /// Returns a new [UserProfile] identical to this one, except with the given
+    /// [Instant] as [#lastSeen()].
+    ///
+    /// @param instant the new last-seen timestamp
+    /// @return a fresh [UserProfile] carrying the updated timestamp
     public UserProfile withLastSeen(final Instant instant) {
-        return new UserProfile(uuid, name, lastSeen);
+        return new UserProfile(this.uuid, this.name, instant);
     }
 }

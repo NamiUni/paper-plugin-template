@@ -1,22 +1,3 @@
-/*
- * PaperPluginTemplate
- *
- * Copyright (c) 2026. Namiu (ãã«ããã)
- *                     Contributors
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
 package io.github.namiuni.paperplugintemplate.api.user;
 
 import java.time.Instant;
@@ -28,25 +9,71 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-//TODO: Javadoc
+/// A plugin-managed view of a player combining live Adventure capabilities
+/// with persistent profile data.
+///
+/// The interface is intentionally mutable for user-configurable fields, following
+/// the same model as Bukkit's [org.bukkit.entity.Player]. This allows command
+/// handlers to read and write player state in a natural, imperative style without
+/// constructing intermediate value objects.
+///
+/// ## Mutability contract
+///
+/// Setters for user-configurable fields are added as the template is extended.
+/// `lastSeen` is **read-only** on this interface; it is a system-managed timestamp
+/// updated exclusively by the service layer and must not be exposed to external
+/// mutation.
+///
+/// ## Thread safety
+///
+/// Individual setter calls are atomic (backed by [java.util.concurrent.atomic.AtomicReference]
+/// in the implementation), but compound read-modify-write sequences are not.
+///
+/// ## Lifecycle
+///
+/// Instances are cached for the duration a player is online (and up to 15 minutes
+/// after going offline). Obtain one via [PluginTemplateUserService#getUser] for
+/// a non-blocking lookup, or [PluginTemplateUserService#loadUser] to guarantee
+/// a result even on a cache miss.
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginTemplateUser extends Audience, Identified {
 
-    //TODO: Javadoc
+    /// Returns the player's permanent unique identifier.
+    ///
+    /// @return the UUID, never `null`
     UUID uuid();
 
-    //TODO: Javadoc
+    /// Returns the player's current username.
+    ///
+    /// @return the username, never `null`
     String name();
 
-    //TODO: Javadoc
+    /// Returns the player's display name as an Adventure [Component].
+    ///
+    /// @return the display name, never `null`
     Component displayName();
 
-    //TODO: Javadoc
+    /// Returns the player's active locale.
+    ///
+    /// @return the locale, never `null`
     Locale locale();
 
-    //TODO: Javadoc
+    /// Returns the instant at which this profile was last persisted to storage.
+    ///
+    /// This value is managed exclusively by the service layer and is updated on
+    /// every successful [PluginTemplateUserService#persistOnlinePlayer] call.
+    ///
+    /// @return the last-seen timestamp, never `null`
     Instant lastSeen();
 
-    void lastSeen(Instant instant);
+    /// Returns `true` if the underlying platform player is currently connected
+    /// to the server.
+    ///
+    /// This method is evaluated by the cache's [com.github.benmanes.caffeine.cache.Expiry]
+    /// policy on every cache interaction. Online players are pinned in cache
+    /// indefinitely; offline players expire 15 minutes after their last access.
+    ///
+    /// @return `true` if the player is online
+    boolean isOnline();
 }

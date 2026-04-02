@@ -1,22 +1,3 @@
-/*
- * PaperPluginTemplate
- *
- * Copyright (c) 2026. Namiu (ãã«ããã)
- *                     Contributors
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
 package io.github.namiuni.paperplugintemplate.common.user;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
@@ -25,6 +6,8 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
+import java.util.function.UnaryOperator;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.identity.Identified;
@@ -32,29 +15,82 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 
+/// Platform-specific [PluginTemplateUser] implementation that pairs a live player
+/// object with its persisted [UserProfile].
+///
+/// The underlying [UserProfile] is held in an [AtomicReference] to allow
+/// individual field setters to perform atomic copy-on-write updates safely from
+/// any thread, mirroring the concurrency model of Bukkit's [org.bukkit.entity.Player].
+///
+/// Online status is determined by a [BooleanSupplier] injected at construction
+/// time. On the Paper platform this supplier delegates to `Player#isOnline()`.
+/// The supplier is intentionally platform-agnostic so that `PlatformUser` itself
+/// carries no dependency on the Paper API.
+///
+/// ## Mutation model
+///
+/// Every setter replaces the stored [UserProfile] with a new instance derived via
+/// a `withX()` accessor method. Changes are visible immediately within the same
+/// [PlatformUser] instance and propagated to storage on the next
+/// [PluginTemplateUserServiceInternal#upsertUser] call.
+///
+/// @param <P> the platform player type; must extend both [Audience] and [Identified]
 @NullMarked
-public final class PlatformUser<P extends Audience & Identified> implements PluginTemplateUser, ForwardingAudience.Single {
+public final class PlatformUser<P extends Audience & Identified>
+        implements PluginTemplateUser, ForwardingAudience.Single {
 
     private final Audience player;
     private final AtomicReference<UserProfile> profile;
+    private final BooleanSupplier onlineCheck;
 
-    public PlatformUser(final P player, final UserProfile profile) {
+    /// Constructs a new [PlatformUser].
+    ///
+    /// @param player      the live platform player used for audience delegation and
+    ///                    live identity pointers such as display name and locale
+    /// @param profile     the persisted profile snapshot to associate with this player
+    /// @param onlineCheck a supplier returning `true` while the player is connected;
+    ///                    use `player::isOnline` on Paper, `() -> false` for offline
+    ///                    player representations
+    public PlatformUser(final P player, final UserProfile profile, final BooleanSupplier onlineCheck) {
         this.player = player;
         this.profile = new AtomicReference<>(profile);
+        this.onlineCheck = onlineCheck;
     }
 
+    /// Returns the current [UserProfile] snapshot.
+    ///
+    /// Package-private; consumers outside the `user` package interact through
+    /// the [PluginTemplateUser] interface only.
+    ///
+    /// @return the current profile, never `null`
     UserProfile profile() {
         return this.profile.get();
     }
 
+    /// Atomically replaces the stored [UserProfile] using the given operator.
+    ///
+    /// Package-private; called by [PluginTemplateUserServiceInternal] to update
+    /// system-managed fields (e.g. `lastSeen`) without exposing those mutations
+    /// on the public interface.
+    ///
+    /// @param operator the pure function producing the updated profile
+    void updateProfile(final UnaryOperator<UserProfile> operator) {
+        this.profile.updateAndGet(operator);
+    }
+
+    @Override
+    public boolean isOnline() {
+        return this.onlineCheck.getAsBoolean();
+    }
+
     @Override
     public UUID uuid() {
-        return this.get(Identity.UUID).orElseThrow();
+        return this.profile.get().uuid();
     }
 
     @Override
     public String name() {
-        return this.get(Identity.NAME).orElseThrow();
+        return this.profile.get().name();
     }
 
     @Override
@@ -73,13 +109,8 @@ public final class PlatformUser<P extends Audience & Identified> implements Plug
     }
 
     @Override
-    public void lastSeen(Instant instant) {
-        this.profile.getAndUpdate(old -> old.withLastSeen(instant));
-    }
-
-    @Override
     public Identity identity() {
-        return Identity.identity(this.uuid());
+        return Identity.identity(this.profile.get().uuid());
     }
 
     @Override
