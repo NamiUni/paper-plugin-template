@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,9 +30,12 @@ import org.jspecify.annotations.NullMarked;
 
 /// JDBI [RowMapper] that converts a SQL result row into a [UserProfile] record.
 ///
-/// UUIDs are read as `VARCHAR(36)` strings and parsed via [UUID#fromString(String)].
-/// Timestamps are stored and read as epoch-millisecond `BIGINT` values to maintain
-/// cross-database compatibility between H2 and MySQL.
+/// ## Column conventions
+///
+/// - `uuid`: stored as `VARCHAR(36)` and parsed via `UUID.fromString(String)`.
+/// - `last_seen`: stored as an epoch-millisecond `BIGINT` to maintain
+///   cross-database compatibility between H2 and MySQL, both of which handle
+///   `BIGINT` identically regardless of time-zone settings.
 @NullMarked
 public final class UserProfileMapper implements RowMapper<UserProfile> {
 
@@ -40,7 +43,12 @@ public final class UserProfileMapper implements RowMapper<UserProfile> {
     public UserProfileMapper() {
     }
 
-    /// {@inheritDoc}
+    /// Maps the current row of `rs` to a new [UserProfile].
+    ///
+    /// @param rs  the result set positioned at the current row
+    /// @param ctx the statement context
+    /// @return a [UserProfile] populated from the current row
+    /// @throws SQLException if a column cannot be read from `rs`
     @Override
     public UserProfile map(final ResultSet rs, final StatementContext ctx) throws SQLException {
         return new UserProfile(

@@ -24,17 +24,22 @@ import java.time.Instant;
 import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
-/// Persistent data for a tracked player.
+/// Immutable persistent data snapshot for a tracked player.
 ///
-/// Stored and retrieved by [UserRepository]; consumed by [PluginTemplateUserServiceInternal]
-/// as the unit of I/O between the service layer and the storage backend.
+/// Stored and retrieved by [UserRepository]; consumed by
+/// [PluginTemplateUserServiceInternal] as the unit of I/O between the service
+/// layer and the storage backend.
 ///
-/// This record is immutable. Use [#withLastSeen(Instant)] to derive an updated
-/// copy without modifying the original.
+/// ## Immutability
 ///
-/// @param uuid     the player's permanent unique identifier
-/// @param name     the player's last-known username
-/// @param lastSeen the instant this record was last written to storage
+/// All record components are final. Use [#withLastSeen(Instant)] to derive an
+/// updated copy without modifying this instance. The copy-on-write pattern
+/// ensures this record is safe to share across threads without synchronization.
+///
+/// @param uuid     the player's permanent unique identifier; never `null`
+/// @param name     the player's last-known Minecraft username; never `null`
+/// @param lastSeen the instant this record was last successfully written to
+///                 storage; set to `Instant.now()` for brand-new players
 @NullMarked
 public record UserProfile(
         UUID uuid,
@@ -42,10 +47,14 @@ public record UserProfile(
         Instant lastSeen
 ) {
 
-    /// Returns a new [UserProfile] identical to this one, except with the given
-    /// [Instant] as [#lastSeen()].
+    /// Returns a new [UserProfile] identical to this one, except with `instant`
+    /// as the [#lastSeen()] value.
     ///
-    /// @param instant the new last-seen timestamp
+    /// This method does not mutate `this` record; it constructs and returns a
+    /// fresh instance. The original record remains valid and can be read
+    /// concurrently from other threads.
+    ///
+    /// @param instant the new last-seen timestamp; must not be `null`
     /// @return a fresh [UserProfile] carrying the updated timestamp
     public UserProfile withLastSeen(final Instant instant) {
         return new UserProfile(this.uuid, this.name, instant);
