@@ -61,9 +61,6 @@ public interface PluginTemplateUser extends Audience, Identified {
 
     /// Returns the instant at which this profile was last persisted to storage.
     ///
-    /// This value is managed exclusively by the service layer and is updated on
-    /// every successful [PluginTemplateUserService#persistOnlinePlayer] call.
-    ///
     /// @return the last-seen timestamp, never `null`
     Instant lastSeen();
 

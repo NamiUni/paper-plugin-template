@@ -4,6 +4,7 @@ import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
@@ -14,6 +15,7 @@ import net.kyori.adventure.identity.Identified;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /// Platform-specific [PluginTemplateUser] implementation that pairs a live player
 /// object with its persisted [UserProfile].
@@ -36,8 +38,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// @param <P> the platform player type; must extend both [Audience] and [Identified]
 @NullMarked
-public final class PlatformUser<P extends Audience & Identified>
-        implements PluginTemplateUser, ForwardingAudience.Single {
+public final class PlatformUser<P extends Audience & Identified> implements PluginTemplateUser, ForwardingAudience.Single {
 
     private final Audience player;
     private final AtomicReference<UserProfile> profile;
@@ -116,5 +117,26 @@ public final class PlatformUser<P extends Audience & Identified>
     @Override
     public Audience audience() {
         return this.player;
+    }
+
+    @Override
+    public String toString() {
+        return "PlatformUser{" +
+                "player=" + this.player +
+                ", profile=" + this.profile +
+                ", onlineCheck=" + this.onlineCheck +
+                '}';
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        final PlatformUser<?> that = (PlatformUser<?>) o;
+        return Objects.equals(this.player, that.player) && Objects.equals(this.profile.get(), that.profile.get()) && Objects.equals(this.onlineCheck, that.onlineCheck);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.player, this.profile, this.onlineCheck);
     }
 }

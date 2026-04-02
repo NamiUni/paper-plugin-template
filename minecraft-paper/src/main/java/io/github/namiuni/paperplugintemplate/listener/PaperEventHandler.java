@@ -29,6 +29,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.jspecify.annotations.NullMarked;
@@ -91,7 +92,22 @@ public final class PaperEventHandler implements Listener {
                         this.logger.error("Failed to load user profile for UUID: {}, disconnecting player.", uuid, ex);
                         connection.disconnect(this.messages.joinFailureProfile());
                     } else {
-                        this.logger.debug("Connect: uuid={}, profileFound={}", uuid, profile.isPresent());
+                        this.logger.debug("Connect: {}", profile);
+                    }
+                });
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    private void onJoin(final PlayerJoinEvent event) {
+        final Player player = event.getPlayer();
+        // Eagerly promote the preloaded profile into userCache so that all
+        // subsequent loadUser calls during this session are guaranteed cache hits.
+        this.userService.loadUser(player, player::isOnline)
+                .whenComplete((user, ex) -> {
+                    if (ex != null) {
+                        this.logger.error("Failed to load user profile on join for UUID: {}", player.getUniqueId(), ex);
+                    } else {
+                        this.logger.debug("Join: {}", user);
                     }
                 });
     }
@@ -107,8 +123,7 @@ public final class PaperEventHandler implements Listener {
                 })
                 .whenComplete((_, ex) -> {
                     if (ex != null) {
-                        this.logger.error(
-                                "Failed to persist profile on disconnect for UUID: {}", uuid, ex);
+                        this.logger.error("Failed to persist profile on disconnect for UUID: {}", uuid, ex);
                     }
                     this.userService.discardUser(uuid);
                 });
@@ -124,9 +139,7 @@ public final class PaperEventHandler implements Listener {
                     })
                     .whenComplete((_, ex) -> {
                         if (ex != null) {
-                            this.logger.error(
-                                    "Failed to persist profile on world save for UUID: {}",
-                                    player.getUniqueId(), ex);
+                            this.logger.error("Failed to persist profile on world save for UUID: {}", player.getUniqueId(), ex);
                         }
                     });
         }
