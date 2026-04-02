@@ -50,8 +50,8 @@ import org.jspecify.annotations.NullMarked;
 /// last cache access.
 ///
 /// @apiNote On the Paper platform, always pass `player::isOnline` as the
-///     `onlineCheck` argument. For offline-player operations such as admin
-///     commands that modify absent players, pass `() -> false`.
+///          `onlineCheck` argument. For offline-player operations such as admin
+///          commands that modify absent players, pass `() -> false`.
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginTemplateUserService {
@@ -78,15 +78,14 @@ public interface PluginTemplateUserService {
     /// @param <P>         the platform player type
     /// @param player      the player to load
     /// @param onlineCheck a supplier evaluated on every cache interaction;
-    ///     use `player::isOnline` on Paper, `() -> false` for offline lookups
+    ///                    use `player::isOnline` on Paper, `() -> false` for offline lookups
     /// @return a future resolving to the user; may complete exceptionally if
-    ///     the repository is unreachable on a cold miss
+    ///         the repository is unreachable on a cold miss
     /// @apiNote For event handlers that fire before a `Player` object exists,
-    ///     use the internal preload API instead of this method.
-    ///
+    ///          use the internal preload API instead of this method.
     /// @implNote The returned future completes on a virtual-thread executor for
-    ///     the repository path and on the calling thread for cache-hit paths.
-    ///     Callers must not assume a specific completion thread.
+    ///           the repository path and on the calling thread for cache-hit paths.
+    ///           Callers must not assume a specific completion thread.
     <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(
             P player, BooleanSupplier onlineCheck);
 
@@ -99,6 +98,6 @@ public interface PluginTemplateUserService {
     ///
     /// @param uuid the player UUID whose data should be permanently deleted
     /// @return a future that completes when the deletion finishes; may complete
-    ///     exceptionally if the repository write fails
+    ///         exceptionally if the repository write fails
     CompletableFuture<Void> deleteUser(UUID uuid);
 }
