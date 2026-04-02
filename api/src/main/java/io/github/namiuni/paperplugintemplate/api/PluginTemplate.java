@@ -34,7 +34,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// {@snippet lang="java" :
 /// PluginTemplate api = PluginTemplateProvider.pluginTemplate();
-/// api.userService().getUser(player).ifPresent(user -> /* ... *//* );
+/// api.userService().getUser(player).ifPresent(user -> ...);
 /// }
 ///
 /// @see PluginTemplateProvider
