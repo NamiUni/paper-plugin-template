@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,18 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/// Static registry that holds the singleton [PluginTemplate] instance.
+///
+/// Third-party plugins obtain the public API reference through
+/// [#pluginTemplate()]. The instance is written exactly once during plugin
+/// bootstrap — before the server accepts player connections — and is never
+/// replaced thereafter.
+///
+/// ## Thread safety
+///
+/// The backing field is written once at startup and never modified again.
+/// All subsequent reads via [#pluginTemplate()] are therefore safe from any
+/// thread without additional synchronization.
 @NullMarked
 public final class PluginTemplateProvider {
 
@@ -32,11 +44,24 @@ public final class PluginTemplateProvider {
     private PluginTemplateProvider() {
     }
 
+    /// Registers the singleton [PluginTemplate] instance.
+    ///
+    /// Called exactly once by the plugin internals during bootstrap. Invoking
+    /// this method a second time would silently overwrite the registered
+    /// instance and is therefore prohibited outside the plugin's own
+    /// initialization path.
+    ///
+    /// @param instance the fully initialized plugin API instance; must not be `null`
     @ApiStatus.Internal
     public static void register(final PluginTemplate instance) {
         PluginTemplateProvider.instance = instance;
     }
 
+    /// Returns the singleton [PluginTemplate] instance.
+    ///
+    /// @return the registered plugin API, never `null`
+    /// @throws NullPointerException if called before the plugin has finished
+    ///         bootstrapping and [#register] has not yet been invoked
     public static PluginTemplate pluginTemplate() { // TODO: change the method name
         return Objects.requireNonNull(PluginTemplateProvider.instance, "PluginTemplate not initialized!"); // TODO: change the plugin name
     }

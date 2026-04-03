@@ -1,3 +1,22 @@
+/*
+ * PaperPluginTemplate
+ *
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.github.namiuni.paperplugintemplate.api.user;
 
 import java.time.Instant;
@@ -9,32 +28,34 @@ import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/// A plugin-managed view of a player combining live Adventure capabilities
-/// with persistent profile data.
-///
-/// The interface is intentionally mutable for user-configurable fields, following
-/// the same model as Bukkit's [org.bukkit.entity.Player]. This allows command
-/// handlers to read and write player state in a natural, imperative style without
-/// constructing intermediate value objects.
+/// A plugin-managed view of a player that combines live Adventure messaging
+/// capabilities with persistent profile data stored in the configured backend.
 ///
 /// ## Mutability contract
 ///
-/// Setters for user-configurable fields are added as the template is extended.
-/// `lastSeen` is **read-only** on this interface; it is a system-managed timestamp
-/// updated exclusively by the service layer and must not be exposed to external
-/// mutation.
+/// `lastSeen` is **read-only** on this interface; it is a system-managed
+/// timestamp updated exclusively by the service layer on player disconnect
+/// and must not be exposed for external mutation.
 ///
 /// ## Thread safety
 ///
-/// Individual setter calls are atomic (backed by [java.util.concurrent.atomic.AtomicReference]
-/// in the implementation), but compound read-modify-write sequences are not.
+/// Individual getter calls are safe from any thread. The underlying profile
+/// snapshot is updated via copy-on-write semantics, guaranteeing that each
+/// call observes a fully constructed, consistent value without requiring
+/// external synchronization.
+///
+/// Compound read-modify-write sequences across multiple calls are **not**
+/// atomic and require external coordination when used concurrently.
 ///
 /// ## Lifecycle
 ///
-/// Instances are cached for the duration a player is online (and up to 15 minutes
-/// after going offline). Obtain one via [PluginTemplateUserService#getUser] for
-/// a non-blocking lookup, or [PluginTemplateUserService#loadUser] to guarantee
-/// a result even on a cache miss.
+/// Instances are cached for the duration a player is online and for up to
+/// 15 minutes after they disconnect. Obtain one via
+/// [PluginTemplateUserService#getUser] for a non-blocking lookup, or
+/// [PluginTemplateUserService#loadUser] to guarantee a result even on a
+/// cache miss.
+///
+/// @see PluginTemplateUserService
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginTemplateUser extends Audience, Identified {
@@ -44,22 +65,39 @@ public interface PluginTemplateUser extends Audience, Identified {
     /// @return the UUID, never `null`
     UUID uuid();
 
-    /// Returns the player's current username.
+    /// Returns the player's last-known username.
+    ///
+    /// The name reflects the value stored in the profile at the time this
+    /// instance was constructed. It is updated to the current username on each
+    /// new login, but does **not** change in real-time if the player changes
+    /// their Minecraft username mid-session.
     ///
     /// @return the username, never `null`
     String name();
 
     /// Returns the player's display name as an Adventure [Component].
     ///
-    /// @return the display name, never `null`
+    /// Delegates to the underlying platform player, so the returned value
+    /// reflects any custom display name set via server software.
+    ///
+    /// @return the display name component, never `null`
     Component displayName();
 
-    /// Returns the player's active locale.
+    /// Returns the locale currently active for this player.
     ///
-    /// @return the locale, never `null`
+    /// The locale is sourced from the live platform player and may differ from
+    /// the server default. Used for translating
+    /// [net.kyori.adventure.text.TranslatableComponent] messages.
+    ///
+    /// @return the player's locale, never `null`
     Locale locale();
 
     /// Returns the instant at which this profile was last persisted to storage.
+    ///
+    /// This timestamp is updated by the service layer on player disconnect and
+    /// on periodic world-save checkpoints. It reflects the wall-clock time of
+    /// the most recent successful write, not the current moment, and must not
+    /// be modified externally.
     ///
     /// @return the last-seen timestamp, never `null`
     Instant lastSeen();
@@ -67,10 +105,13 @@ public interface PluginTemplateUser extends Audience, Identified {
     /// Returns `true` if the underlying platform player is currently connected
     /// to the server.
     ///
-    /// This method is evaluated by the cache's [com.github.benmanes.caffeine.cache.Expiry]
-    /// policy on every cache interaction. Online players are pinned in cache
-    /// indefinitely; offline players expire 15 minutes after their last access.
+    /// This method is evaluated by the cache expiry policy on every cache
+    /// interaction. Online players are pinned indefinitely; offline players
+    /// expire 15 minutes after their last cache access.
     ///
-    /// @return `true` if the player is online
+    /// @return `true` if the player is connected to the server
+    /// @implNote On the Paper platform this method delegates to
+    ///           `Player#isOnline()`, which is safe to call from any thread.
+    ///           No virtual-thread pinning occurs.
     boolean isOnline();
 }

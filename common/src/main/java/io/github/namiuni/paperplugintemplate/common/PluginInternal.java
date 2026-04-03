@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,13 @@ import jakarta.inject.Inject;
 import net.kyori.adventure.translation.GlobalTranslator;
 import org.jspecify.annotations.NullMarked;
 
+/// Internal implementation of [PluginTemplate] that coordinates one-time
+/// startup initialization across translations, storage, and the public API
+/// registration.
+///
+/// Constructed exclusively by the Guice injector during plugin bootstrap.
+/// All dependencies are supplied via constructor injection; no static accessors
+/// are used within this class.
 @NullMarked
 public final class PluginInternal implements PluginTemplate {
 
@@ -35,6 +42,12 @@ public final class PluginInternal implements PluginTemplate {
     private final UserRepository userRepository;
     private final PluginTemplateUserService userService;
 
+    /// Constructs a new internal plugin facade.
+    ///
+    /// @param translatorHolder the holder for the active Adventure translator
+    /// @param userRepository   the storage backend to initialize on [#initialize()]
+    /// @param userService      the public user-service implementation to expose
+    ///                         via [PluginTemplateProvider]
     @Inject
     private PluginInternal(
             final TranslatorHolder translatorHolder,
@@ -46,19 +59,31 @@ public final class PluginInternal implements PluginTemplate {
         this.userService = userService;
     }
 
+    /// {@inheritDoc}
     @Override
     public PluginTemplateUserService userService() {
         return this.userService;
     }
 
-    /// Performs one-time initialization tasks that must run before the server starts.
+    /// Performs one-time startup initialization in dependency order.
+    ///
+    /// The following steps are performed sequentially:
+    ///
+    /// 1. Registers the plugin's [net.kyori.adventure.translation.Translator]
+    ///    with [GlobalTranslator] so that translatable components are resolved
+    ///    for all subsequent messages.
+    /// 2. Initializes the [UserRepository] (creates tables or directories).
+    /// 3. Publishes this instance to [PluginTemplateProvider] so that
+    ///    third-party plugins can obtain the public API reference.
+    ///
+    /// Must be called exactly once, during plugin bootstrap, before the
+    /// server accepts player connections.
+    ///
+    /// @throws java.io.UncheckedIOException if the storage backend cannot be
+    ///         initialized (e.g. directory creation fails for the JSON backend)
     public void initialize() {
-        // Translator
         GlobalTranslator.translator().addSource(this.translatorHolder.get());
-
-        // Repository
         this.userRepository.initialize();
-
         PluginTemplateProvider.register(this);
     }
 }

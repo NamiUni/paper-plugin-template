@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,11 +44,20 @@ import org.jdbi.v3.core.statement.SqlStatements;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.jspecify.annotations.NullMarked;
 
-/// Guice module that selects and binds the active [UserRepository].
+/// Guice module responsible for selecting and binding the active
+/// [UserRepository] based on the configured [StorageType].
 ///
-/// The active backend is chosen at injection time based on
-/// [PrimaryConfiguration.StorageConfig#type()]. The [Jdbi] and [HikariDataSource]
-/// providers are only called when a SQL backend is selected.
+/// The [Jdbi] and [HikariDataSource] providers are lazy: they are only invoked
+/// by Guice when a SQL backend ([StorageType#H2] or [StorageType#MYSQL]) is
+/// selected. For [StorageType#JSON] these providers are never called, so no
+/// database connection is ever opened.
+///
+/// ## Module responsibilities
+///
+/// This module does not call [UserRepository#initialize()] itself.
+/// Initialization is performed by
+/// [io.github.namiuni.paperplugintemplate.common.PluginInternal#initialize()]
+/// after all bindings are resolved.
 @NullMarked
 @SuppressWarnings("unused")
 public final class StorageModule extends AbstractModule {
@@ -59,11 +68,16 @@ public final class StorageModule extends AbstractModule {
 
     /// Provides the singleton [UserRepository] for the configured [StorageType].
     ///
-    /// @param primaryConfig the configuration holder; read to determine [StorageType]
+    /// The `jdbi` and `dataSource` parameters are lazy [Provider]s; they are
+    /// only dereferenced when the storage type requires a SQL connection. This
+    /// prevents HikariCP from opening connections when the JSON backend is
+    /// selected.
+    ///
+    /// @param primaryConfig the configuration holder used to determine the active [StorageType]
     /// @param dataDirectory the plugin data directory; forwarded to [JsonUserRepository]
-    /// @param jdbi          lazy provider for the JDBI instance; only called for SQL backends
-    /// @param dataSource    lazy provider for the connection pool; only called for SQL backends
-    /// @return the initialized [UserRepository]
+    /// @param jdbi          lazy provider for the JDBI instance; called only for SQL backends
+    /// @param dataSource    lazy provider for the HikariCP pool; called only for SQL backends
+    /// @return the initialized [UserRepository] singleton
     @Provides
     @Singleton
     private UserRepository userRepository(
@@ -72,8 +86,7 @@ public final class StorageModule extends AbstractModule {
             final Provider<Jdbi> jdbi,
             final Provider<HikariDataSource> dataSource
     ) {
-        final var storageConfig = primaryConfig.get().storage();
-
+        final PrimaryConfiguration.StorageConfig storageConfig = primaryConfig.get().storage();
         return switch (storageConfig.type()) {
             case JSON -> new JsonUserRepository(dataDirectory);
             case H2, MYSQL -> new JdbiUserRepository(jdbi.get(), dataSource.get());
@@ -82,8 +95,19 @@ public final class StorageModule extends AbstractModule {
 
     /// Provides a singleton [Jdbi] instance with all required plugins installed.
     ///
+    /// Installed plugins and configuration:
+    ///
+    /// - `SqlObjectPlugin`: enables the `@Sql*` annotation-driven DAO pattern
+    ///   used by [io.github.namiuni.paperplugintemplate.common.user.storage.sql.UserDao].
+    /// - `CaffeineCachePlugin`: caches compiled SQL templates in a bounded
+    ///   Caffeine cache (512 entries, 15-minute expiry) to avoid repeated
+    ///   template-parsing overhead.
+    /// - [UserProfileMapper]: maps SQL result rows to [io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile] records.
+    /// - `QualifiedArgumentFactory`: binds [Instant] values as
+    ///   epoch-millisecond `BIGINT`s for cross-database compatibility.
+    ///
     /// @param dataSource the HikariCP connection pool
-    /// @return a [Jdbi] instance with [SqlObjectPlugin] and [CaffeineCachePlugin] installed
+    /// @return a fully configured [Jdbi] singleton
     @Provides
     @Singleton
     private Jdbi jdbi(final HikariDataSource dataSource) {
@@ -98,21 +122,30 @@ public final class StorageModule extends AbstractModule {
                     return Optional.of((position, statement, ctx) ->
                             statement.setLong(position, instant.toEpochMilli()));
                 })
-                .configure(SqlStatements.class, config -> config.setTemplateCache(new CaffeineCacheBuilder(
-                        Caffeine.newBuilder()
-                                .maximumSize(512L)
-                                .expireAfterAccess(15L, TimeUnit.MINUTES)
-                )));
+                .configure(SqlStatements.class, config -> config.setTemplateCache(
+                        new CaffeineCacheBuilder(
+                                Caffeine.newBuilder()
+                                        .maximumSize(512L)
+                                        .expireAfterAccess(15L, TimeUnit.MINUTES)
+                        )));
     }
 
     /// Provides a singleton [HikariDataSource] for SQL storage backends.
     ///
-    /// H2 is opened with `MODE=MySQL;DB_CLOSE_DELAY=-1` to share the same SQL dialect
-    /// as the MySQL backend. Not called when the storage type is [StorageType#JSON].
+    /// H2 is opened with `MODE=MySQL;DB_CLOSE_DELAY=-1` to share the same SQL
+    /// dialect as the MySQL backend. This provider is never called when the
+    /// storage type is [StorageType#JSON].
     ///
-    /// @param primaryConfig the configuration holder; supplies JDBC connection parameters
-    /// @param dataDirectory the plugin data directory; used to resolve the H2 file path
-    /// @return a started HikariCP connection pool
+    /// @param primaryConfig the configuration holder supplying JDBC connection
+    ///        parameters
+    /// @param dataDirectory the plugin data directory; used to resolve the H2
+    ///        database file path
+    /// @return a started [HikariDataSource] with the configured pool size
+    /// @throws IllegalStateException if the storage type is not a SQL variant;
+    ///         this should never occur because this provider is only invoked for H2
+    ///         and MySQL
+    /// @implNote The pool name defaults to `YourPlugin`. Replace this with the
+    ///           actual plugin name to avoid ambiguity in thread dumps.
     @Provides
     @Singleton
     private HikariDataSource dataSource(
@@ -121,28 +154,30 @@ public final class StorageModule extends AbstractModule {
     ) {
         final PrimaryConfiguration.StorageConfig storageConfig = primaryConfig.get().storage();
         final HikariConfig config = new HikariConfig();
-        config.setPoolName("YourPlugin"); // TODO: change the pool name
+        config.setPoolName("YourPlugin"); // TODO: replace with the actual plugin name
         config.setMaximumPoolSize(storageConfig.maximumPoolSize());
 
         switch (storageConfig.type()) {
             case H2 -> {
                 final Path dbFile = dataDirectory.toAbsolutePath().resolve("database");
-                config.setJdbcUrl("jdbc:h2:file:%s;MODE=MySQL;DB_CLOSE_DELAY=-1".formatted(dbFile));
+                config.setJdbcUrl("jdbc:h2:file:%s;MODE=MySQL;DB_CLOSE_DELAY=-1"
+                        .formatted(dbFile));
                 config.setDriverClassName("org.h2.Driver");
             }
             case MYSQL -> {
-                config.setJdbcUrl("jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
-                        .formatted(
-                                storageConfig.host(),
-                                storageConfig.port(),
-                                storageConfig.database()
-                        )
-                );
+                config.setJdbcUrl(
+                        "jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
+                                .formatted(
+                                        storageConfig.host(),
+                                        storageConfig.port(),
+                                        storageConfig.database()
+                                ));
                 config.setUsername(storageConfig.username());
                 config.setPassword(storageConfig.password());
                 config.setDriverClassName("com.mysql.cj.jdbc.Driver");
             }
-            default -> throw new IllegalStateException("Unexpected SQL storage type: " + storageConfig.type());
+            default -> throw new IllegalStateException(
+                    "Unexpected SQL storage type: " + storageConfig.type());
         }
 
         return new HikariDataSource(config);

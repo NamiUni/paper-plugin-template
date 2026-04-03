@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,9 +23,30 @@ import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/// Top-level entry point to the public API surface of the template plugin.
+///
+/// Obtain the singleton instance via [PluginTemplateProvider#pluginTemplate()]
+/// after the plugin has finished bootstrapping. All services reachable through
+/// this interface are safe to use from any thread unless their own documentation
+/// states otherwise.
+///
+/// ## Typical usage
+///
+/// ```java
+/// PluginTemplate api = PluginTemplateProvider.pluginTemplate();
+/// api.userService().getUser(player).ifPresent(user -> ...);
+/// ```
+///
+/// @see PluginTemplateProvider
 @NullMarked
 @ApiStatus.NonExtendable
 public interface PluginTemplate {
 
+    /// Returns the service for accessing and managing plugin-tracked players.
+    ///
+    /// The returned service is a singleton; repeated calls always return the
+    /// same instance.
+    ///
+    /// @return the user service, never `null`
     PluginTemplateUserService userService();
 }

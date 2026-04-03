@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,12 +28,17 @@ import org.jspecify.annotations.NullMarked;
 
 /// Specifies the comment header written at the top of a configuration file.
 ///
-/// Place this annotation on a configuration record class to inject a descriptive
-/// comment block when the file is first generated or saved by
-/// [ConfigurationLoader].
-/// The value is forwarded directly to Configurate's node header option.
-/// <pre>
-/// `configuration.Restart the server after editing.""")public record MyConfig(String someValue){}`</pre>
+/// Place this annotation on a configuration record class to inject a
+/// descriptive comment block when the file is first generated or saved by
+/// [ConfigurationLoader]. The value is forwarded directly to Configurate's
+/// node header option.
+///
+/// ```java
+/// @ConfigHeader("""
+///         Main configuration.
+///         Restart the server after editing.""")
+/// public record MyConfig(String someValue) {}
+/// ```
 @NullMarked
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

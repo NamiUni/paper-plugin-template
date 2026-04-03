@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -44,19 +44,20 @@ import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationSt
 import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 
-/// Loads a fully initialized [Translator] from annotation-embedded defaults and
-/// overrides stored in the plugin's translation directory.
+/// Loads a fully initialized [Translator] from annotation-embedded defaults
+/// and overrides stored in the plugin's translation directory.
 ///
 /// The loading strategy follows a three-step priority order:
 ///
 ///   1. **ROOT locale** – always sourced from the compile-time annotations on
-///     [Messages]; these act as the ultimate fallback.
+///      [Messages]; these act as the ultimate fallback.
 ///   2. **Disk files** – `.properties` files found under the
-///     `translation/` sub-directory override the annotation defaults for their
-///     respective locales, allowing server operators to customize messages.
-///   3. **Annotation fill-in** – any locale defined in annotations but absent from
-///     disk is registered programmatically and also written to disk so operators can
-///     edit it later.
+///      `translation/` sub-directory override the annotation defaults for
+///      their respective locales, allowing server operators to customize
+///      messages.
+///   3. **Annotation fill-in** – any locale defined in annotations but absent
+///      from disk is registered programmatically and also written to disk so
+///      operators can edit it later.
 ///
 /// Custom MiniMessage tags registered by this loader:
 ///
@@ -64,21 +65,20 @@ import org.jspecify.annotations.NullMarked;
 ///   - `<warn>`  – [#YELLOW] (JIS Z 9103 safety yellow)
 ///   - `<info>`  – [#GREEN] (JIS Z 9103 safety green)
 ///   - `<debug>` – [#BLUE] (JIS Z 9103 safety blue)
+///
+/// ## Thread safety
+///
+/// This class carries no mutable state after construction. Each call to
+/// [#loadTranslator()] constructs an independent [Translator] instance and
+/// performs its own file I/O; multiple concurrent calls are safe provided
+/// no other process modifies the translation files concurrently.
 @NullMarked
 final class TranslatorLoader {
 
     // JIS Z 9103 https://ja.wikipedia.org/wiki/JIS%E5%AE%89%E5%85%A8%E8%89%B2
-
-    /// JIS Z 9103 safety red used for error messages.
     private static final TextColor RED = TextColor.color(0xFF4B00);
-
-    /// JIS Z 9103 safety yellow used for warning messages.
     private static final TextColor YELLOW = TextColor.color(0xF2E700);
-
-    /// JIS Z 9103 safety green used for informational messages.
     private static final TextColor GREEN = TextColor.color(0x00B06B);
-
-    /// JIS Z 9103 safety blue used for debug messages.
     private static final TextColor BLUE = TextColor.color(0x1971FF);
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.builder()
@@ -99,11 +99,13 @@ final class TranslatorLoader {
 
     private final Path translationDir;
 
-    /// Constructs a new loader, creating the `translation/` directory if it does
-    /// not already exist.
+    /// Constructs a new loader, creating the `translation/` directory if it
+    /// does not already exist.
     ///
-    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
-    /// @throws UncheckedIOException if the translation directory cannot be created
+    /// @param dataDirectory the plugin data directory, injected via
+    ///                      [DataDirectory]
+    /// @throws UncheckedIOException if the translation directory cannot be
+    ///         created
     @Inject
     private TranslatorLoader(final @DataDirectory Path dataDirectory) {
         this.translationDir = dataDirectory.resolve("translation");
@@ -114,11 +116,11 @@ final class TranslatorLoader {
         }
     }
 
-    /// Builds and returns a fresh [Translator] instance containing all registered
-    /// message translations.
+    /// Builds and returns a fresh [Translator] instance containing all
+    /// registered message translations.
     ///
-    /// Calling this method more than once produces independent translator instances;
-    /// the previous instance is not modified.
+    /// Calling this method more than once produces independent translator
+    /// instances; the previous instance is not modified.
     ///
     /// @return a fully populated [Translator]
     /// @throws IOException if reading or writing translation files fails
@@ -177,7 +179,8 @@ final class TranslatorLoader {
 
     /// Reads the [Translation] for a single locale from the given interface.
     ///
-    /// @param translationClass the interface whose methods carry [Key] and [Message]
+    /// @param translationClass the interface whose methods carry [Key] and
+    ///                         [Message]
     /// @param locale           the target locale to extract messages for
     /// @return a [Translation] for the locale; message list may be empty
     private static Translation readAnnotations(final Class<?> translationClass, final Locale locale) {
@@ -253,11 +256,12 @@ final class TranslatorLoader {
     /// Writes a [Translation] to a `.properties` file inside `parentDir`.
     ///
     /// [Locale#ROOT] is treated as [Locale#US] for the file name because
-    /// the root locale has no standard BCP-47 tag. If the resulting file name would be
-    /// empty this method returns without writing anything.
+    /// the root locale has no standard BCP-47 tag. If the resulting file name
+    /// would be empty this method returns without writing anything.
     ///
     /// @param parentDir   the directory in which the file will be created
-    /// @param translation the translation to persist; any existing file is overwritten
+    /// @param translation the translation to persist; any existing file is
+    ///                    overwritten
     /// @throws IOException if the file cannot be created or written
     private static void writeTranslationFile(final Path parentDir, final Translation translation) throws IOException {
         final Locale locale = translation.locale() == Locale.ROOT ? Locale.US : translation.locale();

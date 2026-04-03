@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,14 +31,30 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.async.JdbiExecutor;
 import org.jspecify.annotations.NullMarked;
 
-/// [UserRepository] implementation backed by a SQL database via JDBI.
+/// [UserRepository] implementation backed by a SQL database via JDBI 3.
 ///
-/// Supports H2 (`MODE=MySQL`) and MySQL using identical SQL statements.
-/// Database-vendor-specific upsert syntax is avoided; the portable
-/// update-then-insert strategy is encapsulated in [UserDao#upsert].
+/// Supports H2 (in `MODE=MySQL`) and MySQL/MariaDB using identical SQL
+/// statements. Vendor-specific upsert syntax such as `ON DUPLICATE KEY UPDATE`
+/// is avoided; the portable update-then-insert strategy is encapsulated entirely
+/// in [UserDao#upsert], keeping this class free of SQL dialect concerns.
 ///
-/// The [HikariDataSource] is owned by this repository.
-/// Call [#close()] on plugin disable to release pooled connections.
+/// ## Ownership and lifecycle
+///
+/// The [HikariDataSource] passed at construction is **owned** by this
+/// repository. Call [#close()] on plugin disable to release all pooled JDBC
+/// connections and stop the HikariCP housekeeping thread.
+///
+/// ## Thread safety
+///
+/// All operations are submitted to a virtual-thread-per-task executor named
+/// `YourPlugin-DB-User-Repo-N`. The [JdbiExecutor] wraps JDBI's handle
+/// lifecycle so that each operation acquires and releases a connection within
+/// its virtual thread without blocking the caller. No `synchronized` blocks are
+/// used; this class is safe from carrier-thread pinning (JEP 491).
+///
+/// @implNote HikariCP connection acquisition may block briefly if all
+///           connections are in use. On virtual threads this parks the virtual thread
+///           rather than blocking the carrier thread, provided HikariCP 5.0+ is used.
 @NullMarked
 public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
@@ -51,14 +67,17 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
     /// Constructs a new repository.
     ///
-    /// @param jdbi       the configured JDBI instance with all plugins and mappers installed
-    /// @param dataSource the connection pool; this repository takes ownership and closes it
+    /// @param jdbi       the configured JDBI instance with all required plugins and row mappers installed
+    /// @param dataSource the HikariCP connection pool; this repository takes ownership and closes it on [#close()]
     public JdbiUserRepository(final Jdbi jdbi, final HikariDataSource dataSource) {
         this.jdbi = JdbiExecutor.create(jdbi, VIRTUAL_EXECUTOR);
         this.dataSource = dataSource;
     }
 
     /// {@inheritDoc}
+    ///
+    /// Creates the `users` table if it does not already exist by delegating to
+    /// [UserDao#createTable()].
     @Override
     public void initialize() {
         this.jdbi.useExtension(UserDao.class, UserDao::createTable);
@@ -67,22 +86,29 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
     /// {@inheritDoc}
     @Override
     public CompletableFuture<Optional<UserProfile>> findById(final UUID uuid) {
-        return this.jdbi.withExtension(UserDao.class, dao -> dao.findByUuid(uuid)).toCompletableFuture();
+        return this.jdbi.withExtension(UserDao.class, dao -> dao.findByUuid(uuid))
+                .toCompletableFuture();
     }
 
     /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> upsert(final UserProfile userProfile) {
-        return this.jdbi.useExtension(UserDao.class, dao -> dao.upsert(userProfile)).toCompletableFuture();
+        return this.jdbi.useExtension(UserDao.class, dao -> dao.upsert(userProfile))
+                .toCompletableFuture();
     }
 
     /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> delete(final UUID uuid) {
-        return this.jdbi.useExtension(UserDao.class, dao -> dao.deleteByUuid(uuid)).toCompletableFuture();
+        return this.jdbi.useExtension(UserDao.class, dao -> dao.deleteByUuid(uuid))
+                .toCompletableFuture();
     }
 
-    /// Closes the underlying [HikariDataSource], terminating all pooled connections.
+    /// Closes the underlying [HikariDataSource], terminating all pooled
+    /// connections and the HikariCP housekeeping thread.
+    ///
+    /// Must be called during plugin disable. Subsequent calls to any other
+    /// method on this instance will result in undefined behavior.
     @Override
     public void close() {
         this.dataSource.close();

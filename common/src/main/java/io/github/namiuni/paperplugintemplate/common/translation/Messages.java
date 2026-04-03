@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,17 +32,21 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// Each method corresponds to a single translatable message identified by its
 /// [Key] annotation. Locale-specific content is declared via [Message]
-/// annotations; the Kotonoha library generates a proxy implementation that resolves
-/// the appropriate locale at call time.
+/// annotations; the Kotonoha library generates a proxy implementation that
+/// resolves the appropriate locale at call time.
 ///
 /// Instances are obtained from the Guice injector; use constructor injection
 /// rather than accessing this interface statically.
+///
+/// ## Thread safety
+///
+/// The Kotonoha-generated proxy is stateless and therefore safe to call from
+/// any thread without additional synchronization.
 @NullMarked
 @ResourceBundle(baseName = "messages")
 public interface Messages {
 
-    /// Returns the message sent to a command sender when the configuration is
-    /// reloaded successfully.
+    /// Returns the message sent to a command sender when the configuration is reloaded successfully.
     ///
     /// @return a localized [Component] indicating success
     @Key("template.command.reload.config.success")
@@ -60,8 +64,7 @@ public interface Messages {
     @WithPlaceholders(PlaceholderScope.AUDIENCE_GLOBAL)
     Component configurationReloadFailure();
 
-    /// Returns the message sent to a command sender when the translation files are
-    /// reloaded successfully.
+    /// Returns the message sent to a command sender when the translation files are reloaded successfully.
     ///
     /// @return a localized [Component] indicating success
     @Key("template.command.reload.translation.success")
@@ -79,6 +82,9 @@ public interface Messages {
     @WithPlaceholders(PlaceholderScope.AUDIENCE_GLOBAL)
     Component translationReloadFailure();
 
+    /// Returns the message sent to a player when their profile cannot be loaded on join.
+    ///
+    /// @return a localized [Component] indicating a profile load failure
     @Key("template.join.failure.profile")
     @Message(locale = Locales.ROOT, content = "<error>Failed to load your profile. Please try reconnecting.")
     @Message(locale = Locales.JA_JP, content = "<error>プロフィールの読み込みに失敗しました。再接続してください。")

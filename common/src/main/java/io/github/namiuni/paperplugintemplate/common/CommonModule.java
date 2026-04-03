@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,9 +35,28 @@ import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import org.jspecify.annotations.NullMarked;
 
+/// Guice module that binds the application-layer services shared across all
+/// platform implementations.
+///
+/// Configures the following singleton bindings:
+///
+/// - [ConfigurationLoader] for [PrimaryConfiguration]: reads and writes
+///   the primary YAML configuration file.
+/// - [Messages] proxy backed by Kotonoha: provides type-safe, locale-aware
+///   access to all plugin messages.
+/// - [PluginTemplateUserService] → [PluginTemplateUserServiceInternal]:
+///   routes the public user-service API to its internal implementation.
+///
+/// ## Thread safety
+///
+/// This class carries no mutable state after construction. Guice modules are
+/// configured on a single thread during injector creation; once the injector
+/// is built, this module instance is no longer used and may be safely
+/// discarded.
 @NullMarked
 public final class CommonModule extends AbstractModule {
 
+    /// Constructs a new `CommonModule`.
     public CommonModule() {
     }
 
