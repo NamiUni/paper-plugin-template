@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,20 +24,22 @@ import org.jspecify.annotations.NullMarked;
 /// Supported storage backend types.
 ///
 /// The active type is determined at startup from
-/// [io.github.namiuni.paperplugintemplate.configuration.PrimaryConfiguration.StorageConfig]
+/// [io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration.StorageConfig]
 /// and cannot be changed without restarting the server.
 @NullMarked
 public enum StorageType {
 
-    /// Embedded H2 SQL database. Stores data in a file inside the plugin data directory.
-    /// No external server is required; suitable for single-server deployments.
+    /// Embedded H2 SQL database. Stores data in a file inside the plugin
+    /// data directory. No external server is required; suitable for
+    /// single-server deployments.
     H2,
 
-    /// External MySQL (or MariaDB) database server.
-    /// Requires a running server and valid credentials in the configuration.
+    /// External MySQL (or MariaDB) database server. Requires a running
+    /// server and valid credentials in the configuration.
     MYSQL,
 
-    /// Flat JSON file storage. Each user is persisted as a separate `.json` file.
-    /// Human-readable and easy to inspect, but not suitable for high-concurrency workloads.
+    /// Flat JSON file storage. Each user is persisted as a separate `.json`
+    /// file. Human-readable and easy to inspect, but not suitable for
+    /// high-concurrency workloads.
     JSON,
 }

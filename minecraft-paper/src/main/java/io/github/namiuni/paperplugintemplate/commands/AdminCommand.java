@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -38,9 +38,8 @@ import org.spongepowered.configurate.ConfigurateException;
 
 /// Administration command exposing plugin management actions to operators.
 ///
-/// Requires [TemplatePermission#COMMAND_RELOAD].
-///
-/// @see TemplatePermission#COMMAND_RELOAD
+/// Requires [TemplatePermission#COMMAND_RELOAD] for the `reload`
+/// sub-command.
 @NullMarked
 public final class AdminCommand implements CommandFactory {
 
@@ -48,9 +47,11 @@ public final class AdminCommand implements CommandFactory {
     private final TranslatorHolder translatorHolder;
     private final Messages messages;
 
+    /// Constructs a new `AdminCommand`.
+    ///
     /// @param configHolder     holder for the primary plugin configuration
     /// @param translatorHolder holder for the active Adventure translator
-    /// @param messages message provider for localised feedback
+    /// @param messages         message provider for localized feedback
     @Inject
     private AdminCommand(
             final ConfigurationHolder<PrimaryConfiguration> configHolder,
@@ -62,15 +63,17 @@ public final class AdminCommand implements CommandFactory {
         this.messages = messages;
     }
 
-    /// Builds the `/template` command tree with a single `reload` sub-command.
+    /// Builds the `/template` command tree with a single `reload`
+    /// sub-command.
     ///
     /// The `reload` sub-command:
     ///
     /// - Reloads the primary configuration from disk.
-    /// - Replaces the active translation source in [GlobalTranslator] with a
-    ///   freshly loaded instance.
+    /// - Replaces the active translation source in [GlobalTranslator] with
+    ///   a freshly loaded instance.
     ///
-    /// Both operations send a localised success or failure message to the sender.
+    /// Both operations send a localised success or failure message to the
+    /// sender.
     ///
     /// @return the root `/template` [LiteralCommandNode]
     @Override
@@ -82,8 +85,8 @@ public final class AdminCommand implements CommandFactory {
 
     /// Builds the `reload` sub-command node.
     ///
-    /// Requires [TemplatePermission#COMMAND_RELOAD]. Reports success or failure
-    /// to the sender via [Messages].
+    /// Requires [TemplatePermission#COMMAND_RELOAD]. Reports success or
+    /// failure to the sender via [Messages].
     ///
     /// @return the `reload` [LiteralCommandNode]
     public LiteralCommandNode<CommandSourceStack> reloadNode() {

@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -42,6 +42,13 @@ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
 /// Adventure [net.kyori.adventure.text.Component] values are supported as
 /// configuration field types via the Configurate Adventure serializer.
 ///
+/// ## Thread safety
+///
+/// This class is **not** thread-safe. Concurrent calls to
+/// [#loadConfiguration()] produce undefined behavior. [ConfigurationHolder]
+/// ensures that load operations are serialized; callers that bypass the holder
+/// must provide their own synchronization.
+///
 /// @param <T> the configuration record type; must extend [Record]
 @NullMarked
 public final class ConfigurationLoader<T extends Record> {
@@ -53,14 +60,18 @@ public final class ConfigurationLoader<T extends Record> {
 
     /// Constructs a new loader for the given configuration class.
     ///
-    /// The [ConfigName] annotation on `configClass` is used to determine
-    /// the file name relative to `dataDirectory`. The [ConfigHeader]
-    /// annotation, if present, provides a comment written at the top of the file.
+    /// The [ConfigName] annotation on `configClass` determines the file name
+    /// relative to `dataDirectory`. The [ConfigHeader] annotation, if present,
+    /// provides a comment written at the top of the file.
     ///
-    /// @param configClass   the configuration record class; must be annotated with
-    ///                      [ConfigName] and [ConfigHeader]
-    /// @param defaultConfig the fallback instance used when a key is absent from the file
-    /// @param dataDirectory the plugin data directory where the file will be stored
+    /// @param configClass   the configuration record class; must be annotated
+    ///                      with [ConfigName] and [ConfigHeader]
+    /// @param defaultConfig the fallback instance used when a key is absent
+    ///                      from the file
+    /// @param dataDirectory the plugin data directory where the file will be
+    ///                      stored
+    /// @throws NullPointerException if `configClass` is not annotated with
+    ///         [ConfigName] or [ConfigHeader]
     public ConfigurationLoader(
             final Class<T> configClass,
             final T defaultConfig,
@@ -95,8 +106,8 @@ public final class ConfigurationLoader<T extends Record> {
                 .build();
     }
 
-    /// Loads the configuration from disk, populates missing keys with defaults, and
-    /// saves the result back to the file.
+    /// Loads the configuration from disk, populates missing keys with
+    /// defaults, and saves the result back to the file.
     ///
     /// @return the deserialized configuration instance
     /// @throws ConfigurateException if the file cannot be read, parsed, or written

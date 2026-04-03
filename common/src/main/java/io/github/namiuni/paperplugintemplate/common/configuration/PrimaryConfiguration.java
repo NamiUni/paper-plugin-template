@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,12 +29,14 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 /// Root configuration record for the template plugin.
 ///
 /// This record is automatically serialized to and deserialized from
-/// `config.conf` in the plugin data directory by
-/// [ConfigurationLoader]. Add configuration fields as record components
-/// and Configurate will handle the file mapping.
+/// `config.conf` in the plugin data directory by [ConfigurationLoader].
+/// Add configuration fields as record components and Configurate will handle
+/// the file mapping.
 ///
 /// Use [#DEFAULT] as the fallback value when the file does not yet exist
 /// or when a field is missing from an existing file.
+///
+/// @param storage the storage backend configuration
 @NullMarked
 @ConfigSerializable
 @ConfigName("config.conf")
@@ -48,14 +50,24 @@ public record PrimaryConfiguration(
         StorageConfig storage
 ) {
 
-    /// Default instance used as a fallback when no configuration file is present.
+    /// Default instance used as a fallback when no configuration file is
+    /// present.
     public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration(StorageConfig.DEFAULT);
 
     /// Configuration for the storage backend.
     ///
-    /// Supports H2 (embedded, no external server required), MySQL (external server),
-    /// and JSON (flat files, human-readable). H2 is recommended for single-server
-    /// deployments; MySQL for networks sharing a database.
+    /// Supports H2 (embedded, no external server required), MySQL (external
+    /// server), and JSON (flat files, human-readable). H2 is recommended for
+    /// single-server deployments; MySQL for networks sharing a database.
+    ///
+    /// @param type            the storage backend type
+    /// @param host            the database host; used only for `MYSQL`
+    /// @param port            the database port; used only for `MYSQL`
+    /// @param database        the database name; used for `H2` (file name) and `MYSQL`
+    /// @param username        the database username; used only for `MYSQL`
+    /// @param password        the database password; used only for `MYSQL`
+    /// @param maximumPoolSize the maximum number of connections in the pool;
+    ///                        used only for `MYSQL` and `H2`
     @ConfigSerializable
     public record StorageConfig(
             @Comment("""

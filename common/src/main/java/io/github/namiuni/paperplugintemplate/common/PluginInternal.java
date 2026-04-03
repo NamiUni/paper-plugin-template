@@ -32,8 +32,7 @@ import org.jspecify.annotations.NullMarked;
 /// startup initialization across translations, storage, and the public API
 /// registration.
 ///
-/// Constructed exclusively by the Guice injector during
-/// [io.github.namiuni.paperplugintemplate.PluginBootstrapImpl#bootstrap].
+/// Constructed exclusively by the Guice injector during plugin bootstrap.
 /// All dependencies are supplied via constructor injection; no static accessors
 /// are used within this class.
 @NullMarked
@@ -43,6 +42,12 @@ public final class PluginInternal implements PluginTemplate {
     private final UserRepository userRepository;
     private final PluginTemplateUserService userService;
 
+    /// Constructs a new internal plugin facade.
+    ///
+    /// @param translatorHolder the holder for the active Adventure translator
+    /// @param userRepository   the storage backend to initialize on [#initialize()]
+    /// @param userService      the public user-service implementation to expose
+    ///                         via [PluginTemplateProvider]
     @Inject
     private PluginInternal(
             final TranslatorHolder translatorHolder,
@@ -54,6 +59,7 @@ public final class PluginInternal implements PluginTemplate {
         this.userService = userService;
     }
 
+    /// {@inheritDoc}
     @Override
     public PluginTemplateUserService userService() {
         return this.userService;
@@ -70,9 +76,11 @@ public final class PluginInternal implements PluginTemplate {
     /// 3. Publishes this instance to [PluginTemplateProvider] so that
     ///    third-party plugins can obtain the public API reference.
     ///
-    /// Must be called exactly once, from
-    /// [io.github.namiuni.paperplugintemplate.PluginBootstrapImpl#bootstrap],
-    /// before the server accepts player connections.
+    /// Must be called exactly once, during plugin bootstrap, before the
+    /// server accepts player connections.
+    ///
+    /// @throws java.io.UncheckedIOException if the storage backend cannot be
+    ///         initialized (e.g. directory creation fails for the JSON backend)
     public void initialize() {
         GlobalTranslator.translator().addSource(this.translatorHolder.get());
         this.userRepository.initialize();

@@ -32,10 +32,10 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Typical usage
 ///
-/// {@snippet lang="java" :
+/// ```java
 /// PluginTemplate api = PluginTemplateProvider.pluginTemplate();
 /// api.userService().getUser(player).ifPresent(user -> ...);
-/// }
+/// ```
 ///
 /// @see PluginTemplateProvider
 @NullMarked

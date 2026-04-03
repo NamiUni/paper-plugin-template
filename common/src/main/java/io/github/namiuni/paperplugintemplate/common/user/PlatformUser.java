@@ -48,23 +48,25 @@ import org.jspecify.annotations.Nullable;
 /// (JEP 491).
 ///
 /// Compound read-modify-write sequences across multiple setter calls are
-/// **not** atomic; callers requiring such atomicity must coordinate externally.
+/// **not** atomic; callers requiring such atomicity must coordinate
+/// externally.
 ///
 /// ## Online-status delegation
 ///
 /// Online status is determined by the [BooleanSupplier] injected at
-/// construction time rather than by this class directly. On the Paper platform
-/// the supplier delegates to `Player#isOnline()`, keeping this class free of
-/// any Paper API dependency.
+/// construction time rather than by this class directly. On the Paper
+/// platform the supplier delegates to `Player#isOnline()`, keeping this
+/// class free of any Paper API dependency.
 ///
 /// ## Mutation model
 ///
 /// Every setter derives a fresh [UserProfile] via a `withX()` method and
 /// atomically installs it with [AtomicReference#updateAndGet]. The change is
 /// immediately visible within this instance and is propagated to storage on
-/// the next [PluginTemplateUserServiceInternal#upsertUser] call.
+/// the next persistence call.
 ///
-/// @param <P> the platform player type; must extend both [Audience] and [Identified]
+/// @param <P> the platform player type; must extend both [Audience] and
+///            [Identified]
 @NullMarked
 public final class PlatformUser<P extends Audience & Identified>
         implements PluginTemplateUser, ForwardingAudience.Single {
@@ -76,13 +78,14 @@ public final class PlatformUser<P extends Audience & Identified>
     /// Constructs a new `PlatformUser` binding a live player to a profile
     /// snapshot.
     ///
-    /// @param player      the live platform player used for audience delegation
-    ///        and identity pointers such as display name and locale
-    /// @param profile     the persisted profile snapshot to associate with this
-    ///        player
+    /// @param player      the live platform player used for audience
+    ///                    delegation and identity pointers such as display
+    ///                    name and locale
+    /// @param profile     the persisted profile snapshot to associate with
+    ///                    this player
     /// @param onlineCheck a supplier returning `true` while the player is
-    ///        connected; pass `player::isOnline` on Paper, or `() -> false` for
-    ///        offline player representations
+    ///                    connected; pass `player::isOnline` on Paper, or
+    ///                    `() -> false` for offline player representations
     public PlatformUser(
             final P player,
             final UserProfile profile,
@@ -102,19 +105,20 @@ public final class PlatformUser<P extends Audience & Identified>
         return this.profile.get();
     }
 
-    /// Atomically replaces the stored [UserProfile] by applying `operator` to
-    /// the current value.
+    /// Atomically replaces the stored [UserProfile] by applying `operator`
+    /// to the current value.
     ///
-    /// Package-private; called by [PluginTemplateUserServiceInternal] to update
-    /// system-managed fields such as `lastSeen` without exposing those mutations
-    /// on the public interface.
+    /// Package-private; called by the user service to update system-managed
+    /// fields such as `lastSeen` without exposing those mutations on the
+    /// public interface.
     ///
-    /// @param operator a pure function producing the updated profile; must not
-    ///        return `null` and must not have side effects beyond constructing the
-    ///        new record
-    /// @implNote Delegates to [AtomicReference#updateAndGet], which is wait-free
-    ///           under no contention and lock-free under contention. Safe to call from
-    ///           virtual threads without carrier-thread pinning.
+    /// @param operator a pure function producing the updated profile; must
+    ///                 not return `null` and must not have side effects
+    ///                 beyond constructing the new record
+    /// @implNote Delegates to [AtomicReference#updateAndGet], which is
+    ///           wait-free under no contention and lock-free under contention.
+    ///           Safe to call from virtual threads without carrier-thread
+    ///           pinning.
     void updateProfile(final UnaryOperator<UserProfile> operator) {
         this.profile.updateAndGet(operator);
     }

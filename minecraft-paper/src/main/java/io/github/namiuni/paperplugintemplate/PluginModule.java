@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -38,15 +38,18 @@ import org.jspecify.annotations.NullMarked;
 
 /// Root Guice module for the template plugin.
 ///
-/// Binds all core services, configuration, messages, commands, event listeners,
-/// and the storage backend in one place. Splitting this into a separate
-/// `StorageModule` is unnecessary because all bindings share the same injector
-/// and the `@DataDirectory Path` binding defined here is directly accessible by
-/// any provider or binding within the module.
-///
-/// The correct storage backend is selected at construction time based on the
-/// preloaded [PrimaryConfiguration.StorageConfig], so no conditional logic is
+/// Binds all core services, configuration, messages, commands, event
+/// listeners, and the storage backend in one place. The correct storage
+/// backend is selected at construction time based on the preloaded
+/// [PrimaryConfiguration.StorageConfig], so no conditional logic is
 /// needed at injection time.
+///
+/// ## Thread safety
+///
+/// This class carries no mutable state after construction. Guice modules
+/// are configured on a single thread during injector creation; once the
+/// injector is built this module instance is no longer used and may be
+/// safely discarded.
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class PluginModule extends AbstractModule {
@@ -54,9 +57,9 @@ public final class PluginModule extends AbstractModule {
     private final ComponentLogger logger;
     private final Path dataDirectory;
 
-    /// Creates a new `TemplateModule`.
+    /// Constructs a new `PluginModule`.
     ///
-    /// @param context       the Paper bootstrap context
+    /// @param context the Paper bootstrap context
     PluginModule(final BootstrapContext context) {
         this.logger = context.getLogger();
         this.dataDirectory = context.getDataDirectory();
@@ -75,10 +78,11 @@ public final class PluginModule extends AbstractModule {
         this.bindCommands();
     }
 
-    /// Registers all [CommandFactory] implementations into a Guice [com.google.inject.multibindings.Multibinder].
+    /// Registers all [CommandFactory] implementations into a Guice
+    /// [com.google.inject.multibindings.Multibinder].
     ///
-    /// Add new command factories here to have them automatically registered
-    /// with the Paper command system during bootstrap.
+    /// [CommandFactory] implementations added here are automatically
+    /// registered with the Paper command system during bootstrap.
     private void bindCommands() {
         final Multibinder<CommandFactory> commands = Multibinder.newSetBinder(this.binder(), CommandFactory.class);
         commands.addBinding().to(AdminCommand.class).in(Scopes.SINGLETON);

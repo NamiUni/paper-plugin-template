@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,11 +32,19 @@ import org.jspecify.annotations.NullMarked;
 /// On first construction the translator is loaded from disk via
 /// [TranslatorLoader]. During a hot-reload the old translator must first be
 /// removed from [net.kyori.adventure.translation.GlobalTranslator] and the
-/// new instance obtained from [#reload()] must be added, as shown in
-/// [io.github.namiuni.paperplugintemplate.commands.AdminCommand].
+/// new instance obtained from [#reload()] must be added. The caller is
+/// responsible for performing the swap atomically in terms of the
+/// `GlobalTranslator` registration.
 ///
 /// Implements [Supplier] so that consumers can obtain the current translator
 /// without a direct compile-time dependency on this holder.
+///
+/// ## Thread safety
+///
+/// The active translator is stored in an [AtomicReference]. [#get()] is
+/// therefore safe to call from any thread at any time. [#reload()] does
+/// **not** update the stored reference; the caller is responsible for updating
+/// any held references after the swap.
 @Singleton
 @NullMarked
 public final class TranslatorHolder implements Supplier<Translator> {
@@ -46,8 +54,10 @@ public final class TranslatorHolder implements Supplier<Translator> {
 
     /// Constructs a new holder by performing an initial translation load.
     ///
-    /// @param translatorLoader the loader used for both the initial and subsequent loads
-    /// @throws IOException if the translation files cannot be read during initial load
+    /// @param translatorLoader the loader used for both the initial and
+    ///                         subsequent loads
+    /// @throws IOException if the translation files cannot be read during
+    ///         the initial load
     @Inject
     private TranslatorHolder(final TranslatorLoader translatorLoader) throws IOException {
         this.translatorLoader = translatorLoader;
@@ -58,7 +68,7 @@ public final class TranslatorHolder implements Supplier<Translator> {
 
     /// Loads a fresh [Translator] from disk and returns it.
     ///
-    /// The stored reference is _not_ updated by this method; callers are
+    /// The stored reference is **not** updated by this method; callers are
     /// responsible for replacing the old source in
     /// [net.kyori.adventure.translation.GlobalTranslator] and updating any
     /// references as needed.

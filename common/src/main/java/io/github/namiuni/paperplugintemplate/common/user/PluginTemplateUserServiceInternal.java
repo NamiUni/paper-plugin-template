@@ -43,28 +43,28 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Dual-cache architecture
 ///
-/// Two Caffeine caches work in tandem to eliminate repository round-trips during
-/// normal gameplay while bounding memory use.
+/// Two Caffeine caches work in tandem to eliminate repository round-trips
+/// during normal gameplay while bounding memory use.
 ///
 /// ### Pre-load cache (`preloadCache`)
 ///
-/// A short-lived `Cache<UUID, UserProfile>` populated during
-/// `AsyncPlayerConnectionConfigureEvent`, before a `Player` object exists.
-/// Entries expire 30 seconds after write regardless of access. Its sole purpose
-/// is to bridge the gap between the async connection event and the first
-/// [#loadUser] call on `PlayerJoinEvent`. Once consumed, the preloaded profile
-/// is promoted into `userCache` and the preload entry expires naturally — no
-/// explicit removal is needed.
+/// A short-lived `Cache<UUID, UserProfile>` populated before a `Player`
+/// object exists. Entries expire 30 seconds after write regardless of
+/// access. Its sole purpose is to bridge the gap between the async
+/// connection event and the first [#loadUser] call on join. Once consumed,
+/// the preloaded profile is promoted into `userCache` and the preload entry
+/// expires naturally — no explicit removal is needed.
 ///
 /// ### User cache (`userCache`)
 ///
 /// A `Cache<UUID, PluginTemplateUser>` governed by [OnlineAwareExpiry]:
 ///
-/// - **Online players** (`isOnline() == true`): pinned indefinitely. The only
-///   removal path is explicit eviction via [#discardUser] on disconnect.
+/// - **Online players** (`isOnline() == true`): pinned indefinitely. The
+///   only removal path is explicit eviction via [#discardUser] on
+///   disconnect.
 /// - **Offline players** (`isOnline() == false`): evicted 15 minutes after
-///   the last cache interaction, preventing unbounded memory growth for offline
-///   lookups.
+///   the last cache interaction, preventing unbounded memory growth for
+///   offline lookups.
 ///
 /// ## Thread safety
 ///
@@ -82,6 +82,10 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     private final Cache<UUID, UserProfile> preloadCache;
     private final Cache<UUID, PluginTemplateUser> userCache;
 
+    /// Constructs a new service, initializing both in-memory caches.
+    ///
+    /// @param repository the storage backend used for cold-cache misses and
+    ///                   persistence operations
     @Inject
     private PluginTemplateUserServiceInternal(final UserRepository repository) {
         this.repository = repository;
@@ -96,7 +100,8 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     }
 
     /// Pre-loads a player's profile into the pre-load cache so that the
-    /// subsequent [#loadUser] call can resolve without a repository round-trip.
+    /// subsequent [#loadUser] call can resolve without a repository
+    /// round-trip.
     ///
     /// If the profile is already present in `userCache` (e.g. the player
     /// reconnects quickly after a disconnect), the cached entry is returned
@@ -107,13 +112,12 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     ///
     /// @param uuid the connecting player's UUID
     /// @return a future resolving to the profile wrapped in [Optional], or
-    ///         [Optional#empty()] for first-time players; may complete exceptionally
-    ///         if repository I/O fails
+    ///         [Optional#empty()] for first-time players; may complete
+    ///         exceptionally if repository I/O fails
     /// @apiNote This method is intentionally internal. Callers outside this
     ///          service should use [#loadUser] instead.
-    ///
-    /// @implNote Completes on a virtual-thread executor for the repository path;
-    ///           completes on the calling thread for cache-hit paths.
+    /// @implNote Completes on a virtual-thread executor for the repository
+    ///           path; completes on the calling thread for cache-hit paths.
     public CompletableFuture<Optional<UserProfile>> loadUserProfile(final UUID uuid) {
         final PluginTemplateUser cached = this.userCache.getIfPresent(uuid);
         if (cached instanceof final PlatformUser<?> platformUser) {
@@ -132,12 +136,12 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
                 });
     }
 
-    /// Persists the current state of `user` to storage without modifying any
-    /// system-managed fields.
+    /// Persists the current state of `user` to storage without modifying
+    /// any system-managed fields.
     ///
     /// Before writing, the in-memory cache entry is refreshed so that the
-    /// [OnlineAwareExpiry] policy re-evaluates the player's online status and
-    /// recalculates the TTL from the current moment.
+    /// [OnlineAwareExpiry] policy re-evaluates the player's online status
+    /// and recalculates the TTL from the current moment.
     ///
     /// Suitable for saving user-configurable fields changed by a command,
     /// including offline-player edits. For disconnect and world-save
@@ -145,11 +149,12 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     /// stamps `lastSeen`.
     ///
     /// @param user the user whose current profile state should be saved
-    /// @return a future that completes when the repository write finishes, or
-    ///         completes immediately if `user` is not a recognized internal type
-    /// @apiNote If `user` is not an instance of [PlatformUser] — for example
-    ///          when mocked in tests — this method returns a completed future
-    ///          immediately without any side effects.
+    /// @return a future that completes when the repository write finishes,
+    ///         or completes immediately if `user` is not a recognized
+    ///         internal type
+    /// @apiNote If `user` is not an instance of [PlatformUser] — for
+    ///          example when mocked in tests — this method returns a
+    ///          completed future immediately without any side effects.
     public CompletableFuture<Void> upsertUser(final PluginTemplateUser user) {
         if (user instanceof final PlatformUser<?> platformUser) {
             final UserProfile current = platformUser.profile();
@@ -161,26 +166,26 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
         return CompletableFuture.completedFuture(null);
     }
 
-    /// Stamps [UserProfile#lastSeen()] with the current instant, persists the
-    /// updated profile, and then evicts the cache entry.
+    /// Stamps [UserProfile#lastSeen()] with the current instant, persists
+    /// the updated profile, and then evicts the cache entry.
     ///
     /// This method encodes the **online-player lifecycle checkpoint** as an
-    /// explicit, named operation. The `lastSeen` timestamp is updated here and
-    /// nowhere else, ensuring it always reflects the actual disconnect or save
-    /// time rather than an arbitrary write.
+    /// explicit, named operation. The `lastSeen` timestamp is updated here
+    /// and nowhere else, ensuring it always reflects the actual disconnect
+    /// or save time rather than an arbitrary write.
     ///
     /// Cache eviction is guaranteed via [CompletableFuture#whenComplete], so
-    /// the entry is removed regardless of whether the repository write succeeds
-    /// or fails. This prevents stale data from accumulating in the user cache.
-    ///
-    /// @apiNote If `user` is not an instance of [PlatformUser], this method
-    ///          returns a completed future immediately. This is intentional and avoids
-    ///          errors when called with mock objects in tests.
+    /// the entry is removed regardless of whether the repository write
+    /// succeeds or fails. This prevents stale data from accumulating in the
+    /// user cache.
     ///
     /// @param user the online player whose session is ending or being
     ///             checkpointed
-    /// @return a future that completes when the repository write finishes; the
-    ///         cache entry is evicted unconditionally after completion
+    /// @return a future that completes when the repository write finishes;
+    ///         the cache entry is evicted unconditionally after completion
+    /// @apiNote If `user` is not an instance of [PlatformUser], this method
+    ///          returns a completed future immediately. This is intentional
+    ///          and avoids errors when called with mock objects in tests.
     public CompletableFuture<Void> persistOnlinePlayer(final PluginTemplateUser user) {
         if (user instanceof final PlatformUser<?> platformUser) {
             platformUser.updateProfile(profile -> profile.withLastSeen(Instant.now()));
@@ -193,12 +198,12 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
 
     /// Evicts the entry for `uuid` from the user cache.
     ///
-    /// Calling this method while the player is still online removes them from
-    /// the pinned-forever expiry bucket; a subsequent cache miss will rebuild
-    /// their entry from the repository.
+    /// Calling this method while the player is still online removes them
+    /// from the pinned-forever expiry bucket; a subsequent cache miss will
+    /// rebuild their entry from the repository.
     ///
-    /// This method is idempotent: calling it multiple times for the same `uuid`
-    /// is safe and has no additional effect after the first call.
+    /// This method is idempotent: calling it multiple times for the same
+    /// `uuid` is safe and has no additional effect after the first call.
     ///
     /// @param uuid the player UUID to evict
     public void discardUser(final UUID uuid) {
@@ -259,17 +264,19 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     // Cache expiry policy
     // -------------------------------------------------------------------------
 
-    /// Caffeine [Expiry] policy that pins online players indefinitely in cache
-    /// and applies 15-minute access-based expiry to offline players.
+    /// Caffeine [Expiry] policy that pins online players indefinitely in
+    /// cache and applies 15-minute access-based expiry to offline players.
     ///
     /// All three lifecycle callbacks — [#expireAfterCreate],
     /// [#expireAfterUpdate], and [#expireAfterRead] — delegate to the same
-    /// [#ttl] helper. If [PluginTemplateUser#isOnline()] returns `true`, the
-    /// entry lives forever (until explicit eviction via [#discardUser]);
-    /// otherwise the standard 15-minute access-window applies.
+    /// [#ttl] helper. If [PluginTemplateUser#isOnline()] returns `true`,
+    /// the entry lives forever (until explicit eviction via
+    /// [PluginTemplateUserServiceInternal#discardUser]); otherwise the
+    /// standard 15-minute access-window applies.
     ///
-    /// @implNote TTL values are in nanoseconds as required by the Caffeine API.
-    ///           `Long.MAX_VALUE` nanoseconds is effectively infinite (~292 years).
+    /// @implNote TTL values are in nanoseconds as required by the Caffeine
+    ///           API. `Long.MAX_VALUE` nanoseconds is effectively infinite
+    ///           (~292 years).
     private static final class OnlineAwareExpiry implements Expiry<UUID, PluginTemplateUser> {
 
         private static final long NEVER_EXPIRE_NANOS = Long.MAX_VALUE;

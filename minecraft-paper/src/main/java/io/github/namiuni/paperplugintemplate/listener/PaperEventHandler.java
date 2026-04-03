@@ -34,35 +34,36 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.jspecify.annotations.NullMarked;
 
-/// Bukkit event listener that bridges Paper lifecycle events to the user service.
+/// Bukkit event listener that bridges Paper lifecycle events to the user
+/// service.
 ///
 /// Handles four lifecycle points for profile management:
 ///
-/// - **Pre-connect** ([AsyncPlayerConnectionConfigureEvent]): pre-loads the
-///   player's profile into the pre-load cache so that the first gameplay access is
-///   non-blocking. If the repository is unreachable, the player is disconnected
-///   with a localized error message rather than joining without a valid profile.
+/// - **Pre-connect** ([AsyncPlayerConnectionConfigureEvent]): pre-loads
+///   the player's profile into the pre-load cache so that the first
+///   gameplay access is non-blocking. If the repository is unreachable,
+///   the player is disconnected with a localized error message rather than
+///   joining without a valid profile.
 ///
 /// - **Join** ([PlayerJoinEvent]): promotes the preloaded profile from the
-///   connection cache into the user cache, ensuring all subsequent service calls
-///   are guaranteed cache hits for the duration of the session.
+///   connection cache into the user cache, ensuring all subsequent service
+///   calls are guaranteed cache hits for the duration of the session.
 ///
-/// - **Disconnect** ([PlayerQuitEvent]): stamps `lastSeen`, persists
-///   the final profile snapshot, and evicts the cache entry. Cache eviction is
-///   guaranteed by [PluginTemplateUserServiceInternal#persistOnlinePlayer]
-///   regardless of whether the repository write succeeds; this handler only calls
-///   [PluginTemplateUserServiceInternal#discardUser] additionally when the
-///   user could not be loaded at all (i.e. the load future itself failed).
+/// - **Disconnect** ([PlayerQuitEvent]): stamps `lastSeen`, persists the
+///   final profile snapshot, and evicts the cache entry. Cache eviction is
+///   guaranteed by the service's persist operation regardless of whether
+///   the repository write succeeds; this handler additionally discards the
+///   cache entry manually only when the initial load future itself failed.
 ///
-/// - **World save** ([WorldSaveEvent]): checkpoints all profiles for players
-///   in the saved world to limit data loss on unexpected shutdowns.
+/// - **World save** ([WorldSaveEvent]): checkpoints all profiles for
+///   players in the saved world to limit data loss on unexpected shutdowns.
 ///
 /// ## Thread safety
 ///
-/// Event callbacks for {@link AsyncPlayerConnectionConfigureEvent} fire on Paper's
-/// async configuration thread. All other callbacks fire on the main server thread.
-/// The user service methods called here are safe from all threads; no additional
-/// synchronization is required.
+/// The callback for [AsyncPlayerConnectionConfigureEvent] fires on Paper's
+/// async configuration thread. All other callbacks fire on the main server
+/// thread. The user service methods called here are safe from all threads;
+/// no additional synchronization is required.
 @NullMarked
 @SuppressWarnings("UnstableApiUsage")
 public final class PaperEventHandler implements Listener {
@@ -73,8 +74,10 @@ public final class PaperEventHandler implements Listener {
 
     /// Constructs a new event handler.
     ///
-    /// @param userService the internal service managing in-memory and persistent user state
-    /// @param logger      the component-aware logger used for structured error reporting
+    /// @param userService the internal service managing in-memory and
+    ///                    persistent user state
+    /// @param logger      the component-aware logger used for structured
+    ///                    error reporting
     /// @param messages    the localized message provider
     @Inject
     private PaperEventHandler(
@@ -89,8 +92,8 @@ public final class PaperEventHandler implements Listener {
     /// Pre-loads the connecting player's profile into the service cache.
     ///
     /// Fires on Paper's async configuration thread before a `Player` object
-    /// exists. A load failure disconnects the player with a localized error message
-    /// so they never join without a valid profile.
+    /// exists. A load failure disconnects the player with a localized error
+    /// message so they never join without a valid profile.
     ///
     /// @param event the async connection configure event
     @EventHandler(priority = EventPriority.MONITOR)
@@ -119,8 +122,8 @@ public final class PaperEventHandler implements Listener {
 
     /// Promotes the preloaded profile into the user cache on join.
     ///
-    /// Calling [PluginTemplateUserServiceInternal#loadUser] here ensures all
-    /// subsequent service calls during this session are guaranteed cache hits.
+    /// Ensures all subsequent service calls during this session are
+    /// guaranteed cache hits.
     ///
     /// @param event the join event
     @EventHandler(priority = EventPriority.MONITOR)
@@ -137,16 +140,16 @@ public final class PaperEventHandler implements Listener {
                 });
     }
 
-    /// Persists the final profile snapshot and evicts the cache entry on disconnect.
+    /// Persists the final profile snapshot and evicts the cache entry on
+    /// disconnect.
     ///
-    /// [PluginTemplateUserServiceInternal#persistOnlinePlayer] stamps
-    /// `lastSeen` with the current instant and guarantees cache eviction via
-    /// its own internal `whenComplete`, regardless of whether the repository
-    /// write succeeds or fails. This handler therefore only calls
-    /// [PluginTemplateUserServiceInternal#discardUser] as a safety net for
-    /// the case where `loadUser` itself fails — in which case
-    /// `persistOnlinePlayer` is never reached and the cache entry would
-    /// otherwise leak until it expires naturally.
+    /// The service's persist operation stamps `lastSeen` with the current
+    /// instant and guarantees cache eviction via its own completion
+    /// handler, regardless of whether the repository write succeeds or
+    /// fails. This handler therefore only discards the cache entry manually
+    /// as a safety net for the case where the initial load future itself
+    /// fails — in which case the persist call is never reached and the
+    /// entry would otherwise leak until it expires naturally.
     ///
     /// @param event the quit event
     @EventHandler(priority = EventPriority.MONITOR)
@@ -173,10 +176,10 @@ public final class PaperEventHandler implements Listener {
 
     /// Checkpoints profiles for all online players in the saved world.
     ///
-    /// Reduces data loss exposure on unexpected server shutdowns. Each checkpoint
-    /// stamps `lastSeen` and persists the current profile state; cache
-    /// entries are evicted and re-promoted on the next access. Failures are logged
-    /// per-player and do not interrupt the world-save process.
+    /// Reduces data loss exposure on unexpected server shutdowns. Each
+    /// checkpoint stamps `lastSeen` and persists the current profile
+    /// state. Failures are logged per-player and do not interrupt the
+    /// world-save process.
     ///
     /// @param event the world save event
     @EventHandler(priority = EventPriority.MONITOR)

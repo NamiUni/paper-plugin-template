@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,22 +25,25 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jspecify.annotations.NullMarked;
 
-/// Specifies the file name used when persisting a configuration record to disk.
+/// Specifies the file name used when persisting a configuration record to
+/// disk.
 ///
-/// Place this annotation on a configuration record class to declare the filename
-/// (relative to the plugin's data directory) that [io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationLoader]
+/// Place this annotation on a configuration record class to declare the
+/// filename (relative to the plugin's data directory) that
+/// [io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationLoader]
 /// will read from and write to.
-/// <pre>
-/// `record MyConfig(String someValue){}`</pre>
+///
+/// ```java
+/// @ConfigName("config.conf")
+/// public record MyConfig(String someValue) {}
+/// ```
 @NullMarked
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ConfigName {
 
-    /**
-     * The configuration file name, including extension (e.g. `"config.conf"`).
-     *
-     * @return the file name relative to the plugin data directory
-     */
+    /// The configuration file name, including extension (e.g. `"config.conf"`).
+    ///
+    /// @return the file name relative to the plugin data directory
     String value();
 }

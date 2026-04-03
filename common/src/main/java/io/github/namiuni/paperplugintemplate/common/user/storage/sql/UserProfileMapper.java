@@ -28,14 +28,22 @@ import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.jspecify.annotations.NullMarked;
 
-/// JDBI [RowMapper] that converts a SQL result row into a [UserProfile] record.
+/// JDBI [RowMapper] that converts a SQL result row into a [UserProfile]
+/// record.
 ///
 /// ## Column conventions
 ///
-/// - `uuid`: stored as `VARCHAR(36)` and parsed via `UUID.fromString(String)`.
+/// - `uuid`: stored as `VARCHAR(36)` and parsed via
+///   `UUID.fromString(String)`.
 /// - `last_seen`: stored as an epoch-millisecond `BIGINT` to maintain
-///   cross-database compatibility between H2 and MySQL, both of which handle
-///   `BIGINT` identically regardless of time-zone settings.
+///   cross-database compatibility between H2 and MySQL, both of which
+///   handle `BIGINT` identically regardless of time-zone settings.
+///
+/// ## Thread safety
+///
+/// This mapper is stateless and therefore safe to register as a singleton
+/// in the JDBI instance. Concurrent calls to [#map] from different threads
+/// are fully independent and require no external synchronization.
 @NullMarked
 public final class UserProfileMapper implements RowMapper<UserProfile> {
 
