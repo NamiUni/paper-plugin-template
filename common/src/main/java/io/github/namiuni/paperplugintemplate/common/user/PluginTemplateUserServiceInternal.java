@@ -65,6 +65,20 @@ import org.jspecify.annotations.NullMarked;
 ///   the last cache interaction, preventing unbounded memory growth for
 ///   offline lookups.
 ///
+/// ## Persist vs. checkpoint distinction
+///
+/// Two separate write paths exist for profile persistence and must not be
+/// confused:
+///
+/// - [#persistOnlinePlayer]: **disconnect only**. Stamps `lastSeen`, persists
+///   to the repository, then **evicts** the cache entry. Calling this while
+///   the player is still online removes them from the cache, causing
+///   subsequent [#getUser] calls to return `Optional.empty()`.
+/// - [#checkpointUser]: **periodic saves only** (e.g. world-save events).
+///   Stamps `lastSeen` and persists to the repository, but **retains** the
+///   cache entry so that all subsequent service calls remain cache hits for
+///   the duration of the session.
+///
 /// ## Thread safety
 ///
 /// Both Caffeine caches are thread-safe. All methods on this service may be
@@ -170,25 +184,63 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     }
 
     /// Stamps [UserProfile#lastSeen()] with the current instant, persists
-    /// the updated profile, and then evicts the cache entry.
+    /// the updated profile, and then **evicts** the cache entry.
     ///
+    /// This method is exclusively for the **player disconnect** path.
     /// Cache eviction is guaranteed via
     /// [java.util.concurrent.CompletableFuture#whenComplete], so the entry
     /// is removed regardless of whether the repository write succeeds or
     /// fails.
     ///
-    /// @param user the online player whose session is ending or being
-    ///             checkpointed; must not be `null`
+    /// **Do not call this method for periodic saves such as world-save
+    /// checkpoints.** Evicting an online player from the cache causes all
+    /// subsequent [#getUser] calls to return `Optional.empty()` until
+    /// [#loadUser] is called again. Use [#checkpointUser] for periodic
+    /// saves instead.
+    ///
+    /// @param user the online player whose session is ending; must not be
+    ///             `null`
     /// @return a future that completes when the repository write finishes;
     ///         the cache entry is evicted unconditionally after completion,
     ///         or completes immediately with `null` if `user` does not
     ///         implement [PluginTemplateUserInternal]
+    /// @see #checkpointUser
     public CompletableFuture<Void> persistOnlinePlayer(final PluginTemplateUser user) {
         if (user instanceof final PluginTemplateUserInternal platformUser) {
             platformUser.updateProfile(profile -> profile.withLastSeen(Instant.now()));
             final UserProfile updated = platformUser.profile();
             return this.repository.upsert(updated)
                     .whenComplete((_, _) -> this.discardUser(updated.uuid()));
+        }
+        return CompletableFuture.completedFuture(null);
+    }
+
+    /// Stamps [UserProfile#lastSeen()] with the current instant and persists
+    /// the updated profile, **without** evicting the cache entry.
+    ///
+    /// This method is exclusively for the **periodic checkpoint** path (e.g.
+    /// world-save events). Unlike [#persistOnlinePlayer], it retains the
+    /// cache entry so that the player remains a cache hit for the duration of
+    /// their session. The re-put also triggers [OnlineAwareExpiry] to
+    /// re-evaluate `isOnline()` and recalculate the TTL.
+    ///
+    /// **Do not use this method for disconnect handling.** The cache entry
+    /// will not be evicted, and the `lastSeen` timestamp recorded by this
+    /// method will be overwritten by the disconnect path.
+    ///
+    /// @param user the online player to checkpoint; must not be `null`
+    /// @return a future that completes when the repository write finishes;
+    ///         may complete exceptionally if the repository write fails.
+    ///         Completes immediately with `null` if `user` does not
+    ///         implement [PluginTemplateUserInternal]
+    /// @see #persistOnlinePlayer
+    public CompletableFuture<Void> checkpointUser(final PluginTemplateUser user) {
+        if (user instanceof final PluginTemplateUserInternal platformUser) {
+            platformUser.updateProfile(profile -> profile.withLastSeen(Instant.now()));
+            final UserProfile updated = platformUser.profile();
+            // Re-put to trigger expireAfterUpdate; does NOT evict the entry.
+            this.userCache.put(updated.uuid(), platformUser);
+            return this.repository.upsert(updated);
         }
         return CompletableFuture.completedFuture(null);
     }
