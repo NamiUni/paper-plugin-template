@@ -57,6 +57,10 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// - **World save** ([WorldSaveEvent]): checkpoints all profiles for
 ///   players in the saved world to limit data loss on unexpected shutdowns.
+///   Uses [PluginTemplateUserServiceInternal#checkpointUser] rather than
+///   [PluginTemplateUserServiceInternal#persistOnlinePlayer] so that cache
+///   entries are **retained** — evicting online players from the cache
+///   would cause subsequent `getUser` calls to return `Optional.empty()`.
 ///
 /// ## Thread safety
 ///
@@ -174,8 +178,13 @@ public final class PaperEventHandler implements Listener {
     /// Checkpoints profiles for all online players in the saved world.
     ///
     /// Reduces data loss exposure on unexpected server shutdowns. Each
-    /// checkpoint stamps `lastSeen` and persists the current profile
-    /// state. Failures are logged per-player and do not interrupt the
+    /// checkpoint stamps `lastSeen` and persists the current profile state
+    /// via [PluginTemplateUserServiceInternal#checkpointUser], which
+    /// **retains** the cache entry. Using
+    /// [PluginTemplateUserServiceInternal#persistOnlinePlayer] here would
+    /// evict the cache entry and cause subsequent `getUser` calls — e.g.
+    /// from command handlers — to return `Optional.empty()` for the rest of
+    /// the session. Failures are logged per-player and do not interrupt the
     /// world-save process.
     ///
     /// @param event the world save event
@@ -185,7 +194,7 @@ public final class PaperEventHandler implements Listener {
             this.userService.loadUser(player)
                     .thenCompose(user -> {
                         this.logger.debug("World-save checkpoint: {}", user);
-                        return this.userService.persistOnlinePlayer(user);
+                        return this.userService.checkpointUser(user);
                     })
                     .whenComplete((_, ex) -> {
                         if (ex != null) {
