@@ -26,7 +26,6 @@ import com.google.inject.Provides;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.common.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.user.storage.json.JsonUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRepository;
@@ -36,6 +35,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import org.jdbi.v3.cache.caffeine.CaffeineCacheBuilder;
 import org.jdbi.v3.cache.caffeine.CaffeineCachePlugin;
 import org.jdbi.v3.core.Jdbi;
@@ -81,7 +81,7 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     private UserRepository userRepository(
-            final ConfigurationHolder<PrimaryConfiguration> primaryConfig,
+            final Supplier<PrimaryConfiguration> primaryConfig,
             final @DataDirectory Path dataDirectory,
             final Provider<Jdbi> jdbi,
             final Provider<HikariDataSource> dataSource
@@ -149,7 +149,7 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     private HikariDataSource dataSource(
-            final ConfigurationHolder<PrimaryConfiguration> primaryConfig,
+            final Supplier<PrimaryConfiguration> primaryConfig,
             final @DataDirectory Path dataDirectory
     ) {
         final PrimaryConfiguration.StorageConfig storageConfig = primaryConfig.get().storage();

@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.common;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.github.namiuni.kotonoha.translatable.message.KotonohaMessage;
 import io.github.namiuni.kotonoha.translatable.message.configuration.FormatTypes;
@@ -29,15 +30,18 @@ import io.github.namiuni.kotonoha.translatable.message.policy.argument.Translati
 import io.github.namiuni.kotonoha.translatable.message.policy.argument.tag.TagNameResolver;
 import io.github.namiuni.kotonoha.translatable.message.utility.TranslationArgumentAdapter;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
-import io.github.namiuni.paperplugintemplate.common.command.commands.ReloadCommand;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.common.command.commands.HelpCommand;
+import io.github.namiuni.paperplugintemplate.common.command.commands.ReloadCommand;
+import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationLoader;
 import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.translation.Messages;
 import io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
+import java.util.function.Supplier;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
 /// Guice module that binds the application-layer services shared across all
@@ -62,8 +66,16 @@ import org.jspecify.annotations.NullMarked;
 @SuppressWarnings("unused")
 public final class CommonModule extends AbstractModule {
 
+    private final ComponentLogger logger;
+    private final Path dataDirectory;
+
     /// Constructs a new `CommonModule`.
-    public CommonModule() {
+    public CommonModule(
+            final ComponentLogger logger,
+            final Path dataDirectory
+    ) {
+        this.logger = logger;
+        this.dataDirectory = dataDirectory;
     }
 
     /// Provides a singleton [ConfigurationLoader] for [PrimaryConfiguration].
@@ -96,7 +108,12 @@ public final class CommonModule extends AbstractModule {
 
     @Override
     protected void configure() {
+        this.bind(ComponentLogger.class).toInstance(this.logger);
+        this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.dataDirectory);
         this.bind(PluginTemplateUserService.class).to(PluginTemplateUserServiceInternal.class).in(Scopes.SINGLETON);
+        this.bind(new TypeLiteral<Supplier<PrimaryConfiguration>>() { })
+                .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
+
         this.bindCommands();
     }
 

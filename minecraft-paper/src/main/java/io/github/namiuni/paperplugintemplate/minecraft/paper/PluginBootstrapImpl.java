@@ -45,7 +45,7 @@ public final class PluginBootstrapImpl implements PluginBootstrap {
     public void bootstrap(final BootstrapContext context) {
         this.injector = Guice.createInjector(
                 new PluginModule(context),
-                new CommonModule(),
+                new CommonModule(context.getLogger(), context.getDataDirectory()),
                 new StorageModule()
         );
 

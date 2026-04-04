@@ -60,7 +60,7 @@ import org.spongepowered.configurate.ConfigurateException;
 /// [#command] is invoked once on the bootstrap thread. Each command
 /// handler executes on cloud's async execution coordinator (a virtual
 /// thread), so the reload operations performed inside
-/// [#executeReload] may block briefly on I/O without stalling the
+/// [#executes] may block briefly on I/O without stalling the
 /// Paper main thread.
 @NullMarked
 public final class ReloadCommand implements CommandFactory {
@@ -97,10 +97,8 @@ public final class ReloadCommand implements CommandFactory {
         return manager.commandBuilder("template")
                 .literal("reload")
                 .permission(TemplatePermission.COMMAND_RELOAD.node())
-                .commandDescription(CommandDescription.commandDescription(
-                        RichDescription.of(this.messages.commandReloadDescription()))
-                )
-                .handler(this::executeReload)
+                .commandDescription(this.description())
+                .handler(this::executes)
                 .build();
     }
 
@@ -121,7 +119,7 @@ public final class ReloadCommand implements CommandFactory {
     /// @throws UncheckedIOException if configuration or translation reload
     ///         fails; the exception is propagated to cloud's exception
     ///         handler after feedback has been sent to the sender
-    private void executeReload(final CommandContext<CommandSource> context) {
+    private void executes(final CommandContext<CommandSource> context) {
         final Audience sender = context.sender().sender();
 
         try {
@@ -143,5 +141,9 @@ public final class ReloadCommand implements CommandFactory {
             sender.sendMessage(this.messages.translationReloadFailure());
             throw new UncheckedIOException(exception);
         }
+    }
+
+    private CommandDescription description() {
+        return CommandDescription.commandDescription(RichDescription.of(this.messages.commandReloadDescription()));
     }
 }

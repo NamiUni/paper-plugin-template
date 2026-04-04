@@ -22,26 +22,17 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.Singleton;
-import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
-import io.github.namiuni.paperplugintemplate.common.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.command.commands.ReloadCommand;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
-import io.github.namiuni.paperplugintemplate.common.command.commands.HelpCommand;
-import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
-import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.command.PaperCommandSource;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.listener.PaperEventHandler;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.user.PaperUserFactory;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
-import java.nio.file.Path;
-import java.util.function.Supplier;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import jakarta.inject.Singleton;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.SenderMapper;
@@ -56,16 +47,6 @@ import org.jspecify.annotations.NullMarked;
 /// [CommandFactory] [Multibinder] so that [CommonModule] and any future
 /// platform-specific modules can safely add their own command registrars
 /// without encountering an uninitialized binder.
-///
-/// ## Command binding convention
-///
-/// The [CommandFactory] multibinder is created here and populated with:
-///
-/// - [ReloadCommand]: the `/template reload` administration command.
-/// - [HelpCommand]: the `/template help [query]` help browser.
-///
-/// Platform-specific commands may be added here by calling
-/// `commands.addBinding().to(MyPlatformCommand.class)`.
 ///
 /// ## Thread safety
 ///
@@ -103,10 +84,6 @@ final class PluginModule extends AbstractModule {
     /// {@inheritDoc}
     @Override
     protected void configure() {
-        this.bind(ComponentLogger.class).toInstance(this.context.getLogger());
-        this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.context.getDataDirectory());
-        this.bind(new TypeLiteral<Supplier<PrimaryConfiguration>>() { })
-                .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
         this.bind(JavaPlugin.class).to(JavaPluginImpl.class).in(Scopes.SINGLETON);
         this.bind(PaperEventHandler.class).in(Scopes.SINGLETON);
         this.bind(UserFactory.class).to(PaperUserFactory.class).in(Scopes.SINGLETON);

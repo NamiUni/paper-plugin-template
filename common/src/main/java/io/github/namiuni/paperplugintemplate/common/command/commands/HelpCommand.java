@@ -20,21 +20,26 @@
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
+import io.github.namiuni.paperplugintemplate.common.permission.TemplatePermission;
 import io.github.namiuni.paperplugintemplate.common.translation.Messages;
 import jakarta.inject.Inject;
+import java.util.Map;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.component.DefaultValue;
+import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.context.CommandInput;
 import org.incendo.cloud.description.CommandDescription;
 import org.incendo.cloud.help.result.CommandEntry;
 import org.incendo.cloud.minecraft.extras.MinecraftHelp;
 import org.incendo.cloud.minecraft.extras.RichDescription;
 import org.incendo.cloud.parser.standard.StringParser;
+import org.incendo.cloud.suggestion.BlockingSuggestionProvider;
 import org.incendo.cloud.suggestion.Suggestion;
-import org.incendo.cloud.suggestion.SuggestionProvider;
 import org.jspecify.annotations.NullMarked;
 
 /// [CommandFactory] that contributes the `/template help [query]` command.
@@ -66,18 +71,15 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class HelpCommand implements CommandFactory {
 
-    // JIS Z 9103 https://ja.wikipedia.org/wiki/JIS%E5%AE%89%E5%85%A8%E8%89%B2
     private static final TextColor PRIMARY = TextColor.color(0x2D7D9A);
     private static final TextColor HIGHLIGHT = TextColor.color(0x49E1E8);
     private static final TextColor ALT_HIGHLIGHT = TextColor.color(0xE3008C);
     private static final TextColor TEXT = TextColor.color(0xFFFFFF);
     private static final TextColor ACCENT = TextColor.color(0x7D7D7D);
-
     private static final String COMMAND_NAME = "template"; // TODO: change
 
     private final CommandManager<CommandSource> manager;
     private final Messages messages;
-
     private final MinecraftHelp<CommandSource> minecraftHelp;
 
     /// Constructs a new [HelpCommand] and eagerly initializes the
@@ -98,40 +100,12 @@ public final class HelpCommand implements CommandFactory {
     ) {
         this.manager = manager;
         this.messages = messages;
-
         this.minecraftHelp = MinecraftHelp.<CommandSource>builder()
                 .commandManager(manager)
                 .audienceProvider(CommandSource::sender)
                 .commandPrefix("/%s help".formatted(COMMAND_NAME))
-                .colors(MinecraftHelp.helpColors(
-                        PRIMARY,
-                        HIGHLIGHT,
-                        ALT_HIGHLIGHT,
-                        TEXT,
-                        ACCENT)
-                )
-                .messageProvider((_, key, args) -> {
-                    final TagResolver.Builder builder = TagResolver.builder();
-                    args.forEach((k, value) -> builder.resolver(Placeholder.parsed(k, value)));
-                    final TagResolver placeholders = builder.build();
-
-                    return switch (key) {
-                        case "arguments" -> this.messages.commandHelpMiscArguments(placeholders);
-                        case "available_commands" -> this.messages.commandHelpMiscAvailableCommands(placeholders);
-                        case "click_for_next_page" -> this.messages.commandHelpMiscClickForNextPage(placeholders);
-                        case "click_for_previous_page" -> this.messages.commandHelpMiscClickForPreviousPage(placeholders);
-                        case "click_to_show_help" -> this.messages.commandHelpMiscClickToShowHelp(placeholders);
-                        case "command" -> this.messages.commandHelpMiscCommand(placeholders);
-                        case "description" -> this.messages.commandHelpMiscDescription(placeholders);
-                        case "help" -> this.messages.commandHelpMiscHelp(placeholders);
-                        case "no_description" -> this.messages.commandHelpMiscNoDescription(placeholders);
-                        case "no_results_for_query" -> this.messages.commandHelpMiscNoResultsForQuery(placeholders);
-                        case "optional" -> this.messages.commandHelpMiscOptional(placeholders);
-                        case "page_out_of_range" -> this.messages.commandHelpMiscPageOutOfRange(placeholders);
-                        case "showing_results_for_query" -> this.messages.commandHelpMiscShowingResultsForQuery(placeholders);
-                        default -> throw new IllegalArgumentException();
-                    };
-                })
+                .colors(MinecraftHelp.helpColors(PRIMARY, HIGHLIGHT, ALT_HIGHLIGHT, TEXT, ACCENT))
+                .messageProvider(new MessageProvider())
                 .headerFooterLength(53)
                 .build();
     }
@@ -150,27 +124,64 @@ public final class HelpCommand implements CommandFactory {
     public Command<CommandSource> command() {
         return this.manager.commandBuilder(COMMAND_NAME)
                 .literal("help")
-                .commandDescription(CommandDescription.commandDescription(
-                        RichDescription.of(this.messages.commandHelpDescription()))
-                )
-                .optional(
-                        "query",
+                .permission(TemplatePermission.COMMAND_HELP.node())
+                .commandDescription(this.description())
+                .optional("query",
                         StringParser.greedyStringParser(),
                         DefaultValue.constant(""),
-                        SuggestionProvider.blocking((ctx, _) ->
-                                this.manager.createHelpHandler()
-                                        .queryRootIndex(ctx.sender())
-                                        .entries()
-                                        .stream()
-                                        .map(CommandEntry::syntax)
-                                        .map(Suggestion::suggestion)
-                                        .toList()
-                        )
+                        new SuggestionProvider()
                 )
-                .handler(ctx -> {
-                    String query = ctx.getOrDefault("query", "");
-                    this.minecraftHelp.queryCommands(query, ctx.sender());
-                })
+                .handler(this::executes)
                 .build();
+    }
+
+    private void executes(final CommandContext<CommandSource> context) {
+        final String query = context.getOrDefault("query", "");
+        this.minecraftHelp.queryCommands(query, context.sender());
+    }
+
+    private CommandDescription description() {
+        return CommandDescription.commandDescription(RichDescription.of(this.messages.commandHelpDescription()));
+    }
+
+    private final class SuggestionProvider implements BlockingSuggestionProvider<CommandSource> {
+
+        @Override
+        public Iterable<? extends Suggestion> suggestions(final CommandContext<CommandSource> context, final CommandInput input) {
+            return HelpCommand.this.manager.createHelpHandler()
+                    .queryRootIndex(context.sender())
+                    .entries()
+                    .stream()
+                    .map(CommandEntry::syntax)
+                    .map(Suggestion::suggestion)
+                    .toList();
+        }
+    }
+
+    private final class MessageProvider implements MinecraftHelp.MessageProvider<CommandSource> {
+
+        @Override
+        public Component provide(final CommandSource sender, final String key, final Map<String, String> args) {
+            final TagResolver.Builder builder = TagResolver.builder();
+            args.forEach((k, value) -> builder.resolver(Placeholder.parsed(k, value)));
+            final TagResolver placeholders = builder.build();
+
+            return switch (key) {
+                case "arguments" -> HelpCommand.this.messages.commandHelpMiscArguments(placeholders);
+                case "available_commands" -> HelpCommand.this.messages.commandHelpMiscAvailableCommands(placeholders);
+                case "click_for_next_page" -> HelpCommand.this.messages.commandHelpMiscClickForNextPage(placeholders);
+                case "click_for_previous_page" -> HelpCommand.this.messages.commandHelpMiscClickForPreviousPage(placeholders);
+                case "click_to_show_help" -> HelpCommand.this.messages.commandHelpMiscClickToShowHelp(placeholders);
+                case "command" -> HelpCommand.this.messages.commandHelpMiscCommand(placeholders);
+                case "description" -> HelpCommand.this.messages.commandHelpMiscDescription(placeholders);
+                case "help" -> HelpCommand.this.messages.commandHelpMiscHelp(placeholders);
+                case "no_description" -> HelpCommand.this.messages.commandHelpMiscNoDescription(placeholders);
+                case "no_results_for_query" -> HelpCommand.this.messages.commandHelpMiscNoResultsForQuery(placeholders);
+                case "optional" -> HelpCommand.this.messages.commandHelpMiscOptional(placeholders);
+                case "page_out_of_range" -> HelpCommand.this.messages.commandHelpMiscPageOutOfRange(placeholders);
+                case "showing_results_for_query" -> HelpCommand.this.messages.commandHelpMiscShowingResultsForQuery(placeholders);
+                default -> throw new IllegalArgumentException();
+            };
+        }
     }
 }
