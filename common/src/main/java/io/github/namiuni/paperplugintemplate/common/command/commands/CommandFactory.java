@@ -28,6 +28,13 @@ import org.jspecify.annotations.NullMarked;
 @FunctionalInterface
 public interface CommandFactory {
 
-    // TODO: Javadoc
+    /// Builds and returns the [org.incendo.cloud.Command] contributed by
+    /// this factory.
+    ///
+    /// Called exactly once by [io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar#registerCommands()]. The
+    /// returned command is passed directly to
+    /// [org.incendo.cloud.CommandManager#command].
+    ///
+    /// @return the fully constructed command, never `null`
     Command<CommandSource> command();
 }

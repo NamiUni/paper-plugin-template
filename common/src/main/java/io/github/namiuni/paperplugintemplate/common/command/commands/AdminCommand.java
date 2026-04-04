@@ -91,7 +91,7 @@ public final class AdminCommand implements CommandFactory {
         this.manager = manager;
     }
 
-    // TODO: Javadoc
+    /// {@inheritDoc}
     @Override
     public Command<CommandSource> command() {
         return manager.commandBuilder("template") // TODO: change the command name

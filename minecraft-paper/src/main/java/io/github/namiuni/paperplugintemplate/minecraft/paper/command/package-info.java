@@ -18,5 +18,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// TODO: Javadoc
+/// Paper platform adapters that bridge
+/// [io.papermc.paper.command.brigadier.CommandSourceStack] to the
+/// platform-agnostic [io.github.namiuni.paperplugintemplate.common.command.CommandSource]
+/// contract used by the Incendo Cloud framework.
 package io.github.namiuni.paperplugintemplate.minecraft.paper.command;

@@ -23,13 +23,56 @@ import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-// TODO: Javadoc
+/// Platform-agnostic representation of an Incendo Cloud command sender.
+///
+/// Abstracts over the underlying platform command source — e.g., Paper's
+/// [io.papermc.paper.command.brigadier.CommandSourceStack] — so that all
+/// command logic in the `common` module remains free of platform
+/// imports. Platform adapters implement this interface and are mapped to
+/// and from the native source type via a Cloud
+/// [org.incendo.cloud.SenderMapper].
+///
+/// ## Sender vs. executor
+///
+/// Cloud inherits Brigadier's distinction between the *sender* (the entity
+/// that issued the command) and the *executor* (the entity the command
+/// physically targets when a `/execute as <entity> run …` redirect is
+/// active). [#sender()] is always non-`null`; [#executor()] is `null`
+/// whenever no redirect is in effect, in which case the executor is
+/// considered identical to the sender.
+///
+/// Command handlers that need to act on a specific entity should prefer
+/// [#executor()] with a `null` fallback to [#sender()]:
+///
+/// ```java
+/// Audience target = Objects.requireNonNullElse(source.executor(), source.sender());
+/// ```
+///
+/// ## Thread safety
+///
+/// Implementations must be safe to call from any thread, including Cloud's
+/// async execution coordinator and virtual threads. Neither [#sender()] nor
+/// [#executor()] may block the calling thread.
 @NullMarked
 public interface CommandSource {
 
-    // TODO: Javadoc
+    /// Returns the [Audience] representing the entity that issued the command.
+    ///
+    /// For player-issued commands this resolves to the plugin-managed
+    /// [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser];
+    /// for console-issued commands this is the platform's console sender.
+    ///
+    /// @return the command sender, never `null`
     Audience sender();
 
-    // TODO: Javadoc
+    /// Returns the [Audience] representing the entity the command acts upon,
+    /// or `null` when no `/execute`-style redirect is active.
+    ///
+    /// When non-`null`, this value differs from [#sender()] only inside an
+    /// `/execute as <entity> run …` context. Command handlers that target
+    /// the executor rather than the sender must null-check this value and
+    /// fall back to [#sender()] as appropriate.
+    ///
+    /// @return the command executor, or `null` if no redirect is in effect
     @Nullable Audience executor();
 }
