@@ -26,7 +26,6 @@ import io.github.namiuni.paperplugintemplate.common.permission.TemplatePermissio
 import io.github.namiuni.paperplugintemplate.common.translation.Messages;
 import io.github.namiuni.paperplugintemplate.common.translation.TranslatorHolder;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import net.kyori.adventure.audience.Audience;
@@ -35,6 +34,8 @@ import net.kyori.adventure.translation.Translator;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.context.CommandContext;
+import org.incendo.cloud.description.CommandDescription;
+import org.incendo.cloud.minecraft.extras.RichDescription;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.ConfigurateException;
 
@@ -62,8 +63,7 @@ import org.spongepowered.configurate.ConfigurateException;
 /// [#executeReload] may block briefly on I/O without stalling the
 /// Paper main thread.
 @NullMarked
-@Singleton
-public final class AdminCommand implements CommandFactory {
+public final class ReloadCommand implements CommandFactory {
 
     private final ConfigurationHolder<PrimaryConfiguration> configHolder;
     private final TranslatorHolder translatorHolder;
@@ -79,7 +79,7 @@ public final class AdminCommand implements CommandFactory {
     /// @param messages         localized message provider used to send
     ///                         feedback to the command sender
     @Inject
-    private AdminCommand(
+    private ReloadCommand(
             final ConfigurationHolder<PrimaryConfiguration> configHolder,
             final TranslatorHolder translatorHolder,
             final Messages messages,
@@ -94,9 +94,12 @@ public final class AdminCommand implements CommandFactory {
     /// {@inheritDoc}
     @Override
     public Command<CommandSource> command() {
-        return manager.commandBuilder("template") // TODO: change the command name
+        return manager.commandBuilder("template")
                 .literal("reload")
                 .permission(TemplatePermission.COMMAND_RELOAD.node())
+                .commandDescription(CommandDescription.commandDescription(
+                        RichDescription.of(this.messages.commandReloadDescription()))
+                )
                 .handler(this::executeReload)
                 .build();
     }

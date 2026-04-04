@@ -21,6 +21,7 @@ dependencies {
 
     // Commands
     compileOnlyApi(libs.cloud.core)
+    compileOnlyApi(libs.cloud.minecraft.extras)
 
     // Storage
     api(libs.jdbi.core)

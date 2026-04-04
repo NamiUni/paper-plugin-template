@@ -11,6 +11,7 @@ plugins {
 dependencies {
     implementation(project(":paper-plugin-template-common"))
     runtimeDownload(libs.cloud.paper)
+    runtimeDownload(libs.cloud.minecraft.extras)
     compileOnly(libs.paper.api)
 }
 

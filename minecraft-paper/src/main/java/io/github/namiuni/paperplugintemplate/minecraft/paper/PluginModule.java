@@ -22,13 +22,15 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.Singleton;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.command.commands.AdminCommand;
+import io.github.namiuni.paperplugintemplate.common.command.commands.ReloadCommand;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
+import io.github.namiuni.paperplugintemplate.common.command.commands.HelpCommand;
 import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
@@ -57,10 +59,13 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Command binding convention
 ///
-/// The [CommandFactory] multibinder is created here but populated in
-/// [io.github.namiuni.paperplugintemplate.common.CommonModule]. Platform-specific
-/// commands (if any are added in the future) may be contributed here by
-/// calling `commands.addBinding().to(MyPlatformCommand.class)`.
+/// The [CommandFactory] multibinder is created here and populated with:
+///
+/// - [ReloadCommand]: the `/template reload` administration command.
+/// - [HelpCommand]: the `/template help [query]` help browser.
+///
+/// Platform-specific commands may be added here by calling
+/// `commands.addBinding().to(MyPlatformCommand.class)`.
 ///
 /// ## Thread safety
 ///
@@ -70,7 +75,7 @@ import org.jspecify.annotations.NullMarked;
 /// safely discarded.
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
-public final class PluginModule extends AbstractModule {
+final class PluginModule extends AbstractModule {
 
     private final BootstrapContext context;
 
@@ -82,6 +87,7 @@ public final class PluginModule extends AbstractModule {
     }
 
     @Provides
+    @Singleton
     private CommandManager<CommandSource> commandManager(final PluginTemplateUserService userService) {
         final SenderMapper<CommandSourceStack, CommandSource> senderMapper = SenderMapper.create(
                 paperSource -> new PaperCommandSource(paperSource, userService),
@@ -104,12 +110,5 @@ public final class PluginModule extends AbstractModule {
         this.bind(JavaPlugin.class).to(JavaPluginImpl.class).in(Scopes.SINGLETON);
         this.bind(PaperEventHandler.class).in(Scopes.SINGLETON);
         this.bind(UserFactory.class).to(PaperUserFactory.class).in(Scopes.SINGLETON);
-
-        this.bindCommands();
-    }
-
-    private void bindCommands() {
-        final Multibinder<CommandFactory> commands = Multibinder.newSetBinder(this.binder(), CommandFactory.class);
-        commands.addBinding().to(AdminCommand.class);
     }
 }
