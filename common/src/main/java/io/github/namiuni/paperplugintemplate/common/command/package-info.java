@@ -1,8 +1,8 @@
 /*
- * paper-plugin-template
+ * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu/Unitarou
- *                     Contributors []
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,5 +18,5 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Bukkit event listeners that bridge Paper API events to plugin services.
-package io.github.namiuni.paperplugintemplate.listener;
+/// Platform-agnostic command definitions backed by the Incendo cloud framework.
+package io.github.namiuni.paperplugintemplate.common.command;

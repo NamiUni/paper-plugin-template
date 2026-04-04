@@ -1,8 +1,8 @@
 /*
- * paper-plugin-template
+ * PaperPluginTemplate
  *
- * Copyright (c) 2025. Namiu/Unitarou
- *                     Contributors []
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+package io.github.namiuni.paperplugintemplate.common.command.commands;
 
-/// Root package of the paper-plugin-template.
-package io.github.namiuni.paperplugintemplate;
+import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
+import org.incendo.cloud.Command;
+import org.jspecify.annotations.NullMarked;
+
+// TODO: Javadoc
+@NullMarked
+@FunctionalInterface
+public interface CommandFactory {
+
+    // TODO: Javadoc
+    Command<CommandSource> command();
+}

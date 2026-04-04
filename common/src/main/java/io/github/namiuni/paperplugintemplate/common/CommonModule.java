@@ -54,6 +54,7 @@ import org.jspecify.annotations.NullMarked;
 /// is built, this module instance is no longer used and may be safely
 /// discarded.
 @NullMarked
+@SuppressWarnings("unused")
 public final class CommonModule extends AbstractModule {
 
     /// Constructs a new `CommonModule`.

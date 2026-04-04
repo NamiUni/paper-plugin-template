@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.common;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
+import io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar;
 import io.github.namiuni.paperplugintemplate.common.translation.TranslatorHolder;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import jakarta.inject.Inject;
@@ -41,6 +42,7 @@ public final class PluginInternal implements PluginTemplate {
     private final TranslatorHolder translatorHolder;
     private final UserRepository userRepository;
     private final PluginTemplateUserService userService;
+    private final CommandRegistrar commandRegistrar;
 
     /// Constructs a new internal plugin facade.
     ///
@@ -52,11 +54,13 @@ public final class PluginInternal implements PluginTemplate {
     private PluginInternal(
             final TranslatorHolder translatorHolder,
             final UserRepository userRepository,
-            final PluginTemplateUserService userService
+            final PluginTemplateUserService userService,
+            final CommandRegistrar commandRegistrar
     ) {
         this.translatorHolder = translatorHolder;
         this.userRepository = userRepository;
         this.userService = userService;
+        this.commandRegistrar = commandRegistrar;
     }
 
     /// {@inheritDoc}
@@ -84,6 +88,6 @@ public final class PluginInternal implements PluginTemplate {
     public void initialize() {
         GlobalTranslator.translator().addSource(this.translatorHolder.get());
         this.userRepository.initialize();
-        PluginTemplateProvider.register(this);
+        this.commandRegistrar.registerCommands();
     }
 }

@@ -10,6 +10,7 @@ plugins {
 
 dependencies {
     implementation(project(":paper-plugin-template-common"))
+    runtimeDownload(libs.cloud.paper)
     compileOnly(libs.paper.api)
 }
 
@@ -22,9 +23,9 @@ paperPluginYaml {
     website = projectMetadata.website
     apiVersion = "1.21.11"
 
-    loader = "$mainPackage.PluginLoaderImpl"
-    main = "$mainPackage.JavaPluginImpl"
-    bootstrapper = "$mainPackage.PluginBootstrapImpl"
+    loader = "$mainPackage.minecraft.paper.PluginLoaderImpl"
+    main = "$mainPackage.minecraft.paper.JavaPluginImpl"
+    bootstrapper = "$mainPackage.minecraft.paper.PluginBootstrapImpl"
 
     permissions {
         val prefix = paperPluginYaml.name.get().lowercase()

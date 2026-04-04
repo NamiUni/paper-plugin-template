@@ -14,9 +14,13 @@ dependencies {
         isTransitive = false
     }
 
+    // Localizations
     api(libs.caffeine)
     api(libs.kotonoha.message)
     api(libs.kotonoha.message.extra.miniplaceholders)
+
+    // Commands
+    compileOnlyApi(libs.cloud.core)
 
     // Storage
     api(libs.jdbi.core)

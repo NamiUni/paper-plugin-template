@@ -1,7 +1,7 @@
 /*
  * paper-plugin-template
  *
- * Copyright (c) 2025. Namiu/Unitarou
+ * Copyright (c) 2026. Namiu/Unitarou
  *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,5 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Brigadier command definitions for the template plugin.
-package io.github.namiuni.paperplugintemplate.commands;
-
+/// Bukkit event listeners that bridge Paper API events to plugin services.
+package io.github.namiuni.paperplugintemplate.minecraft.paper.listener;
