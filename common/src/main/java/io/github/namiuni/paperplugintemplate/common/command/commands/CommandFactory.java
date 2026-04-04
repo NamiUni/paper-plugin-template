@@ -23,16 +23,45 @@ import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
 import org.incendo.cloud.Command;
 import org.jspecify.annotations.NullMarked;
 
-// TODO: Javadoc
+/// Factory contract for contributing a single [Command] to the plugin's command tree.
+///
+/// Each implementation encapsulates the construction of one logical command —
+/// including its permission node, argument specification, description, and
+/// handler — and is contributed to the Guice
+/// [com.google.inject.multibindings.Multibinder] for `CommandFactory` in the
+/// platform module. [io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar]
+/// then iterates the bound set at startup and delegates each call to
+/// [#command()], decoupling authorship from registration.
+///
+/// ## Extending the command set
+///
+/// To add a new command, implement this interface, annotate the class with
+/// `@Singleton`, and add a binding to the `Multibinder`:
+///
+/// ```java
+/// commands.addBinding().to(MyNewCommand.class).in(Scopes.SINGLETON);
+/// }
+/// ```
+///
+/// No changes to [io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar]
+/// or the platform module are required.
+///
+/// ## Thread safety
+///
+/// [#command()] is invoked exactly once on the bootstrap thread during
+/// [io.github.namiuni.paperplugintemplate.common.PluginInternal#initialize()].
+/// Implementations need not be thread-safe with respect to [#command()]
+/// itself, but the [Command] returned must be safe for Cloud's execution
+/// coordinator to invoke concurrently across multiple sender threads.
 @NullMarked
 @FunctionalInterface
 public interface CommandFactory {
 
-    /// Builds and returns the [org.incendo.cloud.Command] contributed by
-    /// this factory.
+    /// Builds and returns the [Command] contributed by this factory.
     ///
-    /// Called exactly once by [io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar#registerCommands()]. The
-    /// returned command is passed directly to
+    /// Called exactly once by
+    /// [io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar#registerCommands()]
+    /// on the bootstrap thread. The returned command is passed directly to
     /// [org.incendo.cloud.CommandManager#command].
     ///
     /// @return the fully constructed command, never `null`
