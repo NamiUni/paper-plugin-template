@@ -65,7 +65,7 @@ import org.jspecify.annotations.NullMarked;
 /// thread. The user service methods called here are safe from all threads;
 /// no additional synchronization is required.
 @NullMarked
-@SuppressWarnings("UnstableApiUsage")
+@SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class PaperEventHandler implements Listener {
 
     private final PluginTemplateUserServiceInternal userService;
@@ -111,8 +111,7 @@ public final class PaperEventHandler implements Listener {
         this.userService.loadUserProfile(uuid)
                 .whenComplete((profile, ex) -> {
                     if (ex != null) {
-                        this.logger.error(
-                                "Failed to pre-load profile for UUID: {}; disconnecting.", uuid, ex);
+                        this.logger.error("Failed to pre-load profile for UUID: {}; disconnecting.", uuid, ex);
                         connection.disconnect(this.messages.joinFailureProfile());
                     } else {
                         this.logger.debug("Pre-load succeeded for UUID: {}, result: {}", uuid, profile);
@@ -129,11 +128,10 @@ public final class PaperEventHandler implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     private void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
-        this.userService.loadUser(player, player::isOnline)
+        this.userService.loadUser(player)
                 .whenComplete((user, ex) -> {
                     if (ex != null) {
-                        this.logger.error(
-                                "Failed to load user on join for UUID: {}", player.getUniqueId(), ex);
+                        this.logger.error("Failed to load user on join for UUID: {}", player.getUniqueId(), ex);
                     } else {
                         this.logger.debug("Join cache promotion succeeded: {}", user);
                     }
@@ -156,7 +154,7 @@ public final class PaperEventHandler implements Listener {
     private void onDisconnect(final PlayerQuitEvent event) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
-        this.userService.loadUser(player, player::isOnline)
+        this.userService.loadUser(player)
                 .thenCompose(user -> {
                     this.logger.debug("Disconnecting: {}", user);
                     return this.userService.persistOnlinePlayer(user);
@@ -165,8 +163,7 @@ public final class PaperEventHandler implements Listener {
                 })
                 .whenComplete((_, ex) -> {
                     if (ex != null) {
-                        this.logger.error(
-                                "Failed to persist profile on disconnect for UUID: {}", uuid, ex);
+                        this.logger.error("Failed to persist profile on disconnect for UUID: {}", uuid, ex);
                         // Safety net: persistOnlinePlayer was never reached, so the
                         // cache entry must be evicted here to avoid a leak.
                         this.userService.discardUser(uuid);
@@ -185,7 +182,7 @@ public final class PaperEventHandler implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     private void onWorldSave(final WorldSaveEvent event) {
         for (final Player player : event.getWorld().getPlayers()) {
-            this.userService.loadUser(player, player::isOnline)
+            this.userService.loadUser(player)
                     .thenCompose(user -> {
                         this.logger.debug("World-save checkpoint: {}", user);
                         return this.userService.persistOnlinePlayer(user);
