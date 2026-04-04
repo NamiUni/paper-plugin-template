@@ -26,7 +26,8 @@ import org.jspecify.annotations.NullMarked;
 public enum TemplatePermission {
 
     /// Grants access to the `/template reload` administration command.
-    COMMAND_RELOAD("template.command.admin.reload"); // TODO change the prefix
+    COMMAND_RELOAD("template.command.reload"),
+    COMMAND_HELP("template.command.help");
 
     private final String node;
 

@@ -1,8 +1,8 @@
 /*
- * paper-plugin-template
+ * PaperPluginTemplate
  *
- * Copyright (c) 2025. Namiu/Unitarou
- *                     Contributors []
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,5 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-/// Brigadier command definitions for the template plugin.
-package io.github.namiuni.paperplugintemplate.commands;
-
+/// Platform-agnostic command definitions backed by the Incendo cloud framework.
+package io.github.namiuni.paperplugintemplate.common.command;

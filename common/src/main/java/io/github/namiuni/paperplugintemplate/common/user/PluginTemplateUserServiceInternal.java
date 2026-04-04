@@ -280,8 +280,7 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
         private static final long OFFLINE_EXPIRE_NANOS = TimeUnit.MINUTES.toNanos(15L);
 
         @Override
-        public long expireAfterCreate(
-                final UUID key, final PluginTemplateUser user, final long currentTime) {
+        public long expireAfterCreate(final UUID key, final PluginTemplateUser user, final long currentTime) {
             return this.ttl(user);
         }
 
