@@ -40,16 +40,7 @@ import org.jspecify.annotations.NullMarked;
 /// [CommandFactory] that contributes the `/template help [query]` command.
 ///
 /// Uses [MinecraftHelp] from `cloud-minecraft-extras` to render an
-/// Adventure-styled, clickable help menu. The color palette follows the
-/// JIS Z 9103 safety-color scheme used throughout the plugin:
-///
-/// | Role            | Color   | Usage                               |
-/// |-----------------|---------|-------------------------------------|
-/// | `PRIMARY`       | #00B06B | Header/footer lines                 |
-/// | `HIGHLIGHT`     | #1971FF | Command name text                   |
-/// | `ALT_HIGHLIGHT` | #F2E700 | Argument placeholders               |
-/// | `TEXT`          | white   | Description body text               |
-/// | `ACCENT`        | gray    | Separators and punctuation          |
+/// Adventure-styled, clickable help menu.
 ///
 /// ## Command structure
 ///
