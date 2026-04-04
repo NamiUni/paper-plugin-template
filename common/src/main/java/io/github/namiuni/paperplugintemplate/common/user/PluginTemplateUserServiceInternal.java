@@ -33,7 +33,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import net.kyori.adventure.identity.Identity;
@@ -79,16 +78,25 @@ import org.jspecify.annotations.NullMarked;
 public final class PluginTemplateUserServiceInternal implements PluginTemplateUserService {
 
     private final UserRepository repository;
+    private final UserFactory userFactory;
+
     private final Cache<UUID, UserProfile> preloadCache;
     private final Cache<UUID, PluginTemplateUser> userCache;
 
     /// Constructs a new service, initializing both in-memory caches.
     ///
-    /// @param repository the storage backend used for cold-cache misses and
-    ///                   persistence operations
+    /// @param repository  the storage backend used for cold-cache misses and
+    ///                    persistence operations
+    /// @param userFactory the platform-specific factory used to construct
+    ///                    user adapter instances
     @Inject
-    private PluginTemplateUserServiceInternal(final UserRepository repository) {
+    private PluginTemplateUserServiceInternal(
+            final UserRepository repository,
+            final UserFactory userFactory
+    ) {
         this.repository = repository;
+        this.userFactory = userFactory;
+
         this.preloadCache = Caffeine.newBuilder()
                 .maximumSize(512L)
                 .expireAfterWrite(30L, TimeUnit.SECONDS)
@@ -99,7 +107,7 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
                 .build();
     }
 
-    /// Pre-loads a player's profile into the pre-load cache so that the
+    /// Pre-loads a player's profile into the preload cache so that the
     /// subsequent [#loadUser] call can resolve without a repository
     /// round-trip.
     ///
@@ -120,7 +128,7 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     ///           path; completes on the calling thread for cache-hit paths.
     public CompletableFuture<Optional<UserProfile>> loadUserProfile(final UUID uuid) {
         final PluginTemplateUser cached = this.userCache.getIfPresent(uuid);
-        if (cached instanceof final PlatformUser<?> platformUser) {
+        if (cached instanceof final PluginTemplateUserInternal platformUser) {
             return CompletableFuture.completedFuture(Optional.of(platformUser.profile()));
         }
 
@@ -139,24 +147,19 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     /// Persists the current state of `user` to storage without modifying
     /// any system-managed fields.
     ///
-    /// Before writing, the in-memory cache entry is refreshed so that the
-    /// [OnlineAwareExpiry] policy re-evaluates the player's online status
-    /// and recalculates the TTL from the current moment.
+    /// The `instanceof` pattern match against [PluginTemplateUserInternal]
+    /// replaces the former cast to {@code PlatformUser}: any value returned
+    /// by [UserFactory#create] satisfies this check, and mock objects used in
+    /// tests that implement only [PluginTemplateUser] safely reach the
+    /// no-op branch.
     ///
-    /// Suitable for saving user-configurable fields changed by a command,
-    /// including offline-player edits. For disconnect and world-save
-    /// checkpoints, use [#persistOnlinePlayer] instead, which additionally
-    /// stamps `lastSeen`.
-    ///
-    /// @param user the user whose current profile state should be saved
+    /// @param user the user whose current profile state should be saved;
+    ///             must not be `null`
     /// @return a future that completes when the repository write finishes,
-    ///         or completes immediately if `user` is not a recognized
-    ///         internal type
-    /// @apiNote If `user` is not an instance of [PlatformUser] — for
-    ///          example when mocked in tests — this method returns a
-    ///          completed future immediately without any side effects.
+    ///         or completes immediately with `null` if `user` does not
+    ///         implement [PluginTemplateUserInternal]
     public CompletableFuture<Void> upsertUser(final PluginTemplateUser user) {
-        if (user instanceof final PlatformUser<?> platformUser) {
+        if (user instanceof final PluginTemplateUserInternal platformUser) {
             final UserProfile current = platformUser.profile();
             // Re-put to trigger expireAfterUpdate so the expiry policy
             // re-evaluates isOnline() and recalculates the TTL.
@@ -169,25 +172,19 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
     /// Stamps [UserProfile#lastSeen()] with the current instant, persists
     /// the updated profile, and then evicts the cache entry.
     ///
-    /// This method encodes the **online-player lifecycle checkpoint** as an
-    /// explicit, named operation. The `lastSeen` timestamp is updated here
-    /// and nowhere else, ensuring it always reflects the actual disconnect
-    /// or save time rather than an arbitrary write.
-    ///
-    /// Cache eviction is guaranteed via [CompletableFuture#whenComplete], so
-    /// the entry is removed regardless of whether the repository write
-    /// succeeds or fails. This prevents stale data from accumulating in the
-    /// user cache.
+    /// Cache eviction is guaranteed via
+    /// [java.util.concurrent.CompletableFuture#whenComplete], so the entry
+    /// is removed regardless of whether the repository write succeeds or
+    /// fails.
     ///
     /// @param user the online player whose session is ending or being
-    ///             checkpointed
+    ///             checkpointed; must not be `null`
     /// @return a future that completes when the repository write finishes;
-    ///         the cache entry is evicted unconditionally after completion
-    /// @apiNote If `user` is not an instance of [PlatformUser], this method
-    ///          returns a completed future immediately. This is intentional
-    ///          and avoids errors when called with mock objects in tests.
+    ///         the cache entry is evicted unconditionally after completion,
+    ///         or completes immediately with `null` if `user` does not
+    ///         implement [PluginTemplateUserInternal]
     public CompletableFuture<Void> persistOnlinePlayer(final PluginTemplateUser user) {
-        if (user instanceof final PlatformUser<?> platformUser) {
+        if (user instanceof final PluginTemplateUserInternal platformUser) {
             platformUser.updateProfile(profile -> profile.withLastSeen(Instant.now()));
             final UserProfile updated = platformUser.profile();
             return this.repository.upsert(updated)
@@ -210,15 +207,15 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
         this.userCache.invalidate(uuid);
     }
 
+    /// {@inheritDoc}
     @Override
-    public <P extends Audience & Identified> Optional<PluginTemplateUser> getUser(final P player) {
-        return Optional.ofNullable(
-                this.userCache.getIfPresent(player.get(Identity.UUID).orElseThrow()));
+    public Optional<PluginTemplateUser> getUser(final UUID uuid) {
+        return Optional.ofNullable(this.userCache.getIfPresent(uuid));
     }
 
+    /// {@inheritDoc}
     @Override
-    public <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(
-            final P player, final BooleanSupplier onlineCheck) {
+    public <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(final P player) {
         final UUID uuid = player.get(Identity.UUID).orElseThrow();
 
         // 1. User cache — non-blocking, always preferred.
@@ -235,8 +232,7 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
         if (preloaded != null) {
             // Reflect any username change that occurred between the last session
             // and this connection before promoting to the main cache.
-            final UserProfile resolved = new UserProfile(uuid, currentName, preloaded.lastSeen());
-            final PlatformUser<P> platformUser = new PlatformUser<>(player, resolved, onlineCheck);
+            final PluginTemplateUser platformUser = this.userFactory.create(player, preloaded);
             this.userCache.put(uuid, platformUser);
             return CompletableFuture.completedFuture(platformUser);
         }
@@ -247,12 +243,13 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
                         .map(profile -> new UserProfile(profile.uuid(), currentName, profile.lastSeen()))
                         .orElse(new UserProfile(uuid, currentName, Instant.now())))
                 .thenApply(profile -> {
-                    final PlatformUser<P> platformUser = new PlatformUser<>(player, profile, onlineCheck);
+                    final PluginTemplateUser platformUser = this.userFactory.create(player, profile);
                     this.userCache.put(uuid, platformUser);
                     return platformUser;
                 });
     }
 
+    /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> deleteUser(final UUID uuid) {
         this.userCache.invalidate(uuid);
@@ -291,14 +288,16 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
         @Override
         public long expireAfterUpdate(
                 final UUID key, final PluginTemplateUser user,
-                final long currentTime, final long currentDuration) {
+                final long currentTime, final long currentDuration
+        ) {
             return this.ttl(user);
         }
 
         @Override
         public long expireAfterRead(
                 final UUID key, final PluginTemplateUser user,
-                final long currentTime, final long currentDuration) {
+                final long currentTime, final long currentDuration
+        ) {
             return this.ttl(user);
         }
 

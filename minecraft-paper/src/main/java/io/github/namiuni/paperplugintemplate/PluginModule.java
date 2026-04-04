@@ -28,7 +28,9 @@ import io.github.namiuni.paperplugintemplate.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.common.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
 import io.github.namiuni.paperplugintemplate.listener.PaperEventHandler;
+import io.github.namiuni.paperplugintemplate.user.PaperUserFactory;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import java.nio.file.Path;
 import java.util.function.Supplier;
@@ -74,6 +76,7 @@ public final class PluginModule extends AbstractModule {
                 .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
         this.bind(JavaPlugin.class).to(JavaPluginImpl.class).in(Scopes.SINGLETON);
         this.bind(PaperEventHandler.class).in(Scopes.SINGLETON);
+        this.bind(UserFactory.class).to(PaperUserFactory.class).in(Scopes.SINGLETON);
 
         this.bindCommands();
     }

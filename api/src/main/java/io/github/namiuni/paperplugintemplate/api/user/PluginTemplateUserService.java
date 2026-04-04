@@ -22,7 +22,6 @@ package io.github.namiuni.paperplugintemplate.api.user;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BooleanSupplier;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import org.jetbrains.annotations.ApiStatus;
@@ -60,40 +59,40 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface PluginTemplateUserService {
 
-    /// Returns the cached [PluginTemplateUser] for `player`, if present.
+    /// Returns the cached [PluginTemplateUser] for `uuid`, if present.
     ///
     /// This method never blocks and never triggers a repository lookup.
-    /// Returns [Optional#empty()] if the player has not yet been loaded or
+    /// Returns [Optional#empty()] if the uuid has not yet been loaded or
     /// has already been evicted from the cache.
     ///
-    /// @param <P>    the platform player type; must extend both [Audience]
-    ///               and [Identified]
-    /// @param player the player whose cached entry is requested
+    /// @param uuid the player uuid whose cached entry is requested
     /// @return the cached user wrapped in [Optional], or [Optional#empty()]
     ///         on a cache miss
-    <P extends Audience & Identified> Optional<PluginTemplateUser> getUser(P player);
+    Optional<PluginTemplateUser> getUser(UUID uuid);
 
     /// Returns the [PluginTemplateUser] for `player`, loading from the
     /// repository if no cache entry exists.
     ///
-    /// See the class-level documentation for the full resolution order. The
-    /// resolved entry is stored in the user cache with an expiry governed by
-    /// `onlineCheck`: a `true` result pins the entry forever, while `false`
-    /// allows it to expire 15 minutes after the last cache access.
+    /// See the class-level documentation for the full three-tier resolution
+    /// order. The resolved entry's cache expiry is governed entirely by
+    /// [PluginTemplateUser#isOnline()]: a `true` result pins the entry
+    /// indefinitely; `false` allows expiry 15 minutes after the last cache
+    /// access.
     ///
-    /// @param <P>         the platform player type; must extend both [Audience]
-    ///                    and [Identified]
-    /// @param player      the player to load
-    /// @param onlineCheck a supplier evaluated on every cache interaction;
-    ///                    pass `player::isOnline` on Paper, `() -> false` for
-    ///                    offline-player lookups
+    /// Because online status is now read directly from the platform player
+    /// object inside the adapter (e.g. via
+    /// `org.bukkit.entity.Player#isOnline()`), callers no longer need
+    /// to supply an `onlineCheck` supplier.
+    ///
+    /// @param <P>    the platform player type; must extend both [Audience] and [Identified]
+    /// @param player the player to load; must not be `null`
     /// @return a future resolving to the user; may complete exceptionally if
     ///         the repository is unreachable on a cold cache miss
-    /// @implNote The returned future completes on a virtual-thread executor for
-    ///           the repository path and on the calling thread for cache-hit
-    ///           paths. Callers must not assume a specific completion thread.
-    <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(
-            P player, BooleanSupplier onlineCheck);
+    /// @implNote The returned future completes on a virtual-thread executor
+    ///           for the repository path and on the calling thread for
+    ///           cache-hit paths. Callers must not assume a specific
+    ///           completion thread.
+    <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(P player);
 
     /// Permanently removes all data for `uuid` from both caches and the
     /// underlying storage backend.
