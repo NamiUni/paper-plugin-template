@@ -108,8 +108,7 @@ public final class JsonUserRepository implements UserRepository {
     /// than here, so construction is safe even before the plugin data directory
     /// exists.
     ///
-    /// @param dataDirectory the plugin data directory, injected via
-    ///                      [io.github.namiuni.paperplugintemplate.common.DataDirectory]
+    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
     public JsonUserRepository(final @DataDirectory Path dataDirectory) {
         this.storageDir = dataDirectory.resolve("users");
         this.locks = Caffeine.newBuilder()

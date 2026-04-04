@@ -20,6 +20,7 @@
 package io.github.namiuni.paperplugintemplate.common.user.storage.sql;
 
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
+import java.nio.ByteBuffer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
@@ -33,17 +34,18 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Column conventions
 ///
-/// - `uuid`: stored as `VARCHAR(36)` and parsed via
-///   `UUID.fromString(String)`.
-/// - `last_seen`: stored as an epoch-millisecond `BIGINT` to maintain
-///   cross-database compatibility between H2 and MySQL, both of which
-///   handle `BIGINT` identically regardless of time-zone settings.
+/// - `uuid`: stored as `BINARY(16)`. The 16 raw bytes are reconstructed
+///   into a [UUID] via [ByteBuffer], reading the most-significant 8 bytes
+///   then the least-significant 8 bytes in big-endian order — the same
+///   layout used by [UUID#getMostSignificantBits()] and
+///   [UUID#getLeastSignificantBits()].
+/// - `last_seen`: stored as an epoch-millisecond `BIGINT` for
+///   cross-database compatibility between H2 and MySQL.
 ///
 /// ## Thread safety
 ///
 /// This mapper is stateless and therefore safe to register as a singleton
-/// in the JDBI instance. Concurrent calls to [#map] from different threads
-/// are fully independent and require no external synchronization.
+/// in the JDBI instance.
 @NullMarked
 public final class UserProfileMapper implements RowMapper<UserProfile> {
 
@@ -60,9 +62,14 @@ public final class UserProfileMapper implements RowMapper<UserProfile> {
     @Override
     public UserProfile map(final ResultSet rs, final StatementContext ctx) throws SQLException {
         return new UserProfile(
-                UUID.fromString(rs.getString("uuid")),
+                uuidFromBytes(rs.getBytes("uuid")),
                 rs.getString("name"),
                 Instant.ofEpochMilli(rs.getLong("last_seen"))
         );
+    }
+
+    private static UUID uuidFromBytes(final byte[] bytes) {
+        final ByteBuffer bb = ByteBuffer.wrap(bytes);
+        return new UUID(bb.getLong(), bb.getLong());
     }
 }

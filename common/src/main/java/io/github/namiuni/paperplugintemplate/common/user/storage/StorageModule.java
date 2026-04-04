@@ -31,9 +31,11 @@ import io.github.namiuni.paperplugintemplate.common.user.storage.json.JsonUserRe
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.UserProfileMapper;
 import jakarta.inject.Singleton;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import org.jdbi.v3.cache.caffeine.CaffeineCacheBuilder;
@@ -115,19 +117,42 @@ public final class StorageModule extends AbstractModule {
                 .installPlugin(new SqlObjectPlugin())
                 .installPlugin(new CaffeineCachePlugin())
                 .registerRowMapper(new UserProfileMapper())
-                .registerArgument((QualifiedArgumentFactory) (type, value, config) -> {
-                    if (!(value instanceof final Instant instant)) {
-                        return Optional.empty();
-                    }
-                    return Optional.of((position, statement, ctx) ->
-                            statement.setLong(position, instant.toEpochMilli()));
-                })
+                .registerArgument(uuidArgumentFactory())
+                .registerArgument(instantArgumentFactory())
                 .configure(SqlStatements.class, config -> config.setTemplateCache(
                         new CaffeineCacheBuilder(
                                 Caffeine.newBuilder()
                                         .maximumSize(512L)
                                         .expireAfterAccess(15L, TimeUnit.MINUTES)
                         )));
+    }
+
+    private static QualifiedArgumentFactory uuidArgumentFactory() {
+        return (type, value, config) -> {
+            if (!(value instanceof final UUID uuid)) {
+                return Optional.empty();
+            }
+            final byte[] bytes = uuidToBytes(uuid);
+            return Optional.of((position, statement, ctx) ->
+                    statement.setBytes(position, bytes));
+        };
+    }
+
+    private static QualifiedArgumentFactory instantArgumentFactory() {
+        return (type, value, config) -> {
+            if (!(value instanceof final Instant instant)) {
+                return Optional.empty();
+            }
+            return Optional.of((position, statement, ctx) ->
+                    statement.setLong(position, instant.toEpochMilli()));
+        };
+    }
+
+    private static byte[] uuidToBytes(final UUID uuid) {
+        final ByteBuffer bb = ByteBuffer.allocate(16);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+        return bb.array();
     }
 
     /// Provides a singleton [HikariDataSource] for SQL storage backends.
