@@ -44,10 +44,10 @@ import org.jspecify.annotations.NullMarked;
 /// JIS Z 9103 safety-color scheme used throughout the plugin:
 ///
 /// | Role            | Color   | Usage                               |
-/// |-----------------|---------|--------------------------------------|
-/// | `PRIMARY`       | #00B06B | Header/footer lines (info green)    |
-/// | `HIGHLIGHT`     | #1971FF | Command name text (debug blue)      |
-/// | `ALT_HIGHLIGHT` | #F2E700 | Argument placeholders (warn yellow) |
+/// |-----------------|---------|-------------------------------------|
+/// | `PRIMARY`       | #00B06B | Header/footer lines                 |
+/// | `HIGHLIGHT`     | #1971FF | Command name text                   |
+/// | `ALT_HIGHLIGHT` | #F2E700 | Argument placeholders               |
 /// | `TEXT`          | white   | Description body text               |
 /// | `ACCENT`        | gray    | Separators and punctuation          |
 ///
