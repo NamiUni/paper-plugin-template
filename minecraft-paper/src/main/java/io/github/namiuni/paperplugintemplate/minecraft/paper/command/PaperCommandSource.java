@@ -94,13 +94,13 @@ public final class PaperCommandSource implements CommandSource {
 
     /// {@inheritDoc}
     ///
-    /// When the underlying sender is a [org.bukkit.entity.Player], returns
+    /// When the underlying sender is a [Player], returns
     /// the corresponding [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
     /// from the user service userCache. Otherwise, returns the raw
     /// [org.bukkit.command.CommandSender] (e.g., the console).
     @Override
     public Audience sender() {
-        if (this.source.getSender() instanceof Player player) {
+        if (this.source.getSender() instanceof final Player player) {
             return this.userService.getUser(player.getUniqueId()).orElseThrow();
         }
         return this.source.getSender();
@@ -108,14 +108,14 @@ public final class PaperCommandSource implements CommandSource {
 
     /// {@inheritDoc}
     ///
-    /// When the underlying executor is a [org.bukkit.entity.Player], returns
+    /// When the underlying executor is a [Player], returns
     /// the corresponding [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
     /// from the user service userCache. Returns `null` when
     /// [CommandSourceStack#getExecutor()] is `null` — i.e., when no
     /// `/execute as` redirect is active.
     @Override
     public @Nullable Audience executor() {
-        if (this.source.getExecutor() instanceof Player player) {
+        if (this.source.getExecutor() instanceof final Player player) {
             return this.userService.getUser(player.getUniqueId()).orElseThrow();
         }
         return this.source.getExecutor();

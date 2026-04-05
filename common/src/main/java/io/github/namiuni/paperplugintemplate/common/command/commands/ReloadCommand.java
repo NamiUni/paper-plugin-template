@@ -94,7 +94,7 @@ public final class ReloadCommand implements CommandFactory {
     /// {@inheritDoc}
     @Override
     public Command<CommandSource> command() {
-        return manager.commandBuilder("template")
+        return this.manager.commandBuilder("template")
                 .literal("reload")
                 .permission(TemplatePermission.COMMAND_RELOAD.node())
                 .commandDescription(this.description())

@@ -335,7 +335,7 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
 
         private final long offlineExpireNanos;
 
-        public OnlineAwareExpiry(final PrimaryConfiguration.Storage.Cache cacheSettings) {
+        OnlineAwareExpiry(final PrimaryConfiguration.Storage.Cache cacheSettings) {
             this.offlineExpireNanos = cacheSettings.expireAfterOffline();
         }
 
@@ -361,7 +361,7 @@ public final class PluginTemplateUserServiceInternal implements PluginTemplateUs
         }
 
         private long ttl(final PluginTemplateUser user) {
-            return user.isOnline() ? NEVER_EXPIRE_NANOS : offlineExpireNanos;
+            return user.isOnline() ? NEVER_EXPIRE_NANOS : this.offlineExpireNanos;
         }
     }
 }

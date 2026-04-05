@@ -74,5 +74,6 @@ public interface CommandSource {
     /// fall back to [#sender()] as appropriate.
     ///
     /// @return the command executor, or `null` if no redirect is in effect
-    @Nullable Audience executor();
+    @Nullable
+    Audience executor();
 }

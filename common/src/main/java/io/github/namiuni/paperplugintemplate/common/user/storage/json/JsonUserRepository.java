@@ -39,7 +39,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +56,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// `synchronized` blocks are avoided entirely to prevent carrier-thread pinning
 /// on virtual threads (JEP 491). Instead, a per-UUID [ReentrantReadWriteLock]
-/// is maintained in a [ConcurrentHashMap] managed by a Caffeine userCache:
+/// is maintained in a [java.util.concurrent.ConcurrentHashMap] managed by a Caffeine userCache:
 ///
 /// - Multiple concurrent reads for the same UUID proceed in parallel.
 /// - A write operation (upsert or delete) for a given UUID excludes all other

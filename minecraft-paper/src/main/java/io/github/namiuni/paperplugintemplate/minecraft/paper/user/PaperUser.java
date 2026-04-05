@@ -1,6 +1,24 @@
+/*
+ * PaperPluginTemplate
+ *
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserInternal;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import java.time.Instant;
@@ -30,7 +48,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// Adding a new capability to the public API requires only two steps:
 ///
-/// 1. Declare the method in [PluginTemplateUser] (the port).
+/// 1. Declare the method in [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser] (the port).
 /// 2. Implement it here by delegating to `this.player`.
 ///
 /// The constructor signature never changes as capabilities are added.
@@ -148,7 +166,10 @@ public final class PaperUser implements PluginTemplateUserInternal, ForwardingAu
 
     @Override
     public boolean equals(final @Nullable Object that) {
-        if (that == null || getClass() != that.getClass()) return false;
+        if (that == null || getClass() != that.getClass()) {
+            return false;
+        }
+
         final PaperUser paperUser = (PaperUser) that;
         return Objects.equals(this.player, paperUser.player) && Objects.equals(this.profile.get(), paperUser.profile.get());
     }

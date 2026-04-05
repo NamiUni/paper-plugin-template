@@ -19,7 +19,6 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user.storage.sql;
 
-import io.github.namiuni.paperplugintemplate.common.user.storage.StorageDialect;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import java.util.Optional;
 import java.util.UUID;
@@ -52,7 +51,7 @@ import org.jspecify.annotations.NullMarked;
 /// [org.jdbi.v3.core.argument.QualifiedArgumentFactory] registered on the
 /// [org.jdbi.v3.core.Jdbi] instance by `StorageModule`:
 ///
-/// - MySQL / H2: serialises [java.util.UUID] to a 16-byte `BINARY(16)` value.
+/// - MySQL / H2: serializes [java.util.UUID] to a 16-byte `BINARY(16)` value.
 /// - PostgreSQL: passes the [java.util.UUID] directly via
 ///   [java.sql.PreparedStatement#setObject], relying on the PostgreSQL JDBC
 ///   driver's native `uuid` type support.
@@ -62,7 +61,7 @@ import org.jspecify.annotations.NullMarked;
 /// The `@UseRowMapper` annotation is intentionally absent from [#findByUuid].
 /// The [org.jdbi.v3.core.mapper.RowMapper] for [UserProfile] is registered
 /// on the [org.jdbi.v3.core.Jdbi] instance by `StorageModule` via
-/// [StorageDialect#profileMapper],
+/// [io.github.namiuni.paperplugintemplate.common.user.storage.StorageDialect#profileMapper],
 /// allowing each vendor to use its own deserialization strategy without
 /// annotation-level coupling.
 ///
@@ -92,8 +91,7 @@ public interface UserDao extends SqlObject {
     /// strategy is applied automatically.
     ///
     /// @param uuid the player UUID to look up
-    /// @return the mapped [UserProfile] wrapped in [Optional], or
-    ///         [Optional#empty()] if absent
+    /// @return the mapped [UserProfile] wrapped in [Optional], or [Optional#empty()] if absent
     @SqlQuery("SELECT uuid, name, last_seen FROM users WHERE uuid = :uuid")
     Optional<UserProfile> findByUuid(@Bind("uuid") UUID uuid);
 
@@ -102,8 +100,7 @@ public interface UserDao extends SqlObject {
     /// Prefer [#upsert] over calling this method directly; direct calls do
     /// not handle the case where the row already exists.
     ///
-    /// @param userProfile the record to insert; components bound via
-    ///                    `@BindMethods`
+    /// @param userProfile the record to insert; components bound via `@BindMethods`
     @SqlUpdate("INSERT INTO users (uuid, name, last_seen) VALUES (:uuid, :name, :lastSeen)")
     void insert(@BindMethods UserProfile userProfile);
 
@@ -111,10 +108,8 @@ public interface UserDao extends SqlObject {
     ///
     /// Prefer [#upsert] over calling this method directly.
     ///
-    /// @param userProfile the record to update; components bound via
-    ///                    `@BindMethods`
-    /// @return the number of affected rows; `0` indicates no row existed
-    ///         for this UUID
+    /// @param userProfile the record to update; components bound via `@BindMethods`
+    /// @return the number of affected rows; `0` indicates no row existed for this UUID
     @SqlUpdate("UPDATE users SET name = :name, last_seen = :lastSeen WHERE uuid = :uuid")
     int update(@BindMethods UserProfile userProfile);
 
