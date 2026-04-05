@@ -1,3 +1,5 @@
+import gradle.kotlin.dsl.accessors._27a6b18d50d34019e3acdc7613d267a2.jar
+
 plugins {
     id("java-library")
     id("checkstyle")
@@ -41,6 +43,9 @@ dependencies {
 }
 
 tasks {
+    jar {
+        archiveClassifier = "unshaded"
+    }
     compileJava {
         options.compilerArgs.add("-parameters")
     }

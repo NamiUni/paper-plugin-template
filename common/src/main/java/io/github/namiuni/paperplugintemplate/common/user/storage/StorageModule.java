@@ -103,8 +103,8 @@ public final class StorageModule extends AbstractModule {
             final Provider<JsonUserRepository> jsonRepository,
             final Provider<JdbiUserRepository> jdbiRepository
     ) {
-        final PrimaryConfiguration.StorageConfig storageConfig = primaryConfig.get().storage();
-        return switch (storageConfig.type()) {
+        final PrimaryConfiguration.Storage storage = primaryConfig.get().storage();
+        return switch (storage.type()) {
             case JSON -> jsonRepository.get();
             case H2, MYSQL, POSTGRESQL -> jdbiRepository.get();
         };
@@ -206,13 +206,18 @@ public final class StorageModule extends AbstractModule {
             final Supplier<PrimaryConfiguration> primaryConfig,
             final @DataDirectory Path dataDirectory
     ) {
-        final PrimaryConfiguration.StorageConfig storageConfig = primaryConfig.get().storage();
+        final PrimaryConfiguration.Storage storage = primaryConfig.get().storage();
+        final PrimaryConfiguration.Storage.Pool pool = storage.pool();
         final HikariConfig config = new HikariConfig();
         config.setPoolName("PaperPluginTemplate"); // TODO: replace with the actual plugin name
-        config.setMaximumPoolSize(storageConfig.maximumPoolSize());
+        config.setMaximumPoolSize(pool.maximumPoolSize());
+        config.setMinimumIdle(pool.minimumIdle());
+        config.setMaxLifetime(pool.maximumLifetime());
+        config.setKeepaliveTime(pool.keepaliveTime());
+        config.setConnectionTimeout(pool.connectionTimeout());
         config.setThreadFactory(Thread.ofVirtual().name("PaperPluginTemplate-Hikari-Pool", 0).factory());
 
-        switch (storageConfig.type()) {
+        switch (storage.type()) {
             case H2 -> {
                 final Path dbFile = dataDirectory.toAbsolutePath().resolve("database");
                 config.setJdbcUrl("jdbc:h2:file:%s;MODE=MySQL;DB_CLOSE_DELAY=-1".formatted(dbFile));
@@ -220,19 +225,19 @@ public final class StorageModule extends AbstractModule {
             }
             case MYSQL -> {
                 config.setJdbcUrl("jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
-                                .formatted(storageConfig.host(), storageConfig.port(), storageConfig.database()));
-                config.setUsername(storageConfig.username());
-                config.setPassword(storageConfig.password());
+                                .formatted(storage.host(), storage.port(), storage.database()));
+                config.setUsername(storage.username());
+                config.setPassword(storage.password());
                 config.setDriverClassName("com.mysql.cj.jdbc.Driver");
             }
             case POSTGRESQL -> {
                 config.setJdbcUrl("jdbc:postgresql://%s:%d/%s"
-                        .formatted(storageConfig.host(), storageConfig.port(), storageConfig.database()));
-                config.setUsername(storageConfig.username());
-                config.setPassword(storageConfig.password());
+                        .formatted(storage.host(), storage.port(), storage.database()));
+                config.setUsername(storage.username());
+                config.setPassword(storage.password());
                 config.setDriverClassName("org.postgresql.Driver");
             }
-            default -> throw new IllegalStateException("Unexpected SQL storage type: " + storageConfig.type());
+            default -> throw new IllegalStateException("Unexpected SQL storage type: " + storage.type());
         }
 
         return new HikariDataSource(config);

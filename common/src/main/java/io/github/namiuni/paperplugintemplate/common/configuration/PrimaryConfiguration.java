@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.common.configuration;
 import io.github.namiuni.paperplugintemplate.common.configuration.annotations.ConfigHeader;
 import io.github.namiuni.paperplugintemplate.common.configuration.annotations.ConfigName;
 import io.github.namiuni.paperplugintemplate.common.user.storage.StorageType;
+import java.util.concurrent.TimeUnit;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
@@ -47,12 +48,28 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
         """)
 public record PrimaryConfiguration(
         @Comment("Storage backend configuration.")
-        StorageConfig storage
+        Storage storage
 ) {
 
     /// Default instance used as a fallback when no configuration file is
     /// present.
-    public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration(StorageConfig.DEFAULT);
+    public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration(
+            new Storage(
+                    StorageType.H2,
+                    "localhost",
+                    3306,
+                    "paper_plugin_template", // TODO: change the database name
+                    "server",
+                    "",
+                    new Storage.Pool(
+                            8,
+                            8,
+                            TimeUnit.MINUTES.toMillis(30L),
+                            TimeUnit.MINUTES.toMillis(0L),
+                            TimeUnit.MINUTES.toMillis(30L)
+                    )
+            )
+    );
 
     /// Configuration for the storage backend.
     ///
@@ -67,10 +84,9 @@ public record PrimaryConfiguration(
     /// @param database        the database name; used for `H2` (file name), `MYSQL`, and `POSTGRESQL`
     /// @param username        the database username; used only for `MYSQL` and `POSTGRESQL`
     /// @param password        the database password; used only for `MYSQL` and `POSTGRESQL`
-    /// @param maximumPoolSize the maximum number of connections in the pool;
-    ///                        used only for `MYSQL`, `POSTGRESQL`, and `H2`
+    /// @param pool            TODO
     @ConfigSerializable
-    public record StorageConfig(
+    public record Storage(
             @Comment("""
                     Storage type. Available options: H2, MYSQL, POSTGRESQL, JSON
                     H2         - Embedded SQL database. No external server required.
@@ -95,19 +111,29 @@ public record PrimaryConfiguration(
             @Comment("Database password. Only used for MYSQL and POSTGRESQL.")
             String password,
 
-            @Comment("Maximum number of connections in the pool. Only used for MYSQL, POSTGRESQL, and H2.")
-            int maximumPoolSize
+            @Comment("") //TODO
+            Pool pool
     ) {
 
-        /// Default storage configuration using H2.
-        public static final StorageConfig DEFAULT = new StorageConfig(
-                StorageType.H2,
-                "localhost",
-                3306,
-                "paper_plugin_template",
-                "root",
-                "",
-                10
-        );
+        // TODO: Javadoc
+        @ConfigSerializable
+        public record Pool(
+
+                @Comment("") // TODO
+                int maximumPoolSize,
+
+                @Comment("") // TODO
+                int minimumIdle,
+
+                @Comment("") // TODO
+                long maximumLifetime,
+
+                @Comment("") // TODO
+                long keepaliveTime,
+
+                @Comment("") // TODO
+                long connectionTimeout
+        ) {
+        }
     }
 }

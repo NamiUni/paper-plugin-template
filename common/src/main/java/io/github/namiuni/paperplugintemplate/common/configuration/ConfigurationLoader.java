@@ -29,8 +29,7 @@ import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
-import org.spongepowered.configurate.yaml.NodeStyle;
-import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+import org.spongepowered.configurate.hocon.HoconConfigurationLoader;
 
 /// Loads and saves a typed configuration record backed by a YAML file on disk.
 ///
@@ -93,8 +92,8 @@ public final class ConfigurationLoader<T extends Record> {
                 .build()
                 .serializers();
 
-        this.configLoader = YamlConfigurationLoader.builder()
-                .nodeStyle(NodeStyle.BLOCK)
+        this.configLoader = HoconConfigurationLoader.builder()
+                .prettyPrinting(true)
                 .defaultOptions(options -> options
                         .shouldCopyDefaults(true)
                         .header(configHeader)

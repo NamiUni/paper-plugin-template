@@ -19,12 +19,13 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user.storage;
 
+import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import org.jspecify.annotations.NullMarked;
 
 /// Supported storage backend types.
 ///
 /// The active type is determined at startup from
-/// [io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration.StorageConfig]
+/// [PrimaryConfiguration.Storage]
 /// and cannot be changed without restarting the server.
 @NullMarked
 public enum StorageType {
