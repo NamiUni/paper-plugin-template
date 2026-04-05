@@ -1,14 +1,19 @@
 plugins {
     id("java-library")
-}
-
-tasks.test {
-    useJUnitPlatform()
-    jvmArgs("-Xshare:off")
+    id("com.gradleup.shadow")
+    id("xyz.jpenilla.gremlin-gradle")
 }
 
 dependencies {
     testImplementation(libs.bundles.testing)
     testRuntimeOnly(libs.junit.platform)
-    testImplementation(libs.adventure.api)
+}
+
+configurations.testImplementation {
+    extendsFrom(configurations.runtimeDownload.get())
+}
+
+tasks.test {
+    useJUnitPlatform()
+    jvmArgs("-Xshare:off")
 }

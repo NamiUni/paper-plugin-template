@@ -36,7 +36,7 @@ junit = "6.1.0-M1"
 # Tool
 shadow = { group = "com.gradleup.shadow", name = "shadow-gradle-plugin", version.ref = "shadow" }
 indra-licenser-spotless = { group = "net.kyori", name = "indra-licenser-spotless", version.ref = "indra-licenser-spotless" }
-gremlin = { group = "xyz.jpenilla", name = "gremlin-gradle", version.ref = "gremlin" }
+gremlin-gradle = { group = "xyz.jpenilla", name = "gremlin-gradle", version.ref = "gremlin" }
 
 jspecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify" }
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
@@ -47,12 +47,15 @@ mini-placeholders = { group = "io.github.miniplaceholders", name = "miniplacehol
 configurate-hocon = { group = "org.spongepowered", name = "configurate-hocon", version.ref = "configurate" }
 adventure-serializer-configurate = { group = "net.kyori", name = "adventure-serializer-configurate4", version.ref = "adventure" }
 adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
+adventure-text-minimessage = { group = "net.kyori", name = "adventure-text-minimessage", version.ref = "adventure" }
 adventure-text-logger-slf4j = { group = "net.kyori", name = "adventure-text-logger-slf4j", version.ref = "adventure" }
+kotonoha-annotations = { group = "io.github.namiuni", name = "kotonoha-annotations", version.ref = "kotonoha" }
 kotonoha-message = { group = "io.github.namiuni", name = "kotonoha-message", version.ref = "kotonoha" }
 kotonoha-message-extra-miniplaceholders = { group = "io.github.namiuni", name = "kotonoha-message-extra-miniplaceholders", version.ref = "kotonoha" }
 cloud-core = { group = "org.incendo", name = "cloud-core", version.ref = "cloud" }
 cloud-paper = { group = "org.incendo", name = "cloud-paper", version.ref = "cloud-minecraft" }
 cloud-minecraft-extras = { group = "org.incendo", name = "cloud-minecraft-extras", version.ref = "cloud-minecraft" }
+gremlin-runtime = { group = "xyz.jpenilla", name = "gremlin-runtime", version.ref = "gremlin" }
 
 # Storage
 jdbi-core = { group = "org.jdbi", name = "jdbi3-core", version.ref = "jdbi" }

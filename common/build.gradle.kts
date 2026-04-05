@@ -4,36 +4,38 @@ plugins {
 
 dependencies {
     api(project(":paper-plugin-template-api"))
-    api(libs.gson)
-    api(libs.guice)
 
+    // Gson
+    compileOnlyApi(libs.gson)
+
+    // Adventure
     compileOnlyApi(libs.adventure.text.logger.slf4j)
+    compileOnlyApi(libs.adventure.text.minimessage)
     compileOnlyApi(libs.mini.placeholders)
-    api(libs.configurate.hocon)
-    api(libs.adventure.serializer.configurate) {
-        isTransitive = false
-    }
 
-    // Localizations
-    api(libs.caffeine)
-    api(libs.kotonoha.message)
-    api(libs.kotonoha.message.extra.miniplaceholders)
+    // DI
+    compileOnlyApi(libs.guice)
+
+    // Config
+    compileOnlyApi(libs.configurate.hocon)
+    compileOnlyApi(libs.adventure.serializer.configurate)
+
+    // Cache
+    compileOnlyApi(libs.caffeine)
+
+    // i18n
+    compileOnlyApi(libs.kotonoha.message)
+    compileOnlyApi(libs.kotonoha.message.extra.miniplaceholders)
 
     // Commands
     compileOnlyApi(libs.cloud.core)
     compileOnlyApi(libs.cloud.minecraft.extras)
 
     // Storage
-    api(libs.jdbi.core)
-    api(libs.jdbi.postgres)
-    api(libs.jdbi.sqlobject)
-    api(libs.jdbi.caffeine.cache)
-    api(libs.hikari)
-
-    // Database migrations
-    api(libs.flyway.core)
-    // flyway-mysql is required at runtime for MySQL / H2-in-MySQL-mode dialect support
-    runtimeOnly(libs.flyway.mysql)
-    runtimeOnly(libs.flyway.postgresql)
-    runtimeOnly(libs.postgresql)
+    compileOnlyApi(libs.jdbi.core)
+    compileOnlyApi(libs.jdbi.postgres)
+    compileOnlyApi(libs.jdbi.sqlobject)
+    compileOnlyApi(libs.jdbi.caffeine.cache)
+    compileOnlyApi(libs.hikari)
+    compileOnlyApi(libs.flyway.core)
 }
