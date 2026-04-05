@@ -32,11 +32,24 @@ public enum StorageType {
     /// Embedded H2 SQL database. Stores data in a file inside the plugin
     /// data directory. No external server is required; suitable for
     /// single-server deployments.
+    ///
+    /// H2 is opened in `MODE=MySQL` and therefore uses the same migration
+    /// scripts and UUID binding strategy as [#MYSQL].
     H2,
 
     /// External MySQL (or MariaDB) database server. Requires a running
     /// server and valid credentials in the configuration.
+    ///
+    /// UUIDs are persisted as `BINARY(16)` for compact storage.
     MYSQL,
+
+    /// External PostgreSQL database server. Requires a running server and
+    /// valid credentials in the configuration.
+    ///
+    /// UUIDs are persisted using PostgreSQL's native `UUID` type, which
+    /// eliminates the byte-order concerns that arise with `BINARY(16)` and
+    /// enables native index operations.
+    POSTGRESQL,
 
     /// Flat JSON file storage. Each user is persisted as a separate `.json`
     /// file. Human-readable and easy to inspect, but not suitable for

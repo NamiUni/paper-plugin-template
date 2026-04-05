@@ -21,45 +21,67 @@ package io.github.namiuni.paperplugintemplate.common.user.storage;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provider;
 import com.google.inject.Provides;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
+import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.common.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.user.storage.json.JsonUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRepository;
-import io.github.namiuni.paperplugintemplate.common.user.storage.sql.UserProfileMapper;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
-import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.flywaydb.core.Flyway;
 import org.jdbi.v3.cache.caffeine.CaffeineCacheBuilder;
 import org.jdbi.v3.cache.caffeine.CaffeineCachePlugin;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.argument.QualifiedArgumentFactory;
 import org.jdbi.v3.core.statement.SqlStatements;
+import org.jdbi.v3.postgres.PostgresPlugin;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.jspecify.annotations.NullMarked;
 
 /// Guice module responsible for selecting and binding the active
 /// [UserRepository] based on the configured [StorageType].
 ///
-/// The [Jdbi] and [HikariDataSource] providers are lazy: they are only invoked
-/// by Guice when a SQL backend ([StorageType#H2] or [StorageType#MYSQL]) is
-/// selected. For [StorageType#JSON] these providers are never called, so no
-/// database connection is ever opened.
+/// ## Supported backends
 ///
-/// ## Module responsibilities
+/// | [StorageType] | Driver | UUID column | Migration location |
+/// |---|---|---|---|
+/// | `H2`         | `org.h2.Driver` (`MODE=MySQL`)     | `BINARY(16)` | `db/migration/mysql`      |
+/// | `MYSQL`      | `com.mysql.cj.jdbc.Driver`         | `BINARY(16)` | `db/migration/mysql`      |
+/// | `POSTGRESQL` | `org.postgresql.Driver`            | `uuid`       | `db/migration/postgresql` |
+/// | `JSON`       | — (no JDBC)                        | —            | —                         |
 ///
-/// This module does not call [UserRepository#initialize()] itself.
-/// Initialization is performed by
-/// [io.github.namiuni.paperplugintemplate.common.PluginInternal#initialize()]
-/// after all bindings are resolved.
+/// ## Dialect-aware UUID handling
+///
+/// MySQL/H2 and PostgreSQL require fundamentally different UUID strategies.
+/// This difference is modeled by [StorageDialect]: a sealed interface whose
+/// two implementations ([StorageDialect.MySql] and [StorageDialect.PostgreSql])
+/// each provide:
+///
+/// - a Flyway migration location,
+/// - a JDBI [org.jdbi.v3.core.argument.QualifiedArgumentFactory] for binding UUIDs, and
+/// - a JDBI [org.jdbi.v3.core.mapper.RowMapper] for reading [UserProfile] rows.
+///
+/// ## Schema management
+///
+/// For SQL backends, Flyway runs migrations before the [Jdbi] instance is
+/// constructed. A failed migration throws a
+/// [org.flywaydb.core.api.FlywayException] that propagates through Guice's
+/// provider chain and aborts plugin startup cleanly.
+///
+/// ## Lazy providers
+///
+/// [Jdbi] and [HikariDataSource] providers are injected as [Provider]s in
+/// [#userRepository] and are **never dereferenced** when [StorageType#JSON]
+/// is selected, preventing any database connection from being opened.
 @NullMarked
 @SuppressWarnings("unused")
 public final class StorageModule extends AbstractModule {
@@ -70,107 +92,114 @@ public final class StorageModule extends AbstractModule {
 
     /// Provides the singleton [UserRepository] for the configured [StorageType].
     ///
-    /// The `jdbi` and `dataSource` parameters are lazy [Provider]s; they are
-    /// only dereferenced when the storage type requires a SQL connection. This
-    /// prevents HikariCP from opening connections when the JSON backend is
-    /// selected.
-    ///
     /// @param primaryConfig the configuration holder used to determine the active [StorageType]
-    /// @param dataDirectory the plugin data directory; forwarded to [JsonUserRepository]
-    /// @param jdbi          lazy provider for the JDBI instance; called only for SQL backends
-    /// @param dataSource    lazy provider for the HikariCP pool; called only for SQL backends
+    /// @param jsonRepository lazy provider for the JSON user repository instance
+    /// @param jdbiRepository lazy provider for the JDBI user repository instance
     /// @return the initialized [UserRepository] singleton
     @Provides
     @Singleton
     private UserRepository userRepository(
             final Supplier<PrimaryConfiguration> primaryConfig,
-            final @DataDirectory Path dataDirectory,
-            final Provider<Jdbi> jdbi,
-            final Provider<HikariDataSource> dataSource
+            final Provider<JsonUserRepository> jsonRepository,
+            final Provider<JdbiUserRepository> jdbiRepository
     ) {
         final PrimaryConfiguration.StorageConfig storageConfig = primaryConfig.get().storage();
         return switch (storageConfig.type()) {
-            case JSON -> new JsonUserRepository(dataDirectory);
-            case H2, MYSQL -> new JdbiUserRepository(jdbi.get(), dataSource.get());
+            case JSON -> jsonRepository.get();
+            case H2, MYSQL, POSTGRESQL -> jdbiRepository.get();
         };
     }
 
-    /// Provides a singleton [Jdbi] instance with all required plugins installed.
+    /// Provides a singleton [Jdbi] instance configured for the active [StorageDialect].
     ///
-    /// Installed plugins and configuration:
+    /// The dialect is resolved from the storage configuration and determines:
     ///
-    /// - `SqlObjectPlugin`: enables the `@Sql*` annotation-driven DAO pattern
-    ///   used by [io.github.namiuni.paperplugintemplate.common.user.storage.sql.UserDao].
-    /// - `CaffeineCachePlugin`: caches compiled SQL templates in a bounded
-    ///   Caffeine cache (512 entries, 15-minute expiry) to avoid repeated
-    ///   template-parsing overhead.
-    /// - [UserProfileMapper]: maps SQL result rows to [io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile] records.
-    /// - `QualifiedArgumentFactory`: binds [Instant] values as
-    ///   epoch-millisecond `BIGINT`s for cross-database compatibility.
+    /// - which [org.jdbi.v3.core.argument.QualifiedArgumentFactory] handles [java.util.UUID]
+    ///   binding, and
+    /// - which [org.jdbi.v3.core.mapper.RowMapper] reads [UserProfile] rows.
     ///
-    /// @param dataSource the HikariCP connection pool
-    /// @return a fully configured [Jdbi] singleton
+    /// @param dataSource the HikariCP pool
+    /// @param dialect    the `StorageDialect`
+    /// @return a fully configured `Jdbi` singleton
     @Provides
     @Singleton
-    private Jdbi jdbi(final HikariDataSource dataSource) {
-        return Jdbi.create(dataSource)
-                .installPlugin(new SqlObjectPlugin())
-                .installPlugin(new CaffeineCachePlugin())
-                .registerRowMapper(new UserProfileMapper())
-                .registerArgument(uuidArgumentFactory())
-                .registerArgument(instantArgumentFactory())
-                .configure(SqlStatements.class, config -> config.setTemplateCache(
-                        new CaffeineCacheBuilder(
-                                Caffeine.newBuilder()
-                                        .maximumSize(512L)
-                                        .expireAfterAccess(15L, TimeUnit.MINUTES)
-                        )));
-    }
-
-    private static QualifiedArgumentFactory uuidArgumentFactory() {
-        return (type, value, config) -> {
-            if (!(value instanceof final UUID uuid)) {
-                return Optional.empty();
-            }
-            final byte[] bytes = uuidToBytes(uuid);
-            return Optional.of((position, statement, ctx) ->
-                    statement.setBytes(position, bytes));
-        };
-    }
-
-    private static QualifiedArgumentFactory instantArgumentFactory() {
-        return (type, value, config) -> {
+    private Jdbi jdbi(
+            final HikariDataSource dataSource,
+            final StorageDialect dialect
+    ) {
+        final QualifiedArgumentFactory instantArgument = (type, value, config) -> {
             if (!(value instanceof final Instant instant)) {
                 return Optional.empty();
             }
-            return Optional.of((position, statement, ctx) ->
-                    statement.setLong(position, instant.toEpochMilli()));
+            return Optional.of((position, statement, ctx) -> statement.setLong(position, instant.toEpochMilli()));
+        };
+
+        final Consumer<SqlStatements> caffeineCache = config -> config.setTemplateCache(
+                new CaffeineCacheBuilder(
+                        Caffeine.newBuilder()
+                                .maximumSize(512L)
+                                .expireAfterAccess(15L, TimeUnit.MINUTES)
+                ));
+
+        final Jdbi jdbi = Jdbi.create(dataSource)
+                .installPlugin(new SqlObjectPlugin())
+                .installPlugin(new CaffeineCachePlugin())
+                .registerRowMapper(UserProfile.class, dialect.profileMapper())
+                .registerArgument(dialect.uuidArgumentFactory())
+                .registerArgument(instantArgument)
+                .configure(SqlStatements.class, caffeineCache);
+
+        if (dialect instanceof StorageDialect.PostgreSql) {
+            jdbi.installPlugin(new PostgresPlugin());
+        }
+
+        return jdbi;
+    }
+
+    @Provides
+    @Singleton
+    private StorageDialect storageDialect(final Supplier<PrimaryConfiguration> primaryConfig) {
+        return switch (primaryConfig.get().storage().type()) {
+            case H2, MYSQL -> new StorageDialect.MySql();
+            case POSTGRESQL -> new StorageDialect.PostgreSql();
+            case JSON -> throw new IllegalArgumentException("StorageType.JSON has no SQL dialect");
         };
     }
 
-    private static byte[] uuidToBytes(final UUID uuid) {
-        final ByteBuffer bb = ByteBuffer.allocate(16);
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-        return bb.array();
+    @Provides
+    @Singleton
+    private Flyway flyway(
+            final HikariDataSource dataSource,
+            final StorageDialect dialect
+    ) {
+        return Flyway.configure(PluginTemplate.class.getClassLoader())
+                .baselineVersion("0")
+                .baselineOnMigrate(true)
+                .locations(dialect.migrationLocation())
+                .dataSource(dataSource)
+                .validateMigrationNaming(true)
+                .validateOnMigrate(true)
+                .load();
     }
 
     /// Provides a singleton [HikariDataSource] for SQL storage backends.
     ///
-    /// H2 is opened with `MODE=MySQL;DB_CLOSE_DELAY=-1` to share the same SQL
-    /// dialect as the MySQL backend. This provider is never called when the
-    /// storage type is [StorageType#JSON].
+    /// H2 is opened with `MODE=MySQL;DB_CLOSE_DELAY=-1` to share the same DDL
+    /// and UUID binding strategy as the MySQL backend. PostgreSQL uses a plain
+    /// `jdbc:postgresql://` URL; no extra query parameters are required for
+    /// basic UTF-8 connections.
     ///
-    /// @param primaryConfig the configuration holder supplying JDBC connection
-    ///        parameters
+    /// This provider is never called when [StorageType#JSON] is selected.
+    ///
+    /// @param primaryConfig the configuration holder supplying JDBC parameters
     /// @param dataDirectory the plugin data directory; used to resolve the H2
     ///        database file path
     /// @return a started [HikariDataSource] with the configured pool size
-    /// @throws IllegalStateException if the storage type is not a SQL variant;
-    ///         this should never occur because this provider is only invoked for H2
-    ///         and MySQL
-    /// @implNote The pool name defaults to `YourPlugin`. Replace this with the
-    ///           actual plugin name to avoid ambiguity in thread dumps.
+    /// @throws IllegalStateException if the storage type is [StorageType#JSON];
+    ///         this should never occur because Guice only invokes this provider
+    ///         when a SQL backend is active
+    /// @implNote Replace the pool name `"YourPlugin"` with the actual plugin name
+    ///           to avoid ambiguity in HikariCP thread dumps.
     @Provides
     @Singleton
     private HikariDataSource dataSource(
@@ -179,30 +208,31 @@ public final class StorageModule extends AbstractModule {
     ) {
         final PrimaryConfiguration.StorageConfig storageConfig = primaryConfig.get().storage();
         final HikariConfig config = new HikariConfig();
-        config.setPoolName("YourPlugin"); // TODO: replace with the actual plugin name
+        config.setPoolName("PaperPluginTemplate"); // TODO: replace with the actual plugin name
         config.setMaximumPoolSize(storageConfig.maximumPoolSize());
+        config.setThreadFactory(Thread.ofVirtual().name("PaperPluginTemplate-Hikari-Pool", 0).factory());
 
         switch (storageConfig.type()) {
             case H2 -> {
                 final Path dbFile = dataDirectory.toAbsolutePath().resolve("database");
-                config.setJdbcUrl("jdbc:h2:file:%s;MODE=MySQL;DB_CLOSE_DELAY=-1"
-                        .formatted(dbFile));
+                config.setJdbcUrl("jdbc:h2:file:%s;MODE=MySQL;DB_CLOSE_DELAY=-1".formatted(dbFile));
                 config.setDriverClassName("org.h2.Driver");
             }
             case MYSQL -> {
-                config.setJdbcUrl(
-                        "jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
-                                .formatted(
-                                        storageConfig.host(),
-                                        storageConfig.port(),
-                                        storageConfig.database()
-                                ));
+                config.setJdbcUrl("jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
+                                .formatted(storageConfig.host(), storageConfig.port(), storageConfig.database()));
                 config.setUsername(storageConfig.username());
                 config.setPassword(storageConfig.password());
                 config.setDriverClassName("com.mysql.cj.jdbc.Driver");
             }
-            default -> throw new IllegalStateException(
-                    "Unexpected SQL storage type: " + storageConfig.type());
+            case POSTGRESQL -> {
+                config.setJdbcUrl("jdbc:postgresql://%s:%d/%s"
+                        .formatted(storageConfig.host(), storageConfig.port(), storageConfig.database()));
+                config.setUsername(storageConfig.username());
+                config.setPassword(storageConfig.password());
+                config.setDriverClassName("org.postgresql.Driver");
+            }
+            default -> throw new IllegalStateException("Unexpected SQL storage type: " + storageConfig.type());
         }
 
         return new HikariDataSource(config);

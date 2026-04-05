@@ -57,43 +57,45 @@ public record PrimaryConfiguration(
     /// Configuration for the storage backend.
     ///
     /// Supports H2 (embedded, no external server required), MySQL (external
-    /// server), and JSON (flat files, human-readable). H2 is recommended for
-    /// single-server deployments; MySQL for networks sharing a database.
+    /// server), PostgreSQL (external server), and JSON (flat files,
+    /// human-readable). H2 is recommended for single-server deployments;
+    /// MySQL or PostgreSQL for networks sharing a database.
     ///
     /// @param type            the storage backend type
-    /// @param host            the database host; used only for `MYSQL`
-    /// @param port            the database port; used only for `MYSQL`
-    /// @param database        the database name; used for `H2` (file name) and `MYSQL`
-    /// @param username        the database username; used only for `MYSQL`
-    /// @param password        the database password; used only for `MYSQL`
+    /// @param host            the database host; used only for `MYSQL` and `POSTGRESQL`
+    /// @param port            the database port; used only for `MYSQL` and `POSTGRESQL`
+    /// @param database        the database name; used for `H2` (file name), `MYSQL`, and `POSTGRESQL`
+    /// @param username        the database username; used only for `MYSQL` and `POSTGRESQL`
+    /// @param password        the database password; used only for `MYSQL` and `POSTGRESQL`
     /// @param maximumPoolSize the maximum number of connections in the pool;
-    ///                        used only for `MYSQL` and `H2`
+    ///                        used only for `MYSQL`, `POSTGRESQL`, and `H2`
     @ConfigSerializable
     public record StorageConfig(
             @Comment("""
-                    Storage type. Available options: H2, MYSQL, JSON
-                    H2   - Embedded SQL database. No external server required.
-                    MYSQL - External MySQL/MariaDB server.
-                    JSON  - Flat JSON files. Human-readable, not suitable for high load.
+                    Storage type. Available options: H2, MYSQL, POSTGRESQL, JSON
+                    H2         - Embedded SQL database. No external server required.
+                    MYSQL      - External MySQL/MariaDB server.
+                    POSTGRESQL - External PostgreSQL server.
+                    JSON       - Flat JSON files. Human-readable, not suitable for high load.
                     """)
             StorageType type,
 
-            @Comment("Database host. Only used for MYSQL.")
+            @Comment("Database host. Only used for MYSQL and POSTGRESQL.")
             String host,
 
-            @Comment("Database port. Only used for MYSQL.")
+            @Comment("Database port. Only used for MYSQL and POSTGRESQL.")
             int port,
 
-            @Comment("Database name. Used for H2 (file name) and MYSQL.")
+            @Comment("Database name. Used for H2 (file name), MYSQL, and POSTGRESQL.")
             String database,
 
-            @Comment("Database username. Only used for MYSQL.")
+            @Comment("Database username. Only used for MYSQL and POSTGRESQL.")
             String username,
 
-            @Comment("Database password. Only used for MYSQL.")
+            @Comment("Database password. Only used for MYSQL and POSTGRESQL.")
             String password,
 
-            @Comment("Maximum number of connections in the pool. Only used for MYSQL and H2.")
+            @Comment("Maximum number of connections in the pool. Only used for MYSQL, POSTGRESQL, and H2.")
             int maximumPoolSize
     ) {
 
@@ -102,7 +104,7 @@ public record PrimaryConfiguration(
                 StorageType.H2,
                 "localhost",
                 3306,
-                "your_plugin",
+                "paper_plugin_template",
                 "root",
                 "",
                 10
