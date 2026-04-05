@@ -82,14 +82,14 @@ public record PrimaryConfiguration(
     /// human-readable). H2 is recommended for single-server deployments;
     /// MySQL or PostgreSQL for networks sharing a database.
     ///
-    /// @param type            the storage backend type
-    /// @param host            the database host; used only for `MYSQL` and `POSTGRESQL`
-    /// @param port            the database port; used only for `MYSQL` and `POSTGRESQL`
-    /// @param database        the database name; used for `H2` (file name), `MYSQL`, and `POSTGRESQL`
-    /// @param username        the database username; used only for `MYSQL` and `POSTGRESQL`
-    /// @param password        the database password; used only for `MYSQL` and `POSTGRESQL`
-    /// @param pool            TODO
-    /// @param userCache           TODO
+    /// @param type      the storage backend type
+    /// @param host      the database host; used only for `MYSQL` and `POSTGRESQL`
+    /// @param port      the database port; used only for `MYSQL` and `POSTGRESQL`
+    /// @param database  the database name; used for `H2` (file name), `MYSQL`, and `POSTGRESQL`
+    /// @param username  the database username; used only for `MYSQL` and `POSTGRESQL`
+    /// @param password  the database password; used only for `MYSQL` and `POSTGRESQL`
+    /// @param pool      HikariCP connection-pool tuning parameters
+    /// @param userCache in-memory user-profile cache sizing and eviction parameters
     @ConfigSerializable
     public record Storage(
             @Comment("""
@@ -116,42 +116,112 @@ public record PrimaryConfiguration(
             @Comment("Database password. Only used for MYSQL and POSTGRESQL.")
             String password,
 
-            @Comment("") //TODO
+            @Comment("HikariCP connection pool settings.")
             Pool pool,
 
-            @Comment("") //TODO
+            @Comment("In-memory user-profile cache settings.")
             Cache userCache
     ) {
 
-        // TODO: Javadoc
+        /// HikariCP connection-pool tuning parameters.
+        ///
+        /// Controls the lifecycle and sizing of the JDBC connection pool
+        /// managed by [com.zaxxer.hikari.HikariDataSource]. All time values
+        /// are expressed in milliseconds and correspond directly to the
+        /// HikariCP properties of the same names.
+        ///
+        /// Refer to the
+        /// [HikariCP documentation](https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby)
+        /// for an authoritative description of each property's effect on
+        /// connection management and pool health.
+        ///
+        /// @param maximumPoolSize  the maximum number of connections the pool
+        ///                         will maintain; set equal to `minimumIdle`
+        ///                         for a fixed-size pool
+        /// @param minimumIdle      the minimum number of idle connections the
+        ///                         pool attempts to maintain; HikariCP
+        ///                         recommends setting this equal to
+        ///                         `maximumPoolSize` to avoid pool-sizing
+        ///                         overhead
+        /// @param maximumLifetime  the maximum lifetime of a connection in the
+        ///                         pool in milliseconds; connections older
+        ///                         than this value are retired and replaced;
+        ///                         must be shorter than any database or
+        ///                         infrastructure-imposed `wait_timeout`
+        /// @param keepaliveTime    the interval in milliseconds at which a
+        ///                         keepalive query is sent on idle connections
+        ///                         to prevent them from being closed by the
+        ///                         database or a network proxy; `0` disables
+        ///                         keepalive
+        /// @param connectionTimeout the maximum number of milliseconds a
+        ///                          caller waits for a connection from the
+        ///                          pool before a [java.sql.SQLException] is
+        ///                          thrown
         @ConfigSerializable
         public record Pool(
 
-                @Comment("") // TODO
+                @Comment("""
+                        Maximum number of connections the pool will maintain.
+                        Set equal to minimumIdle for a fixed-size pool.
+                        """)
                 int maximumPoolSize,
 
-                @Comment("") // TODO
+                @Comment("""
+                        Minimum number of idle connections maintained in the pool.
+                        HikariCP recommends setting this equal to maximumPoolSize.
+                        """)
                 int minimumIdle,
 
-                @Comment("") // TODO
+                @Comment("""
+                        Maximum lifetime of a connection in the pool (milliseconds).
+                        Must be shorter than the database's wait_timeout value.
+                        """)
                 long maximumLifetime,
 
-                @Comment("") // TODO
+                @Comment("""
+                        Interval between keepalive queries on idle connections (milliseconds).
+                        Set to 0 to disable keepalive.
+                        """)
                 long keepaliveTime,
 
-                @Comment("") // TODO
+                @Comment("Maximum milliseconds a caller waits for a connection before an exception is thrown.")
                 long connectionTimeout
         ) {
         }
 
-        // TODO: Javadoc
+        /// In-memory Caffeine cache sizing and eviction parameters for the
+        /// user-profile cache.
+        ///
+        /// The user-profile cache holds [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
+        /// instances for the duration of a player's session and for a
+        /// configurable window after they disconnect. Two eviction rules
+        /// govern entry lifetimes:
+        ///
+        /// - **Online players** are pinned indefinitely; they are evicted
+        ///   only via explicit invalidation on disconnect.
+        /// - **Offline entries** are evicted `expireAfterOffline` nanoseconds
+        ///   after their last cache interaction, bounding memory growth for
+        ///   servers with frequent transient lookups (e.g. admin commands
+        ///   targeting offline players).
+        ///
+        /// @param maximumSize         the maximum number of entries the cache
+        ///                            may hold; when this limit is reached,
+        ///                            Caffeine evicts entries according to a
+        ///                            size-based least-recently-used policy
+        /// @param expireAfterOffline  the duration in nanoseconds after which
+        ///                            an offline player's cache entry expires
+        ///                            following their last access; must be
+        ///                            positive
         @ConfigSerializable
         public record Cache(
 
-                @Comment("") // TODO
+                @Comment("Maximum number of user entries held in the in-memory cache.")
                 long maximumSize,
 
-                @Comment("") // TODO
+                @Comment("""
+                        Duration in nanoseconds before an offline player's cache entry expires
+                        after their last access. Does not affect online players.
+                        """)
                 long expireAfterOffline
         ) {
         }
