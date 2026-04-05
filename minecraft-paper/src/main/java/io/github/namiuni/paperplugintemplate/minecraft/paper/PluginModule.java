@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,10 +22,8 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.multibindings.Multibinder;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.command.PaperCommandSource;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.listener.PaperEventHandler;
@@ -44,7 +42,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// Binds all Paper-specific singletons — logger, data directory, plugin
 /// instance, event handler, and user factory — and initializes the
-/// [CommandFactory] [Multibinder] so that [CommonModule] and any future
+/// [org.incendo.cloud.CommandFactory] [com.google.inject.multibindings.Multibinder] so that [io.github.namiuni.paperplugintemplate.common.CommonModule] and any future
 /// platform-specific modules can safely add their own command registrars
 /// without encountering an uninitialized binder.
 ///
@@ -78,7 +76,7 @@ final class PluginModule extends AbstractModule {
         return PaperCommandManager
                 .builder(senderMapper)
                 .executionCoordinator(ExecutionCoordinator.asyncCoordinator())
-                .buildBootstrapped(context);
+                .buildBootstrapped(this.context);
     }
 
     /// {@inheritDoc}

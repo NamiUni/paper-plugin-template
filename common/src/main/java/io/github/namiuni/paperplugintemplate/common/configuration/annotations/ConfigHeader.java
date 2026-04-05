@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
  */
 package io.github.namiuni.paperplugintemplate.common.configuration.annotations;
 
-import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationLoader;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,7 +29,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// Place this annotation on a configuration record class to inject a
 /// descriptive comment block when the file is first generated or saved by
-/// [ConfigurationLoader]. The value is forwarded directly to Configurate's
+/// [io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationLoader]. The value is forwarded directly to Configurate's
 /// node header option.
 ///
 /// ```java

@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -94,7 +94,7 @@ public final class ReloadCommand implements CommandFactory {
     /// {@inheritDoc}
     @Override
     public Command<CommandSource> command() {
-        return manager.commandBuilder("template")
+        return this.manager.commandBuilder("template")
                 .literal("reload")
                 .permission(TemplatePermission.COMMAND_RELOAD.node())
                 .commandDescription(this.description())

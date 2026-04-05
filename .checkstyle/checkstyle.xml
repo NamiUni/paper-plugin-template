@@ -18,18 +18,16 @@
 
     <module name="TreeWalker">
         <!--Annotations-->
-        <module name="AnnotationLocation">
-            <property name="tokens" value="METHOD_DEF, CTOR_DEF, CLASS_DEF"/>
-            <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
-        </module>
         <module name="AnnotationUseStyle"/>
         <module name="MissingDeprecated"/>
+        <module name="MissingOverride"/>
 
         <!--Block Checks-->
         <module name="AvoidNestedBlocks"/>
         <module name="EmptyBlock"/>
         <module name="LeftCurly"/>
         <module name="RightCurly"/>
+        <module name="NeedBraces"/>
 
         <!--Class Design-->
         <module name="FinalClass"/>
@@ -138,7 +136,6 @@
 
         <!--Modifiers-->
         <module name="ModifierOrder"/>
-        <module name="RedundantModifier"/>
 
         <!--Naming Conventions-->
         <module name="AbbreviationAsWordInName">

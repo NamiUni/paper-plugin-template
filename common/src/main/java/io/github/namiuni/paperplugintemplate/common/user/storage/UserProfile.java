@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,6 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user.storage;
 
-import io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal;
 import java.time.Instant;
 import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
@@ -27,7 +26,7 @@ import org.jspecify.annotations.NullMarked;
 /// Immutable persistent data snapshot for a tracked player.
 ///
 /// Stored and retrieved by [UserRepository]; consumed by
-/// [PluginTemplateUserServiceInternal] as the unit of I/O between the service
+/// [io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal] as the unit of I/O between the service
 /// layer and the storage backend.
 ///
 /// ## Immutability

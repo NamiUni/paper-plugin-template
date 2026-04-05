@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -74,5 +74,6 @@ public interface CommandSource {
     /// fall back to [#sender()] as appropriate.
     ///
     /// @return the command executor, or `null` if no redirect is in effect
-    @Nullable Audience executor();
+    @Nullable
+    Audience executor();
 }

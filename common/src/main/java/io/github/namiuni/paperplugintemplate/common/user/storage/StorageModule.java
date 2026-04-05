@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -126,11 +126,11 @@ public final class StorageModule extends AbstractModule {
             final HikariDataSource dataSource,
             final StorageDialect dialect
     ) {
-        final QualifiedArgumentFactory instantArgument = (type, value, config) -> {
+        final QualifiedArgumentFactory instantArgument = (_, value, _) -> {
             if (!(value instanceof final Instant instant)) {
                 return Optional.empty();
             }
-            return Optional.of((position, statement, ctx) -> statement.setLong(position, instant.toEpochMilli()));
+            return Optional.of((position, statement, _) -> statement.setLong(position, instant.toEpochMilli()));
         };
 
         final Consumer<SqlStatements> caffeineCache = config -> config.setTemplateCache(

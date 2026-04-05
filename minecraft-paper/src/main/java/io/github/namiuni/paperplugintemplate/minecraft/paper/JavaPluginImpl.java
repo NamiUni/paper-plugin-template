@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
-import io.github.namiuni.paperplugintemplate.minecraft.paper.listener.PaperEventHandler;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRepository;
+import io.github.namiuni.paperplugintemplate.minecraft.paper.listener.PaperEventHandler;
 import jakarta.inject.Inject;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;

@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (うにたろう)
+ * Copyright (c) 2026. Namiu (ãã«ããã)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,6 @@
 package io.github.namiuni.paperplugintemplate.common;
 
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
-import io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar;
 import io.github.namiuni.paperplugintemplate.common.translation.TranslatorHolder;
@@ -77,7 +76,7 @@ public final class PluginInternal implements PluginTemplate {
     ///    with [GlobalTranslator] so that translatable components are resolved
     ///    for all subsequent messages.
     /// 2. Initializes the [UserRepository] (creates tables or directories).
-    /// 3. Publishes this instance to [PluginTemplateProvider] so that
+    /// 3. Publishes this instance to [io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider] so that
     ///    third-party plugins can obtain the public API reference.
     ///
     /// Must be called exactly once, during plugin bootstrap, before the
