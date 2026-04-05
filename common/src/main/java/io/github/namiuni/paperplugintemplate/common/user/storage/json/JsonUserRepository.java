@@ -57,14 +57,14 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// `synchronized` blocks are avoided entirely to prevent carrier-thread pinning
 /// on virtual threads (JEP 491). Instead, a per-UUID [ReentrantReadWriteLock]
-/// is maintained in a [ConcurrentHashMap] managed by a Caffeine cache:
+/// is maintained in a [ConcurrentHashMap] managed by a Caffeine userCache:
 ///
 /// - Multiple concurrent reads for the same UUID proceed in parallel.
 /// - A write operation (upsert or delete) for a given UUID excludes all other
 ///   reads and writes for that UUID.
 /// - Operations on different UUIDs are fully independent and never contend.
 ///
-/// The lock entry for a UUID is retained by the Caffeine cache for 10 minutes
+/// The lock entry for a UUID is retained by the Caffeine userCache for 10 minutes
 /// after last access, bounding memory growth for servers with many transient
 /// players.
 ///

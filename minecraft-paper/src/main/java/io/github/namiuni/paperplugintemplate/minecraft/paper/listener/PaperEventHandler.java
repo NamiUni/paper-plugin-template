@@ -40,26 +40,26 @@ import org.jspecify.annotations.NullMarked;
 /// Handles four lifecycle points for profile management:
 ///
 /// - **Pre-connect** ([AsyncPlayerConnectionConfigureEvent]): pre-loads
-///   the player's profile into the pre-load cache so that the first
+///   the player's profile into the pre-load userCache so that the first
 ///   gameplay access is non-blocking. If the repository is unreachable,
 ///   the player is disconnected with a localized error message rather than
 ///   joining without a valid profile.
 ///
 /// - **Join** ([PlayerJoinEvent]): promotes the preloaded profile from the
-///   connection cache into the user cache, ensuring all subsequent service
-///   calls are guaranteed cache hits for the duration of the session.
+///   connection userCache into the user userCache, ensuring all subsequent service
+///   calls are guaranteed userCache hits for the duration of the session.
 ///
 /// - **Disconnect** ([PlayerQuitEvent]): stamps `lastSeen`, persists the
-///   final profile snapshot, and evicts the cache entry. Cache eviction is
+///   final profile snapshot, and evicts the userCache entry. Cache eviction is
 ///   guaranteed by the service's persist operation regardless of whether
 ///   the repository write succeeds; this handler additionally discards the
-///   cache entry manually only when the initial load future itself failed.
+///   userCache entry manually only when the initial load future itself failed.
 ///
 /// - **World save** ([WorldSaveEvent]): checkpoints all profiles for
 ///   players in the saved world to limit data loss on unexpected shutdowns.
 ///   Uses [PluginTemplateUserServiceInternal#checkpointUser] rather than
-///   [PluginTemplateUserServiceInternal#persistOnlinePlayer] so that cache
-///   entries are **retained** — evicting online players from the cache
+///   [PluginTemplateUserServiceInternal#persistOnlinePlayer] so that userCache
+///   entries are **retained** — evicting online players from the userCache
 ///   would cause subsequent `getUser` calls to return `Optional.empty()`.
 ///
 /// ## Thread safety
@@ -93,7 +93,7 @@ public final class PaperEventHandler implements Listener {
         this.messages = messages;
     }
 
-    /// Pre-loads the connecting player's profile into the service cache.
+    /// Pre-loads the connecting player's profile into the service userCache.
     ///
     /// Fires on Paper's async configuration thread before a `Player` object
     /// exists. A load failure disconnects the player with a localized error
@@ -123,10 +123,10 @@ public final class PaperEventHandler implements Listener {
                 });
     }
 
-    /// Promotes the preloaded profile into the user cache on join.
+    /// Promotes the preloaded profile into the user userCache on join.
     ///
     /// Ensures all subsequent service calls during this session are
-    /// guaranteed cache hits.
+    /// guaranteed userCache hits.
     ///
     /// @param event the join event
     @EventHandler(priority = EventPriority.MONITOR)
@@ -137,18 +137,18 @@ public final class PaperEventHandler implements Listener {
                     if (ex != null) {
                         this.logger.error("Failed to load user on join for UUID: {}", player.getUniqueId(), ex);
                     } else {
-                        this.logger.debug("Join cache promotion succeeded: {}", user);
+                        this.logger.debug("Join userCache promotion succeeded: {}", user);
                     }
                 });
     }
 
-    /// Persists the final profile snapshot and evicts the cache entry on
+    /// Persists the final profile snapshot and evicts the userCache entry on
     /// disconnect.
     ///
     /// The service's persist operation stamps `lastSeen` with the current
-    /// instant and guarantees cache eviction via its own completion
+    /// instant and guarantees userCache eviction via its own completion
     /// handler, regardless of whether the repository write succeeds or
-    /// fails. This handler therefore only discards the cache entry manually
+    /// fails. This handler therefore only discards the userCache entry manually
     /// as a safety net for the case where the initial load future itself
     /// fails — in which case the persist call is never reached and the
     /// entry would otherwise leak until it expires naturally.
@@ -169,7 +169,7 @@ public final class PaperEventHandler implements Listener {
                     if (ex != null) {
                         this.logger.error("Failed to persist profile on disconnect for UUID: {}", uuid, ex);
                         // Safety net: persistOnlinePlayer was never reached, so the
-                        // cache entry must be evicted here to avoid a leak.
+                        // userCache entry must be evicted here to avoid a leak.
                         this.userService.discardUser(uuid);
                     }
                 });
@@ -180,9 +180,9 @@ public final class PaperEventHandler implements Listener {
     /// Reduces data loss exposure on unexpected server shutdowns. Each
     /// checkpoint stamps `lastSeen` and persists the current profile state
     /// via [PluginTemplateUserServiceInternal#checkpointUser], which
-    /// **retains** the cache entry. Using
+    /// **retains** the userCache entry. Using
     /// [PluginTemplateUserServiceInternal#persistOnlinePlayer] here would
-    /// evict the cache entry and cause subsequent `getUser` calls — e.g.
+    /// evict the userCache entry and cause subsequent `getUser` calls — e.g.
     /// from command handlers — to return `Optional.empty()` for the rest of
     /// the session. Failures are logged per-player and do not interrupt the
     /// world-save process.

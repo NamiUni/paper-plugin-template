@@ -34,7 +34,6 @@ import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.flywaydb.core.Flyway;
@@ -135,11 +134,8 @@ public final class StorageModule extends AbstractModule {
         };
 
         final Consumer<SqlStatements> caffeineCache = config -> config.setTemplateCache(
-                new CaffeineCacheBuilder(
-                        Caffeine.newBuilder()
-                                .maximumSize(512L)
-                                .expireAfterAccess(15L, TimeUnit.MINUTES)
-                ));
+                new CaffeineCacheBuilder(Caffeine.newBuilder())
+        );
 
         final Jdbi jdbi = Jdbi.create(dataSource)
                 .installPlugin(new SqlObjectPlugin())

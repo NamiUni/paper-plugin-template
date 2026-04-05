@@ -67,6 +67,10 @@ public record PrimaryConfiguration(
                             TimeUnit.MINUTES.toMillis(30L),
                             TimeUnit.MINUTES.toMillis(0L),
                             TimeUnit.MINUTES.toMillis(30L)
+                    ),
+                    new Storage.Cache(
+                            100L,
+                            TimeUnit.MINUTES.toNanos(15L)
                     )
             )
     );
@@ -85,6 +89,7 @@ public record PrimaryConfiguration(
     /// @param username        the database username; used only for `MYSQL` and `POSTGRESQL`
     /// @param password        the database password; used only for `MYSQL` and `POSTGRESQL`
     /// @param pool            TODO
+    /// @param userCache           TODO
     @ConfigSerializable
     public record Storage(
             @Comment("""
@@ -112,7 +117,10 @@ public record PrimaryConfiguration(
             String password,
 
             @Comment("") //TODO
-            Pool pool
+            Pool pool,
+
+            @Comment("") //TODO
+            Cache userCache
     ) {
 
         // TODO: Javadoc
@@ -133,6 +141,18 @@ public record PrimaryConfiguration(
 
                 @Comment("") // TODO
                 long connectionTimeout
+        ) {
+        }
+
+        // TODO: Javadoc
+        @ConfigSerializable
+        public record Cache(
+
+                @Comment("") // TODO
+                long maximumSize,
+
+                @Comment("") // TODO
+                long expireAfterOffline
         ) {
         }
     }
