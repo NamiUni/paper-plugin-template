@@ -11,9 +11,79 @@ plugins {
 
 dependencies {
     implementation(project(":paper-plugin-template-common"))
-    runtimeDownload(libs.cloud.paper)
-    runtimeDownload(libs.cloud.minecraft.extras)
+
+    // Paper API
     compileOnly(libs.paper.api)
+
+    // DI
+    runtimeDownload(libs.guice)
+
+    // Config
+    runtimeDownload(libs.configurate.hocon) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.adventure.serializer.configurate) {
+        isTransitive = false
+    }
+
+    // Cache
+    runtimeDownload(libs.caffeine) {
+        isTransitive = false
+    }
+
+    // i18n
+    runtimeDownload(libs.kotonoha.annotations) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.kotonoha.message) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders) {
+        isTransitive = false
+    }
+
+    // Command
+    compileOnly(libs.cloud.paper)
+    runtimeDownload(libs.cloud.paper)
+    runtimeDownload(libs.cloud.minecraft.extras) {
+        isTransitive = false
+    }
+
+    // Storage
+    runtimeDownload(libs.jdbi.core) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.jdbi.postgres) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.jdbi.sqlobject) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.jdbi.caffeine.cache) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.hikari) {
+        isTransitive = false
+    }
+
+    // Flyway
+    runtimeDownload(libs.flyway.core) {
+        exclude("com.fasterxml.jackson.core", "jackson-core")
+        exclude("tools.jackson", "jackson-bom")
+    }
+    runtimeDownload(libs.flyway.mysql) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.flyway.postgresql) {
+        isTransitive = false
+    }
+
+    // JDBC Drivers
+    runtimeDownload(libs.postgresql) {
+        isTransitive = false
+    }
+    runtimeDownload(libs.h2)
+    runtimeDownload(libs.mysql.connector)
 }
 
 val mainPackage = "${projectMetadata.group.get()}.${projectMetadata.name.get().lowercase()}"
@@ -24,7 +94,6 @@ paperPluginYaml {
     contributors = projectMetadata.contributors
     website = projectMetadata.website
     apiVersion = "1.21.11"
-    foliaSupported = true
 
     loader = "$mainPackage.minecraft.paper.PluginLoaderImpl"
     main = "$mainPackage.minecraft.paper.JavaPluginImpl"
@@ -43,12 +112,6 @@ paperPluginYaml {
     }
 }
 
-configurations {
-    compileOnly {
-        extendsFrom(configurations.runtimeDownload.get())
-    }
-}
-
 runPaper.folia.registerTask()
 
 tasks {
@@ -61,4 +124,10 @@ tasks {
             hangar("PlaceholderAPI", "2.12.2")
         }
     }
+}
+
+configurations.runtimeDownload {
+    exclude("org.checkerframework", "checker-qual")
+    exclude("com.google.guava")
+    exclude("com.google.errorprone", "error_prone_annotations")
 }

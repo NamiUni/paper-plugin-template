@@ -37,11 +37,6 @@ indraSpotlessLicenser {
     property("contributors", contributors.joinToString(", "))
 }
 
-dependencies {
-    compileOnlyApi(libs.jspecify)
-    compileOnlyApi(libs.adventure.api)
-}
-
 tasks {
     jar {
         archiveClassifier = "unshaded"
