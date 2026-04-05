@@ -19,6 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user.storage.sql;
 
+import io.github.namiuni.paperplugintemplate.common.user.storage.StorageDialect;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,65 +28,73 @@ import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.customizer.BindMethods;
 import org.jdbi.v3.sqlobject.statement.SqlQuery;
 import org.jdbi.v3.sqlobject.statement.SqlUpdate;
-import org.jdbi.v3.sqlobject.statement.UseRowMapper;
 import org.jdbi.v3.sqlobject.transaction.Transaction;
 import org.jspecify.annotations.NullMarked;
 
 /// JDBI SQL Object providing low-level access to the `users` table.
 ///
-/// All statements use ANSI-compatible SQL so the same interface works
-/// against H2 (`MODE=MySQL`), MySQL, and MariaDB without dialect branching.
-/// Vendor-specific upsert syntax such as `ON DUPLICATE KEY UPDATE` or
-/// `ON CONFLICT DO UPDATE` is deliberately avoided.
+/// All statements use portable SQL that runs against H2 (`MODE=MySQL`),
+/// MySQL/MariaDB, and PostgreSQL without modification.
+/// Vendor-specific upsert syntax is deliberately avoided; the portable
+/// update-then-insert strategy is implemented entirely in [#upsert].
+///
+/// ## Schema management
+///
+/// The `users` table is created and versioned exclusively by Flyway
+/// (see `classpath:db/migration/<vendor>`). This DAO contains no DDL;
+/// schema changes must be expressed as new numbered migration scripts.
 ///
 /// ## Parameter binding
 ///
 /// Record components are bound via `@BindMethods`, which invokes each
-/// no-arg accessor on the record and maps the method name to the SQL
-/// parameter. For example, [UserProfile#uuid()] binds `:uuid` and
-/// [UserProfile#name()] binds `:name`.
+/// no-arg accessor and maps the method name to the SQL parameter name.
+/// [UserProfile#uuid()] is bound as `:uuid` using the dialect-specific
+/// [org.jdbi.v3.core.argument.QualifiedArgumentFactory] registered on the
+/// [org.jdbi.v3.core.Jdbi] instance by `StorageModule`:
+///
+/// - MySQL / H2: serialises [java.util.UUID] to a 16-byte `BINARY(16)` value.
+/// - PostgreSQL: passes the [java.util.UUID] directly via
+///   [java.sql.PreparedStatement#setObject], relying on the PostgreSQL JDBC
+///   driver's native `uuid` type support.
+///
+/// ## Row mapping
+///
+/// The `@UseRowMapper` annotation is intentionally absent from [#findByUuid].
+/// The [org.jdbi.v3.core.mapper.RowMapper] for [UserProfile] is registered
+/// on the [org.jdbi.v3.core.Jdbi] instance by `StorageModule` via
+/// [StorageDialect#profileMapper],
+/// allowing each vendor to use its own deserialization strategy without
+/// annotation-level coupling.
 ///
 /// ## Upsert strategy
 ///
 /// [#upsert] implements a portable update-then-insert pattern. It attempts
-/// `UPDATE` first; if no row was affected the player is new, so `INSERT`
-/// is performed within the same transaction. A narrow TOCTOU race where
-/// two concurrent callers both observe zero rows from `UPDATE` is resolved
-/// by catching the resulting duplicate-key exception on `INSERT` and
-/// retrying `UPDATE`.
+/// `UPDATE` first; if zero rows were affected the player is new, so `INSERT`
+/// is performed. A narrow TOCTOU race where two concurrent callers both
+/// observe zero rows from `UPDATE` is resolved by catching the resulting
+/// duplicate-key exception on `INSERT` and retrying `UPDATE`.
 ///
 /// ## Thread safety
 ///
 /// JDBI acquires a fresh `Handle` (JDBC connection) for each SQL Object
 /// invocation. This interface carries no mutable state; all thread-safety
-/// concerns are delegated to the underlying [com.zaxxer.hikari.HikariDataSource]
-/// connection pool and JDBC driver.
-///
-/// @see SqlObject for the handle-access mechanism used by [#upsert]
+/// concerns are delegated to the underlying
+/// [com.zaxxer.hikari.HikariDataSource] connection pool and JDBC driver.
 @NullMarked
 public interface UserDao extends SqlObject {
 
-    /// Creates the `users` table if it does not already exist.
-    ///
-    /// Called once during [JdbiUserRepository#initialize()].
-    @SqlUpdate("""
-            CREATE TABLE IF NOT EXISTS users (
-                uuid      VARCHAR(36) NOT NULL,
-                name      VARCHAR(16) NOT NULL,
-                last_seen BIGINT      NOT NULL DEFAULT 0,
-                PRIMARY KEY (uuid)
-            )
-            """)
-    void createTable();
-
     /// Returns the profile for `uuid`, or [Optional#empty()] if no row
     /// exists.
+    ///
+    /// The result is mapped by the [org.jdbi.v3.core.mapper.RowMapper]
+    /// registered on the [org.jdbi.v3.core.Jdbi] instance rather than by a
+    /// method-level `@UseRowMapper` annotation, so the correct dialect
+    /// strategy is applied automatically.
     ///
     /// @param uuid the player UUID to look up
     /// @return the mapped [UserProfile] wrapped in [Optional], or
     ///         [Optional#empty()] if absent
     @SqlQuery("SELECT uuid, name, last_seen FROM users WHERE uuid = :uuid")
-    @UseRowMapper(UserProfileMapper.class)
     Optional<UserProfile> findByUuid(@Bind("uuid") UUID uuid);
 
     /// Inserts a new user row.

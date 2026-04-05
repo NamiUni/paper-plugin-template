@@ -13,5 +13,8 @@ tasks {
     shadowJar {
         archiveClassifier = null as String?
         mergeServiceFiles()
+        filesMatching("META-INF/services/**") {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        }
     }
 }

@@ -25,8 +25,15 @@ dependencies {
 
     // Storage
     api(libs.jdbi.core)
+    api(libs.jdbi.postgres)
     api(libs.jdbi.sqlobject)
     api(libs.jdbi.caffeine.cache)
-//  api(libs.jdbi.guice)
     api(libs.hikari)
+
+    // Database migrations
+    api(libs.flyway.core)
+    // flyway-mysql is required at runtime for MySQL / H2-in-MySQL-mode dialect support
+    runtimeOnly(libs.flyway.mysql)
+    runtimeOnly(libs.flyway.postgresql)
+    runtimeOnly(libs.postgresql)
 }

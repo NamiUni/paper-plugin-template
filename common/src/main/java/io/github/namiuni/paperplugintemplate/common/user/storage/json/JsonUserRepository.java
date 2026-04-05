@@ -29,6 +29,7 @@ import com.google.gson.JsonSerializer;
 import io.github.namiuni.paperplugintemplate.common.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -81,7 +82,7 @@ import org.jspecify.annotations.NullMarked;
 public final class JsonUserRepository implements UserRepository {
 
     private static final Executor IO_EXECUTOR = Executors.newThreadPerTaskExecutor(
-            Thread.ofVirtual().name("YourPlugin-Json-User-Repo-", 0).factory()
+            Thread.ofVirtual().name("PaperPluginTemplate-Json-User-Pool", 0).factory()
     );
 
     private static final Gson GSON = new GsonBuilder()
@@ -108,9 +109,9 @@ public final class JsonUserRepository implements UserRepository {
     /// than here, so construction is safe even before the plugin data directory
     /// exists.
     ///
-    /// @param dataDirectory the plugin data directory, injected via
-    ///                      [io.github.namiuni.paperplugintemplate.common.DataDirectory]
-    public JsonUserRepository(final @DataDirectory Path dataDirectory) {
+    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
+    @Inject
+    private JsonUserRepository(final @DataDirectory Path dataDirectory) {
         this.storageDir = dataDirectory.resolve("users");
         this.locks = Caffeine.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)

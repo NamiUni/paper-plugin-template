@@ -20,13 +20,17 @@
 package io.github.namiuni.paperplugintemplate.common.user.storage.sql;
 
 import com.zaxxer.hikari.HikariDataSource;
+import io.github.namiuni.paperplugintemplate.common.user.storage.FlywayLogger;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
+import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.logging.LogFactory;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.async.JdbiExecutor;
 import org.jspecify.annotations.NullMarked;
@@ -37,6 +41,12 @@ import org.jspecify.annotations.NullMarked;
 /// statements. Vendor-specific upsert syntax such as `ON DUPLICATE KEY UPDATE`
 /// is avoided; the portable update-then-insert strategy is encapsulated entirely
 /// in [UserDao#upsert], keeping this class free of SQL dialect concerns.
+///
+/// ## Schema management
+///
+/// The database schema is fully managed by Flyway, which runs migrations
+/// before this repository is used. [#initialize()] is therefore a no-op for
+/// SQL backends.
 ///
 /// ## Ownership and lifecycle
 ///
@@ -59,28 +69,44 @@ import org.jspecify.annotations.NullMarked;
 public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
     private static final Executor VIRTUAL_EXECUTOR = Executors.newThreadPerTaskExecutor(
-            Thread.ofVirtual().name("YourPlugin-DB-User-Repo-", 0).factory()
+            Thread.ofVirtual().name("PaperPluginTemplate-JDBI-User-Pool", 0).factory()
     );
 
     private final JdbiExecutor jdbi;
     private final HikariDataSource dataSource;
+    private final Flyway flyway;
+    private final FlywayLogger flywayLogger;
 
     /// Constructs a new repository.
     ///
     /// @param jdbi       the configured JDBI instance with all required plugins and row mappers installed
     /// @param dataSource the HikariCP connection pool; this repository takes ownership and closes it on [#close()]
-    public JdbiUserRepository(final Jdbi jdbi, final HikariDataSource dataSource) {
+    @Inject
+    private JdbiUserRepository(
+            final Jdbi jdbi,
+            final HikariDataSource dataSource,
+            final Flyway flyway,
+            final FlywayLogger flywayLogger
+    ) {
         this.jdbi = JdbiExecutor.create(jdbi, VIRTUAL_EXECUTOR);
         this.dataSource = dataSource;
+        this.flyway = flyway;
+        this.flywayLogger = flywayLogger;
     }
 
-    /// {@inheritDoc}
+    /// No-op for SQL backends.
     ///
-    /// Creates the `users` table if it does not already exist by delegating to
-    /// [UserDao#createTable()].
+    /// The `users` table and all subsequent schema versions are created by
+    /// Flyway during injector construction (see `StorageModule.jdbi()`).
+    /// By the time this method is called from
+    /// [io.github.namiuni.paperplugintemplate.common.PluginInternal#initialize()],
+    /// the schema is already up-to-date and no DDL work remains.
     @Override
     public void initialize() {
-        this.jdbi.useExtension(UserDao.class, UserDao::createTable);
+        LogFactory.setLogCreator(this.flywayLogger);
+        this.flyway.repair();
+        this.flyway.migrate();
+        LogFactory.setLogCreator(null);
     }
 
     /// {@inheritDoc}
