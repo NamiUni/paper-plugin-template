@@ -43,7 +43,7 @@ gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 guice = { group = "com.google.inject", name = "guice", version.ref = "guice" }
 paper-api = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper-api" }
 mini-placeholders = { group = "io.github.miniplaceholders", name = "miniplaceholders-api", version.ref = "mini-placeholders" }
-configurate-yaml = { group = "org.spongepowered", name = "configurate-yaml", version.ref = "configurate" }
+configurate-hocon = { group = "org.spongepowered", name = "configurate-hocon", version.ref = "configurate" }
 adventure-serializer-configurate = { group = "net.kyori", name = "adventure-serializer-configurate4", version.ref = "adventure" }
 adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
 adventure-text-logger-slf4j = { group = "net.kyori", name = "adventure-text-logger-slf4j", version.ref = "adventure" }

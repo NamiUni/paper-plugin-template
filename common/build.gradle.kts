@@ -9,7 +9,7 @@ dependencies {
 
     compileOnlyApi(libs.adventure.text.logger.slf4j)
     compileOnlyApi(libs.mini.placeholders)
-    api(libs.configurate.yaml)
+    api(libs.configurate.hocon)
     api(libs.adventure.serializer.configurate) {
         isTransitive = false
     }

@@ -49,7 +49,7 @@ import org.jspecify.annotations.Nullable;
 /// [io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal#loadUser]
 /// has completed for the player — which is guaranteed for any command
 /// handler running after the `PlayerJoinEvent`. Invoking either method
-/// during the configuration phase (before join) for a player whose cache
+/// during the configuration phase (before join) for a player whose userCache
 /// entry has not yet been populated will result in an exception.
 ///
 /// ## Thread safety
@@ -96,7 +96,7 @@ public final class PaperCommandSource implements CommandSource {
     ///
     /// When the underlying sender is a [org.bukkit.entity.Player], returns
     /// the corresponding [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
-    /// from the user service cache. Otherwise, returns the raw
+    /// from the user service userCache. Otherwise, returns the raw
     /// [org.bukkit.command.CommandSender] (e.g., the console).
     @Override
     public Audience sender() {
@@ -110,7 +110,7 @@ public final class PaperCommandSource implements CommandSource {
     ///
     /// When the underlying executor is a [org.bukkit.entity.Player], returns
     /// the corresponding [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
-    /// from the user service cache. Returns `null` when
+    /// from the user service userCache. Returns `null` when
     /// [CommandSourceStack#getExecutor()] is `null` — i.e., when no
     /// `/execute as` redirect is active.
     @Override

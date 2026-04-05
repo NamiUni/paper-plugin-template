@@ -35,7 +35,7 @@ import org.jspecify.annotations.NullMarked;
 /// [StorageType] and is injected by the Guice `StorageModule`.
 ///
 /// @apiNote Callers should prefer the user service over using this
-///          interface directly. Direct use bypasses the in-memory cache
+///          interface directly. Direct use bypasses the in-memory userCache
 ///          and may cause redundant I/O.
 /// @implSpec All implementations must be thread-safe and must complete the
 ///           returned futures on a virtual-thread or I/O-thread executor
