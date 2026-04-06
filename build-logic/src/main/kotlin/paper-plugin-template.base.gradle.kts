@@ -27,7 +27,7 @@ indraSpotlessLicenser {
     licenseHeaderFile(rootProject.file("LICENSE_HEADER"))
     property("name", metadata.projectName)
     property("author", metadata.authorName)
-    property("contributors", metadata.projectContributors)
+    property("contributors", metadata.projectContributors.getOrElse("[]"))
 }
 
 tasks {

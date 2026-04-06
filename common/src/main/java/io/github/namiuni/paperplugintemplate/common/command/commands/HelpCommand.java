@@ -1,8 +1,8 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
- *                     Contributors
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

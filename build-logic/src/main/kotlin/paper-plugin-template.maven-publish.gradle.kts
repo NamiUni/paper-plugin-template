@@ -40,8 +40,8 @@ mavenPublishing {
         }
         scm {
             url.set(metadata.projectWebsite)
-            connection.set("scm:git:git://github.com/${metadata.authorId}/${rootProject.name}.git")
-            developerConnection.set("scm:git:ssh://git@github.com/${metadata.authorId}/${rootProject.name}.git")
+            connection.set("scm:git:git://github.com/${metadata.authorId.get()}/${rootProject.name}.git")
+            developerConnection.set("scm:git:ssh://git@github.com/${metadata.authorId.get()}/${rootProject.name}.git")
         }
     }
 }

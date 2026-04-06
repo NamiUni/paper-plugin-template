@@ -1,8 +1,8 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
- *                     Contributors
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ import org.jspecify.annotations.NullMarked;
 /// ## Thread safety
 ///
 /// [#command()] is invoked exactly once on the bootstrap thread during
-/// [io.github.namiuni.paperplugintemplate.common.PluginInternal#initialize()].
+/// [io.github.namiuni.paperplugintemplate.common.PluginInitializer#initialize()].
 /// Implementations need not be thread-safe with respect to [#command()]
 /// itself, but the [Command] returned must be safe for Cloud's execution
 /// coordinator to invoke concurrently across multiple sender threads.
