@@ -29,6 +29,7 @@ import io.github.namiuni.kotonoha.translatable.message.configuration.FormatTypes
 import io.github.namiuni.kotonoha.translatable.message.policy.argument.TranslationArgumentAdaptationPolicy;
 import io.github.namiuni.kotonoha.translatable.message.policy.argument.tag.TagNameResolver;
 import io.github.namiuni.kotonoha.translatable.message.utility.TranslationArgumentAdapter;
+import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.common.command.commands.HelpCommand;
@@ -95,6 +96,16 @@ public final class CommonModule extends AbstractModule {
                 dataDirectory,
                 logger
         );
+    }
+
+    /// Provides a singleton [PluginTemplate].
+    ///
+    /// @param userService the plugin user service
+    /// @return a plugin instance
+    @Provides
+    @Singleton
+    private PluginTemplate pluginTemplate(final PluginTemplateUserService userService) {
+        return new PluginTemplateImpl(userService);
     }
 
     /// Provides a singleton [Messages] proxy backed by Kotonoha.
