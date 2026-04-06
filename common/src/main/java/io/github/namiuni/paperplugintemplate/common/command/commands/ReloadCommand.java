@@ -19,11 +19,12 @@
  */
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
+import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
 import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
-import io.github.namiuni.paperplugintemplate.common.permission.TemplatePermission;
-import io.github.namiuni.paperplugintemplate.common.translation.Messages;
+import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
+import io.github.namiuni.paperplugintemplate.common.translation.PluginMessages;
 import io.github.namiuni.paperplugintemplate.common.translation.TranslatorHolder;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -53,7 +54,7 @@ import org.spongepowered.configurate.ConfigurateException;
 ///
 /// | Command | Permission | Effect |
 /// |---|---|---|
-/// | `/template reload` | [TemplatePermission#COMMAND_RELOAD] | Reloads config and translations |
+/// | `/template reload` | [PluginPermissions#COMMAND_RELOAD] | Reloads config and translations |
 ///
 /// ## Thread safety
 ///
@@ -67,36 +68,37 @@ public final class ReloadCommand implements CommandFactory {
 
     private final ConfigurationHolder<PrimaryConfiguration> configHolder;
     private final TranslatorHolder translatorHolder;
-    private final Messages messages;
+    private final PluginMessages messages;
     private final CommandManager<CommandSource> manager;
+    private final PluginMetadata metadata;
 
     /// Constructs a new registrar with its required dependencies.
     ///
-    /// @param configHolder     holder for the primary plugin configuration,
-    ///                         reloaded on `/template reload`
-    /// @param translatorHolder holder for the active Adventure translator,
-    ///                         replaced on `/template reload`
-    /// @param messages         localized message provider used to send
-    ///                         feedback to the command sender
+    /// @param configHolder     holder for the primary plugin configuration, reloaded on `/template reload`
+    /// @param translatorHolder holder for the active Adventure translator, replaced on `/template reload`
+    /// @param messages         localized message provider used to send feedback to the command sender
+    /// @param metadata         the plugin metadata
     @Inject
     private ReloadCommand(
             final ConfigurationHolder<PrimaryConfiguration> configHolder,
             final TranslatorHolder translatorHolder,
-            final Messages messages,
-            final CommandManager<CommandSource> manager
+            final PluginMessages messages,
+            final CommandManager<CommandSource> manager,
+            final PluginMetadata metadata
     ) {
         this.configHolder = configHolder;
         this.translatorHolder = translatorHolder;
         this.messages = messages;
         this.manager = manager;
+        this.metadata = metadata;
     }
 
     /// {@inheritDoc}
     @Override
     public Command<CommandSource> command() {
-        return this.manager.commandBuilder("template")
+        return this.manager.commandBuilder(this.metadata.namespace())
                 .literal("reload")
-                .permission(TemplatePermission.COMMAND_RELOAD.node())
+                .permission(PluginPermissions.COMMAND_RELOAD)
                 .commandDescription(this.description())
                 .handler(this::executes)
                 .build();
@@ -116,9 +118,8 @@ public final class ReloadCommand implements CommandFactory {
     /// added to prevent a window in which neither source is registered.
     ///
     /// @param  context the cloud command context holding the sender
-    /// @throws UncheckedIOException if configuration or translation reload
-    ///         fails; the exception is propagated to cloud's exception
-    ///         handler after feedback has been sent to the sender
+    /// @throws UncheckedIOException if configuration or translation reload fails; the exception is propagated
+    ///                              to cloud's exception handler after feedback has been sent to the sender
     private void executes(final CommandContext<CommandSource> context) {
         final Audience sender = context.sender().sender();
 

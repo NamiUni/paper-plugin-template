@@ -27,6 +27,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import io.github.namiuni.paperplugintemplate.common.DataDirectory;
+import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import jakarta.inject.Inject;
@@ -64,10 +65,6 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class JsonUserRepository implements UserRepository {
 
-    private static final Executor IO_EXECUTOR = Executors.newThreadPerTaskExecutor(
-            Thread.ofVirtual().name("PaperPluginTemplate-Json-User-Pool", 0).factory()
-    );
-
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>) (src, _, _) ->
@@ -83,8 +80,10 @@ public final class JsonUserRepository implements UserRepository {
     private static final String EXTENSION = ".json";
 
     private final Path storageDir;
-    private final Cache<UUID, ReentrantReadWriteLock> locks;
     private final ComponentLogger logger;
+
+    private final Executor ioExecutor;
+    private final Cache<UUID, ReentrantReadWriteLock> locks;
 
     /// Constructs a new repository whose files live under
     /// `<dataDirectory>/users/`.
@@ -94,10 +93,16 @@ public final class JsonUserRepository implements UserRepository {
     @Inject
     private JsonUserRepository(
             final @DataDirectory Path dataDirectory,
-            final ComponentLogger logger
+            final ComponentLogger logger,
+            final PluginMetadata metadata
     ) {
         this.storageDir = dataDirectory.resolve("users");
         this.logger = logger;
+
+        this.ioExecutor = Executors.newThreadPerTaskExecutor(
+                Thread.ofVirtual().name(metadata.name() + "-Json-User-Pool", 0).factory()
+        );
+
         this.locks = Caffeine.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)
                 .build();
@@ -143,7 +148,7 @@ public final class JsonUserRepository implements UserRepository {
             } finally {
                 lock.unlock();
             }
-        }, IO_EXECUTOR);
+        }, this.ioExecutor);
     }
 
     /// {@inheritDoc}
@@ -167,7 +172,7 @@ public final class JsonUserRepository implements UserRepository {
             } finally {
                 lock.unlock();
             }
-        }, IO_EXECUTOR);
+        }, this.ioExecutor);
     }
 
     /// {@inheritDoc}
@@ -189,7 +194,7 @@ public final class JsonUserRepository implements UserRepository {
             } finally {
                 lock.unlock();
             }
-        }, IO_EXECUTOR);
+        }, this.ioExecutor);
     }
 
     private ReentrantReadWriteLock lockFor(final UUID uuid) {

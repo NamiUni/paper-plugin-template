@@ -56,8 +56,7 @@ public final class TranslatorHolder implements Supplier<Translator> {
 
     /// Constructs a new holder by performing an initial translation load.
     ///
-    /// @param translatorLoader the loader used for both the initial and
-    ///                         subsequent loads
+    /// @param translatorLoader the loader used for both the initial and subsequent loads
     /// @param logger           the component-aware logger
     /// @throws IOException if the translation files cannot be read during
     ///         the initial load

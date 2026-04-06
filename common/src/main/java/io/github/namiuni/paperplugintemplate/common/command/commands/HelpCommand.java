@@ -19,9 +19,10 @@
  */
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
+import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.permission.TemplatePermission;
-import io.github.namiuni.paperplugintemplate.common.translation.Messages;
+import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
+import io.github.namiuni.paperplugintemplate.common.translation.PluginMessages;
 import jakarta.inject.Inject;
 import java.util.Map;
 import net.kyori.adventure.text.Component;
@@ -76,11 +77,11 @@ public final class HelpCommand implements CommandFactory {
     private static final TextColor ALT_HIGHLIGHT = TextColor.color(0xE3008C);
     private static final TextColor TEXT = TextColor.color(0xFFFFFF);
     private static final TextColor ACCENT = TextColor.color(0x7D7D7D);
-    private static final String COMMAND_NAME = "template"; // TODO: change
 
     private final CommandManager<CommandSource> manager;
-    private final Messages messages;
+    private final PluginMessages messages;
     private final MinecraftHelp<CommandSource> minecraftHelp;
+    private final PluginMetadata metadata;
 
     /// Constructs a new [HelpCommand] and eagerly initializes the
     /// [MinecraftHelp] renderer with the JIS Z 9103 color scheme.
@@ -90,20 +91,24 @@ public final class HelpCommand implements CommandFactory {
     /// `"/template help"` so that click-through navigation in the help UI
     /// re-issues this command with the selected query string pre-filled.
     ///
-    /// @param manager the Cloud command manager; used both to build the
-    ///                command tree and to query the root index for
+    /// @param manager the Cloud command manager; used both to build the command tree and to query the root index for
     ///                tab-completion suggestions
+    /// @param messages the localized message provider used to send feedback to the command sender
+    /// @param metadata the plugin metadata
     @Inject
     private HelpCommand(
             final CommandManager<CommandSource> manager,
-            final Messages messages
+            final PluginMessages messages,
+            final PluginMetadata metadata
     ) {
         this.manager = manager;
         this.messages = messages;
+        this.metadata = metadata;
+
         this.minecraftHelp = MinecraftHelp.<CommandSource>builder()
                 .commandManager(manager)
                 .audienceProvider(CommandSource::sender)
-                .commandPrefix("/%s help".formatted(COMMAND_NAME))
+                .commandPrefix("/%s help".formatted(metadata.namespace()))
                 .colors(MinecraftHelp.helpColors(PRIMARY, HIGHLIGHT, ALT_HIGHLIGHT, TEXT, ACCENT))
                 .messageProvider(new MessageProvider())
                 .headerFooterLength(53)
@@ -122,9 +127,9 @@ public final class HelpCommand implements CommandFactory {
     /// command permissions for the requesting sender at completion time.
     @Override
     public Command<CommandSource> command() {
-        return this.manager.commandBuilder(COMMAND_NAME)
+        return this.manager.commandBuilder(this.metadata.namespace())
                 .literal("help")
-                .permission(TemplatePermission.COMMAND_HELP.node())
+                .permission(PluginPermissions.COMMAND_HELP)
                 .commandDescription(this.description())
                 .optional("query",
                         StringParser.greedyStringParser(),

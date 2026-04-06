@@ -86,10 +86,7 @@ dependencies {
     runtimeDownload(libs.mysql.connector)
 
     // bstats
-    compileOnly(libs.bstats.bukkit)
-    runtimeDownload(libs.bstats.bukkit) {
-        isTransitive = false
-    }
+    implementation(libs.bstats.bukkit)
 }
 
 val mainPackage = "${projectMetadata.projectGroup.get()}.${projectMetadata.projectName.get().lowercase()}"

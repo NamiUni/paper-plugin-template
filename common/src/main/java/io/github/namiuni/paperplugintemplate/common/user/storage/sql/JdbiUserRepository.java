@@ -20,6 +20,7 @@
 package io.github.namiuni.paperplugintemplate.common.user.storage.sql;
 
 import com.zaxxer.hikari.HikariDataSource;
+import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
 import io.github.namiuni.paperplugintemplate.common.user.storage.FlywayLogger;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
@@ -63,10 +64,6 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
-    private static final Executor VIRTUAL_EXECUTOR = Executors.newThreadPerTaskExecutor(
-            Thread.ofVirtual().name("PaperPluginTemplate-JDBI-User-Pool", 0).factory()
-    );
-
     private final JdbiExecutor jdbi;
     private final HikariDataSource dataSource;
     private final Flyway flyway;
@@ -86,9 +83,13 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
             final HikariDataSource dataSource,
             final Flyway flyway,
             final FlywayLogger flywayLogger,
-            final ComponentLogger logger
+            final ComponentLogger logger,
+            final PluginMetadata metadata
     ) {
-        this.jdbi = JdbiExecutor.create(jdbi, VIRTUAL_EXECUTOR);
+        final Executor virtualExecutor = Executors.newThreadPerTaskExecutor(
+                Thread.ofVirtual().name(metadata.name() + "-JDBI-User-Pool", 0).factory()
+        );
+        this.jdbi = JdbiExecutor.create(jdbi, virtualExecutor);
         this.dataSource = dataSource;
         this.flyway = flyway;
         this.flywayLogger = flywayLogger;

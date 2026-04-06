@@ -25,6 +25,7 @@ import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider;
 import io.github.namiuni.paperplugintemplate.common.CommonModule;
 import io.github.namiuni.paperplugintemplate.common.PluginInitializer;
+import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
 import io.github.namiuni.paperplugintemplate.common.user.storage.StorageModule;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
@@ -63,13 +64,20 @@ public final class PluginBootstrapImpl implements PluginBootstrap {
     /// {@inheritDoc}
     ///
     /// Constructs the Guice injector, performs startup initialization via
-    /// [PluginInitializer], and registers the [PluginTemplateImpl] singleton
+    /// [PluginInitializer], and registers the [PluginTemplate] singleton
     /// with [PluginTemplateProvider].
     @Override
     public void bootstrap(final BootstrapContext context) {
+        final var paperMeta = context.getPluginMeta();
+        final PluginMetadata metadata = new PluginMetadata(
+                paperMeta.getName(),
+                paperMeta.getDisplayName(),
+                paperMeta.namespace(),
+                paperMeta.getVersion()
+        );
         this.injector = Guice.createInjector(
                 new PluginModule(context),
-                new CommonModule(context.getLogger(), context.getDataDirectory()),
+                new CommonModule(context.getLogger(), context.getDataDirectory(), metadata),
                 new StorageModule()
         );
 
