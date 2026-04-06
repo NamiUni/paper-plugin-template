@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.common.command;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
 import jakarta.inject.Inject;
 import java.util.Set;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.incendo.cloud.CommandManager;
 import org.jspecify.annotations.NullMarked;
 
@@ -38,7 +39,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// [#registerCommands()] is designed to be called exactly once on the
 /// bootstrap thread during
-/// [io.github.namiuni.paperplugintemplate.common.PluginInternal#initialize()].
+/// [io.github.namiuni.paperplugintemplate.common.PluginInitializer#initialize()].
 /// Concurrent invocation is not supported and would produce duplicate
 /// command registrations.
 @NullMarked
@@ -46,6 +47,7 @@ public final class CommandRegistrar {
 
     private final CommandManager<CommandSource> commandManager;
     private final Set<CommandFactory> commandFactories;
+    private final ComponentLogger logger;
 
     /// Constructs a new registrar.
     ///
@@ -54,13 +56,16 @@ public final class CommandRegistrar {
     /// @param commandFactories the set of factories contributed via Guice
     ///                         [com.google.inject.multibindings.Multibinder];
     ///                         must not be `null` or contain `null` elements
+    /// @param logger           the component-aware logger
     @Inject
     private CommandRegistrar(
             final CommandManager<CommandSource> commandManager,
-            final Set<CommandFactory> commandFactories
+            final Set<CommandFactory> commandFactories,
+            final ComponentLogger logger
     ) {
         this.commandManager = commandManager;
         this.commandFactories = commandFactories;
+        this.logger = logger;
     }
 
     /// Registers all commands contributed by the bound [CommandFactory] set.
@@ -71,6 +76,15 @@ public final class CommandRegistrar {
     /// once on the bootstrap thread before the server accepts player
     /// connections.
     public void registerCommands() {
-        this.commandFactories.forEach(factory -> this.commandManager.command(factory.command()));
+        this.commandFactories.forEach(factory -> {
+            final var command = factory.command();
+            this.commandManager.command(command);
+            this.logger.debug(
+                    "Registered command: /{} ({})",
+                    command.rootComponent().name(),
+                    factory.getClass().getSimpleName()
+            );
+        });
+        this.logger.info("Registered {} command(s).", this.commandFactories.size());
     }
 }

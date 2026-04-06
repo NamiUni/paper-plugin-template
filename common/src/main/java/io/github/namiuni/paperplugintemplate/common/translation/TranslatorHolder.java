@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@ import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 
@@ -51,19 +52,27 @@ public final class TranslatorHolder implements Supplier<Translator> {
 
     private final TranslatorLoader translatorLoader;
     private final AtomicReference<Translator> translator;
+    private final ComponentLogger logger;
 
     /// Constructs a new holder by performing an initial translation load.
     ///
     /// @param translatorLoader the loader used for both the initial and
     ///                         subsequent loads
+    /// @param logger           the component-aware logger
     /// @throws IOException if the translation files cannot be read during
     ///         the initial load
     @Inject
-    private TranslatorHolder(final TranslatorLoader translatorLoader) throws IOException {
+    private TranslatorHolder(
+            final TranslatorLoader translatorLoader,
+            final ComponentLogger logger
+    ) throws IOException {
         this.translatorLoader = translatorLoader;
+        this.logger = logger;
 
+        this.logger.debug("Loading translations...");
         final Translator initial = translatorLoader.loadTranslator();
         this.translator = new AtomicReference<>(initial);
+        this.logger.debug("Translations loaded.");
     }
 
     /// Loads a fresh [Translator] from disk and returns it.
@@ -76,7 +85,10 @@ public final class TranslatorHolder implements Supplier<Translator> {
     /// @return a newly constructed [Translator]
     /// @throws IOException if the translation files cannot be read
     public Translator reload() throws IOException {
-        return this.translatorLoader.loadTranslator();
+        this.logger.debug("Reloading translations...");
+        final Translator fresh = this.translatorLoader.loadTranslator();
+        this.logger.debug("Translation reload complete.");
+        return fresh;
     }
 
     /// Returns the currently active [Translator].

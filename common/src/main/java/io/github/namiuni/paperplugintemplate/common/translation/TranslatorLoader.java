@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -98,17 +99,23 @@ final class TranslatorLoader {
     private static final String FILE_SUFFIX = ".properties";
 
     private final Path translationDir;
+    private final ComponentLogger logger;
 
     /// Constructs a new loader, creating the `translation/` directory if it
     /// does not already exist.
     ///
     /// @param dataDirectory the plugin data directory, injected via
     ///                      [DataDirectory]
+    /// @param logger        the component-aware logger
     /// @throws UncheckedIOException if the translation directory cannot be
     ///         created
     @Inject
-    private TranslatorLoader(final @DataDirectory Path dataDirectory) {
+    private TranslatorLoader(
+            final @DataDirectory Path dataDirectory,
+            final ComponentLogger logger
+    ) {
         this.translationDir = dataDirectory.resolve("translation");
+        this.logger = logger;
         try {
             Files.createDirectories(this.translationDir);
         } catch (final IOException exception) {
@@ -125,6 +132,7 @@ final class TranslatorLoader {
     /// @return a fully populated [Translator]
     /// @throws IOException if reading or writing translation files fails
     Translator loadTranslator() throws IOException {
+        this.logger.debug("Building translation store...");
         final var store = MiniMessageTranslationStore.create(TRANSLATION_KEY, MINI_MESSAGE);
         store.defaultLocale(Locale.ROOT);
 
@@ -134,6 +142,7 @@ final class TranslatorLoader {
                 .stream()
                 .collect(Collectors.toUnmodifiableMap(Translation.Message::key, Translation.Message::content));
         store.registerAll(Locale.ROOT, rootTranslations);
+        this.logger.debug("Registered {} ROOT-locale messages from annotations.", rootTranslations.size());
 
         // 2. Register all translation files present on disk (operator overrides)
         final Set<Locale> diskLocales = new HashSet<>();
@@ -144,10 +153,17 @@ final class TranslatorLoader {
                         final Locale locale = parseLocale(file);
                         store.registerAll(locale, file, false);
                         diskLocales.add(locale);
+                        this.logger.debug("Loaded translation file: {} (locale: {})", file.getFileName(), locale);
                     });
+        }
+        if (diskLocales.isEmpty()) {
+            this.logger.debug("No operator-provided translation files found in {}.", this.translationDir);
+        } else {
+            this.logger.info("Loaded {} translation file(s) from disk: {}.", diskLocales.size(), diskLocales);
         }
 
         // 3. Fill in locales defined in annotations but absent on disk, and write them out
+        int generatedFiles = 0;
         for (final Translation translation : readAllAnnotations(Messages.class)) {
             translation.messages().stream()
                     .filter(msg -> !store.contains(msg.key(), translation.locale()))
@@ -155,9 +171,19 @@ final class TranslatorLoader {
 
             if (!diskLocales.contains(translation.locale())) {
                 writeTranslationFile(this.translationDir, translation);
+                generatedFiles++;
+                this.logger.debug("Generated default translation file for locale: {}.", translation.locale());
             }
         }
+        if (generatedFiles > 0) {
+            this.logger.info(
+                    "Generated {} default translation file(s) — edit them in {} to customise messages.",
+                    generatedFiles,
+                    this.translationDir
+            );
+        }
 
+        this.logger.debug("Translation store build complete.");
         return store;
     }
 

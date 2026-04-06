@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.logging.LogFactory;
 import org.jdbi.v3.core.Jdbi;
@@ -44,9 +45,9 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Schema management
 ///
-/// The database schema is fully managed by Flyway, which runs migrations
-/// before this repository is used. [#initialize()] is therefore a no-op for
-/// SQL backends.
+/// The database schema is fully managed by Flyway, which runs migrations in
+/// [#initialize()]. Flyway output is routed through the plugin's [ComponentLogger]
+/// via [FlywayLogger].
 ///
 /// ## Ownership and lifecycle
 ///
@@ -56,15 +57,9 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Thread safety
 ///
-/// All operations are submitted to a virtual-thread-per-task executor named
-/// `YourPlugin-DB-User-Repo-N`. The [JdbiExecutor] wraps JDBI's handle
-/// lifecycle so that each operation acquires and releases a connection within
-/// its virtual thread without blocking the caller. No `synchronized` blocks are
-/// used; this class is safe from carrier-thread pinning (JEP 491).
-///
-/// @implNote HikariCP connection acquisition may block briefly if all
-///           connections are in use. On virtual threads this parks the virtual thread
-///           rather than blocking the carrier thread, provided HikariCP 5.0+ is used.
+/// All operations are submitted to a virtual-thread-per-task executor. No
+/// `synchronized` blocks are used; this class is safe from carrier-thread
+/// pinning (JEP 491).
 @NullMarked
 public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
@@ -76,42 +71,59 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
     private final HikariDataSource dataSource;
     private final Flyway flyway;
     private final FlywayLogger flywayLogger;
+    private final ComponentLogger logger;
 
     /// Constructs a new repository.
     ///
-    /// @param jdbi       the configured JDBI instance with all required plugins and row mappers installed
-    /// @param dataSource the HikariCP connection pool; this repository takes ownership and closes it on [#close()]
+    /// @param jdbi         the configured JDBI instance with all required plugins and row mappers installed
+    /// @param dataSource   the HikariCP connection pool; this repository takes ownership and closes it on [#close()]
+    /// @param flyway       the Flyway instance managing schema migrations
+    /// @param flywayLogger the logger adapter that routes Flyway output to the plugin logger
+    /// @param logger       the component-aware logger
     @Inject
     private JdbiUserRepository(
             final Jdbi jdbi,
             final HikariDataSource dataSource,
             final Flyway flyway,
-            final FlywayLogger flywayLogger
+            final FlywayLogger flywayLogger,
+            final ComponentLogger logger
     ) {
         this.jdbi = JdbiExecutor.create(jdbi, VIRTUAL_EXECUTOR);
         this.dataSource = dataSource;
         this.flyway = flyway;
         this.flywayLogger = flywayLogger;
+        this.logger = logger;
     }
 
-    /// No-op for SQL backends.
+    /// Runs Flyway repair and migration, then logs the result.
     ///
-    /// The `users` table and all subsequent schema versions are created by
-    /// Flyway during injector construction (see `StorageModule.jdbi()`).
-    /// By the time this method is called from
-    /// [io.github.namiuni.paperplugintemplate.common.PluginInternal#initialize()],
-    /// the schema is already up-to-date and no DDL work remains.
+    /// Flyway output is routed through [FlywayLogger] for the duration of
+    /// this call and the default creator is restored afterward.
     @Override
     public void initialize() {
+        this.logger.info("Running Flyway repair & migration...");
         LogFactory.setLogCreator(this.flywayLogger);
-        this.flyway.repair();
-        this.flyway.migrate();
-        LogFactory.setLogCreator(null);
+        try {
+            this.flyway.repair();
+            final var result = this.flyway.migrate();
+            if (result.migrationsExecuted == 0) {
+                this.logger.info("Schema is up-to-date. No migrations applied.");
+            } else {
+                this.logger.info(
+                        "Applied {} migration(s). Schema is now at version {}.",
+                        result.migrationsExecuted,
+                        result.targetSchemaVersion
+                );
+            }
+        } finally {
+            LogFactory.setLogCreator(null);
+        }
     }
 
     /// {@inheritDoc}
     @Override
     public CompletableFuture<Optional<UserProfile>> findById(final UUID uuid) {
+        this.logger.debug("[SQL] findById: {}", uuid);
         return this.jdbi.withExtension(UserDao.class, dao -> dao.findByUuid(uuid))
                 .toCompletableFuture();
     }
@@ -119,6 +131,7 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
     /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> upsert(final UserProfile userProfile) {
+        this.logger.debug("[SQL] upsert: {} ({})", userProfile.uuid(), userProfile.name());
         return this.jdbi.useExtension(UserDao.class, dao -> dao.upsert(userProfile))
                 .toCompletableFuture();
     }
@@ -126,6 +139,7 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
     /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> delete(final UUID uuid) {
+        this.logger.debug("[SQL] delete: {}", uuid);
         return this.jdbi.useExtension(UserDao.class, dao -> dao.deleteByUuid(uuid))
                 .toCompletableFuture();
     }
@@ -137,6 +151,8 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
     /// method on this instance will result in undefined behavior.
     @Override
     public void close() {
+        this.logger.info("Closing HikariCP connection pool...");
         this.dataSource.close();
+        this.logger.info("Connection pool closed.");
     }
 }

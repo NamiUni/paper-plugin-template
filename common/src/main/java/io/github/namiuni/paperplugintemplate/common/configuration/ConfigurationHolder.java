@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.common.configuration;
 import jakarta.inject.Inject;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.ConfigurateException;
 
@@ -40,15 +41,24 @@ public final class ConfigurationHolder<T extends Record> implements Supplier<T> 
 
     private final ConfigurationLoader<T> configLoader;
     private final AtomicReference<T> config;
+    private final ComponentLogger logger;
 
     /// Constructs a new holder by performing an initial load from disk.
     ///
     /// @param configLoader the loader used for both initial and subsequent loads
+    /// @param logger       the component-aware logger
     /// @throws ConfigurateException if the initial configuration load fails
     @Inject
-    private ConfigurationHolder(final ConfigurationLoader<T> configLoader) throws ConfigurateException {
+    private ConfigurationHolder(
+            final ConfigurationLoader<T> configLoader,
+            final ComponentLogger logger
+    ) throws ConfigurateException {
         this.configLoader = configLoader;
+        this.logger = logger;
+
+        this.logger.info("Loading configuration: {}...", configLoader.configName());
         this.config = new AtomicReference<>(configLoader.loadConfiguration());
+        this.logger.info("Configuration loaded: {}", configLoader.configName());
     }
 
     /// Reloads the configuration from disk and atomically updates the stored value.
@@ -56,8 +66,10 @@ public final class ConfigurationHolder<T extends Record> implements Supplier<T> 
     /// @return the freshly loaded configuration instance
     /// @throws ConfigurateException if the configuration file cannot be read or parsed
     public T reload() throws ConfigurateException {
+        this.logger.info("Reloading configuration: {}...", this.configLoader.configName());
         final T loaded = this.configLoader.loadConfiguration();
         this.config.set(loaded);
+        this.logger.info("Configuration reloaded: {}", this.configLoader.configName());
         return loaded;
     }
 

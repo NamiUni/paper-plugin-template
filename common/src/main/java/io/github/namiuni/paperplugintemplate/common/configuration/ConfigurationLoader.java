@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@ import io.github.namiuni.paperplugintemplate.common.configuration.annotations.Co
 import io.github.namiuni.paperplugintemplate.common.configuration.annotations.ConfigName;
 import java.nio.file.Path;
 import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.CommentedConfigurationNode;
@@ -54,6 +55,8 @@ public final class ConfigurationLoader<T extends Record> {
 
     private final Class<T> configClass;
     private final T defaultConfig;
+    private final String configName;
+    private final ComponentLogger logger;
 
     private final org.spongepowered.configurate.loader.ConfigurationLoader<CommentedConfigurationNode> configLoader;
 
@@ -69,19 +72,22 @@ public final class ConfigurationLoader<T extends Record> {
     ///                      from the file
     /// @param dataDirectory the plugin data directory where the file will be
     ///                      stored
+    /// @param logger        the component-aware logger
     /// @throws NullPointerException if `configClass` is not annotated with
     ///         [ConfigName] or [ConfigHeader]
     public ConfigurationLoader(
             final Class<T> configClass,
             final T defaultConfig,
-            final @DataDirectory Path dataDirectory
+            final @DataDirectory Path dataDirectory,
+            final ComponentLogger logger
     ) {
         this.configClass = configClass;
         this.defaultConfig = defaultConfig;
+        this.logger = logger;
 
         // Config path
-        final String configName = configClass.getAnnotation(ConfigName.class).value();
-        final Path configPath = dataDirectory.resolve(configName);
+        this.configName = configClass.getAnnotation(ConfigName.class).value();
+        final Path configPath = dataDirectory.resolve(this.configName);
 
         // Config header
         final ConfigHeader headerAnnotation = configClass.getAnnotation(ConfigHeader.class);
@@ -105,15 +111,27 @@ public final class ConfigurationLoader<T extends Record> {
                 .build();
     }
 
+    /// Returns the file name this loader reads from and writes to,
+    /// relative to the plugin data directory.
+    ///
+    /// Used by [ConfigurationHolder] to produce meaningful log messages.
+    ///
+    /// @return the config file name (e.g. `"config.conf"`), never `null`
+    public String configName() {
+        return this.configName;
+    }
+
     /// Loads the configuration from disk, populates missing keys with
     /// defaults, and saves the result back to the file.
     ///
     /// @return the deserialized configuration instance
     /// @throws ConfigurateException if the file cannot be read, parsed, or written
     T loadConfiguration() throws ConfigurateException {
+        this.logger.debug("Reading {} from disk...", this.configName);
         final ConfigurationNode node = this.configLoader.load();
         final T config = node.get(this.configClass, this.defaultConfig);
         this.configLoader.save(node);
+        this.logger.debug("Wrote defaults back to {} (shouldCopyDefaults).", this.configName);
         return config;
     }
 }
