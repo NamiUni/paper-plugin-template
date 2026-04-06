@@ -19,11 +19,15 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
+import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRepository;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.listener.PaperEventHandler;
 import jakarta.inject.Inject;
+import java.util.function.Supplier;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import org.bstats.bukkit.Metrics;
+import org.bstats.charts.SimplePie;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
@@ -39,25 +43,27 @@ public final class JavaPluginImpl extends JavaPlugin {
     private final PaperEventHandler paperEventHandler;
     private final UserRepository userRepository;
     private final ComponentLogger logger;
+    private final Supplier<PrimaryConfiguration> primaryConfig;
 
     /// Constructs a new [JavaPluginImpl] instance.
     ///
     /// This constructor is invoked exclusively by the Guice injector.
     ///
-    /// @param paperEventHandler the event listener that drives user data
-    ///                          loading and saving
-    /// @param userRepository    the active storage backend; closed on
-    ///                          [#onDisable()]
+    /// @param paperEventHandler the event listener that drives user data loading and saving
+    /// @param userRepository    the active storage backend; closed on [#onDisable()]
     /// @param logger            the component-aware logger
+    /// @param primaryConfig     the primary config
     @Inject
     private JavaPluginImpl(
             final PaperEventHandler paperEventHandler,
             final UserRepository userRepository,
-            final ComponentLogger logger
+            final ComponentLogger logger,
+            final Supplier<PrimaryConfiguration> primaryConfig
     ) {
         this.paperEventHandler = paperEventHandler;
         this.userRepository = userRepository;
         this.logger = logger;
+        this.primaryConfig = primaryConfig;
     }
 
     /// {@inheritDoc}
@@ -68,6 +74,14 @@ public final class JavaPluginImpl extends JavaPlugin {
     @Override
     public void onEnable() {
         this.getServer().getPluginManager().registerEvents(this.paperEventHandler, this);
+
+        final int pluginId = 30597;
+        final Metrics metrics = new Metrics(this, pluginId);
+
+        metrics.addCustomChart(
+                new SimplePie("user_storage_type", () -> this.primaryConfig.get().storage().type().name())
+        );
+
         this.logger.info("Plugin enabled.");
     }
 
@@ -82,6 +96,7 @@ public final class JavaPluginImpl extends JavaPlugin {
         if (this.userRepository instanceof final JdbiUserRepository jdbiUserRepository) {
             jdbiUserRepository.close();
         }
+
         this.logger.info("Plugin disabled.");
     }
 }

@@ -21,6 +21,7 @@ adventure = "4.26.1"
 kotonoha = "0.2.0"
 cloud = "2.0.0"
 cloud-minecraft = "2.0.0-beta.14"
+bstats = "3.2.1"
 
 # Storage
 jdbi = "3.47.0"
@@ -58,6 +59,7 @@ cloud-core = { group = "org.incendo", name = "cloud-core", version.ref = "cloud"
 cloud-paper = { group = "org.incendo", name = "cloud-paper", version.ref = "cloud-minecraft" }
 cloud-minecraft-extras = { group = "org.incendo", name = "cloud-minecraft-extras", version.ref = "cloud-minecraft" }
 gremlin-runtime = { group = "xyz.jpenilla", name = "gremlin-runtime", version.ref = "gremlin" }
+bstats-bukkit = { group = "org.bstats", name = "bstats-bukkit", version.ref = "bstats" }
 
 # Storage
 jdbi-core = { group = "org.jdbi", name = "jdbi3-core", version.ref = "jdbi" }
