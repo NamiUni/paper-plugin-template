@@ -86,13 +86,15 @@ dependencies {
     runtimeDownload(libs.mysql.connector)
 }
 
-val mainPackage = "${projectMetadata.group.get()}.${projectMetadata.name.get().lowercase()}"
+val mainPackage = "${projectMetadata.projectGroup.get()}.${projectMetadata.projectName.get().lowercase()}"
 paperPluginYaml {
-    name = projectMetadata.name
-    version = projectMetadata.version
-    author = projectMetadata.author
-    contributors = projectMetadata.contributors
-    website = projectMetadata.website
+    name = projectMetadata.projectName
+    version = projectMetadata.projectVersion
+    author = projectMetadata.authorName
+    contributors = projectMetadata.projectContributors.getOrElse("")
+        .split(", ")
+        .filter { it.isNotEmpty() }
+    website = projectMetadata.projectWebsite
     apiVersion = "1.21.11"
 
     loader = "$mainPackage.minecraft.paper.PluginLoaderImpl"
@@ -100,9 +102,9 @@ paperPluginYaml {
     bootstrapper = "$mainPackage.minecraft.paper.PluginBootstrapImpl"
 
     permissions {
-        val prefix = paperPluginYaml.name.get().lowercase()
+        val prefix = projectMetadata.projectName.get().lowercase()
         register("$prefix.command.reload") {
-            description = "Reloads ${projectMetadata.name}'s config."
+            description = "Reloads ${projectMetadata.projectName}'s config."
             default = Permission.Default.OP
         }
     }
