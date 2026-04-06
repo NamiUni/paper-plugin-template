@@ -16,8 +16,8 @@ val contributors = providers.gradleProperty("contributors").getOrElse("")
     .filter { it.isNotEmpty() }
 val website = config.website.convention(providers.gradleProperty("website"))
 
-group = projectGroup
-version = projectVersion
+group = projectGroup.get()
+version = projectVersion.get()
 
 java {
     toolchain {
