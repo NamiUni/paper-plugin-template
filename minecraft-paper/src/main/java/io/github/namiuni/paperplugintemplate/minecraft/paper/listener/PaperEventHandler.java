@@ -113,12 +113,10 @@ public final class PaperEventHandler implements Listener {
         }
 
         this.userService.loadUserProfile(uuid)
-                .whenComplete((profile, ex) -> {
+                .whenComplete((_, ex) -> {
                     if (ex != null) {
                         this.logger.error("Failed to pre-load profile for UUID: {}; disconnecting.", uuid, ex);
                         connection.disconnect(this.messages.joinFailureProfile());
-                    } else {
-                        this.logger.debug("Pre-load succeeded for UUID: {}, result: {}", uuid, profile);
                     }
                 });
     }
@@ -133,11 +131,9 @@ public final class PaperEventHandler implements Listener {
     private void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
         this.userService.loadUser(player)
-                .whenComplete((user, ex) -> {
+                .whenComplete((_, ex) -> {
                     if (ex != null) {
                         this.logger.error("Failed to load user on join for UUID: {}", player.getUniqueId(), ex);
-                    } else {
-                        this.logger.debug("Join userCache promotion succeeded: {}", user);
                     }
                 });
     }
@@ -158,13 +154,10 @@ public final class PaperEventHandler implements Listener {
     private void onDisconnect(final PlayerQuitEvent event) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
+        // persistOnlinePlayer guarantees discardUser on completion;
+        // no additional eviction call is needed on the success path.
         this.userService.loadUser(player)
-                .thenCompose(user -> {
-                    this.logger.debug("Disconnecting: {}", user);
-                    return this.userService.persistOnlinePlayer(user);
-                    // persistOnlinePlayer guarantees discardUser on completion;
-                    // no additional eviction call is needed on the success path.
-                })
+                .thenCompose(this.userService::persistOnlinePlayer)
                 .whenComplete((_, ex) -> {
                     if (ex != null) {
                         this.logger.error("Failed to persist profile on disconnect for UUID: {}", uuid, ex);
@@ -192,10 +185,7 @@ public final class PaperEventHandler implements Listener {
     private void onWorldSave(final WorldSaveEvent event) {
         for (final Player player : event.getWorld().getPlayers()) {
             this.userService.loadUser(player)
-                    .thenCompose(user -> {
-                        this.logger.debug("World-save checkpoint: {}", user);
-                        return this.userService.checkpointUser(user);
-                    })
+                    .thenCompose(this.userService::checkpointUser)
                     .whenComplete((_, ex) -> {
                         if (ex != null) {
                             this.logger.error("Failed to persist profile on world save for UUID: {}", player.getUniqueId(), ex);

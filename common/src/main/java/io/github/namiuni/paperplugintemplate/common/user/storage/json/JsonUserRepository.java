@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -43,40 +43,24 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
 /// [UserRepository] implementation that stores each user profile as an
 /// individual JSON file under `<dataDirectory>/users/<uuid>.json`.
 ///
 /// Suitable only for low-traffic, single-server deployments. Prefer the H2 or
-/// MySQL backend for anything beyond that due to per-file I/O overhead and the
-/// lack of transactional guarantees across multiple records.
+/// MySQL backend for anything beyond that.
 ///
 /// ## Thread safety
 ///
 /// `synchronized` blocks are avoided entirely to prevent carrier-thread pinning
-/// on virtual threads (JEP 491). Instead, a per-UUID [ReentrantReadWriteLock]
-/// is maintained in a [java.util.concurrent.ConcurrentHashMap] managed by a Caffeine userCache:
-///
-/// - Multiple concurrent reads for the same UUID proceed in parallel.
-/// - A write operation (upsert or delete) for a given UUID excludes all other
-///   reads and writes for that UUID.
-/// - Operations on different UUIDs are fully independent and never contend.
-///
-/// The lock entry for a UUID is retained by the Caffeine userCache for 10 minutes
-/// after last access, bounding memory growth for servers with many transient
-/// players.
+/// on virtual threads (JEP 491). A per-UUID [ReentrantReadWriteLock] maintained
+/// in a Caffeine cache provides the necessary mutual exclusion.
 ///
 /// ## Atomicity
 ///
-/// Writes are atomic at the file-system level: JSON is first written to a
-/// `.tmp` sibling file, then renamed over the target using
-/// [StandardCopyOption#ATOMIC_MOVE] where the OS supports it.
-///
-/// @implNote All I/O runs on a dedicated virtual-thread-per-task executor named
-///           `YourPlugin-Json-User-Repo-N`. Callers must never call
-///           [CompletableFuture#join()] on the returned futures from the Paper main
-///           thread.
+/// Writes use a `.tmp`-then-atomic-rename strategy for crash-safety.
 @NullMarked
 public final class JsonUserRepository implements UserRepository {
 
@@ -100,18 +84,20 @@ public final class JsonUserRepository implements UserRepository {
 
     private final Path storageDir;
     private final Cache<UUID, ReentrantReadWriteLock> locks;
+    private final ComponentLogger logger;
 
     /// Constructs a new repository whose files live under
     /// `<dataDirectory>/users/`.
     ///
-    /// The `users/` directory is created lazily at [#initialize()] time rather
-    /// than here, so construction is safe even before the plugin data directory
-    /// exists.
-    ///
     /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
+    /// @param logger        the component-aware logger
     @Inject
-    private JsonUserRepository(final @DataDirectory Path dataDirectory) {
+    private JsonUserRepository(
+            final @DataDirectory Path dataDirectory,
+            final ComponentLogger logger
+    ) {
         this.storageDir = dataDirectory.resolve("users");
+        this.logger = logger;
         this.locks = Caffeine.newBuilder()
                 .expireAfterAccess(10, TimeUnit.MINUTES)
                 .build();
@@ -126,17 +112,13 @@ public final class JsonUserRepository implements UserRepository {
     public void initialize() {
         try {
             Files.createDirectories(this.storageDir);
+            this.logger.info("JSON storage directory ready: {}", this.storageDir);
         } catch (final IOException exception) {
             throw new UncheckedIOException("Failed to create user data directory", exception);
         }
     }
 
     /// {@inheritDoc}
-    ///
-    /// @implNote Acquires the read lock for `uuid` during the file read.
-    ///           Multiple concurrent reads for the same UUID proceed in parallel; only
-    ///           an active write lock causes a read to wait. The lock is released in a
-    ///           `finally` block, ensuring no lock leak.
     @Override
     public CompletableFuture<Optional<UserProfile>> findById(final UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
@@ -145,12 +127,15 @@ public final class JsonUserRepository implements UserRepository {
             try {
                 final Path file = this.fileFor(uuid);
                 if (!Files.exists(file)) {
+                    this.logger.debug("[JSON] findById: no file for {}", uuid);
                     return Optional.empty();
                 }
                 final String json = Files.readString(file);
                 if (json.isBlank()) {
+                    this.logger.debug("[JSON] findById: empty file for {}", uuid);
                     return Optional.empty();
                 }
+                this.logger.debug("[JSON] findById: loaded profile for {}", uuid);
                 return Optional.of(GSON.fromJson(json, UserProfile.class));
             } catch (final IOException exception) {
                 throw new UncheckedIOException(
@@ -162,10 +147,6 @@ public final class JsonUserRepository implements UserRepository {
     }
 
     /// {@inheritDoc}
-    ///
-    /// @implNote Acquires the write lock for `uuid` for the duration of to
-    ///           write. The file is first written to a `.tmp` sibling, then atomically
-    ///           moved to the final path. The lock is released in a `finally` block.
     @Override
     public CompletableFuture<Void> upsert(final UserProfile userProfile) {
         final UUID uuid = userProfile.uuid();
@@ -179,6 +160,7 @@ public final class JsonUserRepository implements UserRepository {
                 Files.move(tmpFile, file,
                         StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
+                this.logger.debug("[JSON] upsert: wrote profile for {} ({})", uuid, userProfile.name());
             } catch (final IOException exception) {
                 throw new UncheckedIOException(
                         "Failed to write user file for UUID: " + uuid, exception);
@@ -189,17 +171,18 @@ public final class JsonUserRepository implements UserRepository {
     }
 
     /// {@inheritDoc}
-    ///
-    /// @implNote Acquires the write lock for `uuid`. Uses
-    ///           [Files#deleteIfExists] so the operation is a no-op when no file
-    ///           exists for the given UUID.
     @Override
     public CompletableFuture<Void> delete(final UUID uuid) {
         return CompletableFuture.runAsync(() -> {
             final ReentrantReadWriteLock.WriteLock lock = this.lockFor(uuid).writeLock();
             lock.lock();
             try {
-                Files.deleteIfExists(this.fileFor(uuid));
+                final boolean deleted = Files.deleteIfExists(this.fileFor(uuid));
+                if (deleted) {
+                    this.logger.debug("[JSON] delete: removed profile file for {}", uuid);
+                } else {
+                    this.logger.debug("[JSON] delete: no file to remove for {}", uuid);
+                }
             } catch (final IOException exception) {
                 throw new UncheckedIOException(
                         "Failed to delete user file for UUID: " + uuid, exception);

@@ -23,6 +23,7 @@ import io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar;
 import io.github.namiuni.paperplugintemplate.common.translation.TranslatorHolder;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import jakarta.inject.Inject;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.translation.GlobalTranslator;
 import org.jspecify.annotations.NullMarked;
 
@@ -69,6 +70,7 @@ public final class PluginInitializer {
     private final TranslatorHolder translatorHolder;
     private final UserRepository userRepository;
     private final CommandRegistrar commandRegistrar;
+    private final ComponentLogger logger;
 
     /// Constructs a new initializer with all startup dependencies.
     ///
@@ -78,15 +80,18 @@ public final class PluginInitializer {
     /// @param userRepository   the storage backend to initialize on [#initialize()]
     /// @param commandRegistrar the registrar that publishes all Cloud commands to
     ///                         the command manager
+    /// @param logger           the component-aware logger
     @Inject
     private PluginInitializer(
             final TranslatorHolder translatorHolder,
             final UserRepository userRepository,
-            final CommandRegistrar commandRegistrar
+            final CommandRegistrar commandRegistrar,
+            final ComponentLogger logger
     ) {
         this.translatorHolder = translatorHolder;
         this.userRepository = userRepository;
         this.commandRegistrar = commandRegistrar;
+        this.logger = logger;
     }
 
     /// Performs one-time startup initialization in dependency order.
@@ -107,8 +112,16 @@ public final class PluginInitializer {
     /// @throws java.io.UncheckedIOException if the storage backend cannot be
     ///         initialized (e.g. directory creation fails for the JSON backend)
     public void initialize() {
+        this.logger.info("Initializing translations...");
         GlobalTranslator.translator().addSource(this.translatorHolder.get());
+        this.logger.info("Translations registered.");
+
+        this.logger.info("Initializing storage backend...");
         this.userRepository.initialize();
+        this.logger.info("Storage backend ready.");
+
+        this.logger.info("Registering commands...");
         this.commandRegistrar.registerCommands();
+        this.logger.info("Commands registered.");
     }
 }

@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,6 +23,7 @@ import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRepository;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.listener.PaperEventHandler;
 import jakarta.inject.Inject;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
@@ -37,6 +38,7 @@ public final class JavaPluginImpl extends JavaPlugin {
 
     private final PaperEventHandler paperEventHandler;
     private final UserRepository userRepository;
+    private final ComponentLogger logger;
 
     /// Constructs a new [JavaPluginImpl] instance.
     ///
@@ -46,13 +48,16 @@ public final class JavaPluginImpl extends JavaPlugin {
     ///                          loading and saving
     /// @param userRepository    the active storage backend; closed on
     ///                          [#onDisable()]
+    /// @param logger            the component-aware logger
     @Inject
     private JavaPluginImpl(
             final PaperEventHandler paperEventHandler,
-            final UserRepository userRepository
+            final UserRepository userRepository,
+            final ComponentLogger logger
     ) {
         this.paperEventHandler = paperEventHandler;
         this.userRepository = userRepository;
+        this.logger = logger;
     }
 
     /// {@inheritDoc}
@@ -63,6 +68,7 @@ public final class JavaPluginImpl extends JavaPlugin {
     @Override
     public void onEnable() {
         this.getServer().getPluginManager().registerEvents(this.paperEventHandler, this);
+        this.logger.info("Plugin enabled.");
     }
 
     /// {@inheritDoc}
@@ -72,8 +78,10 @@ public final class JavaPluginImpl extends JavaPlugin {
     /// server shuts down.
     @Override
     public void onDisable() {
+        this.logger.info("Disabling plugin...");
         if (this.userRepository instanceof final JdbiUserRepository jdbiUserRepository) {
             jdbiUserRepository.close();
         }
+        this.logger.info("Plugin disabled.");
     }
 }
