@@ -4,20 +4,13 @@ plugins {
     id("java-library")
     id("checkstyle")
     id("net.kyori.indra.licenser.spotless")
+    id("paper-plugin-template.metadata")
 }
 
-val config = extensions.create<ProjectMetadata>("projectMetadata")
-val pluginName = config.name.convention(providers.gradleProperty("name"))
-val projectVersion = config.version.convention(providers.gradleProperty("version"))
-val projectGroup = config.group.convention(providers.gradleProperty("group"))
-val author = config.author.convention(providers.gradleProperty("author"))
-val contributors = providers.gradleProperty("contributors").getOrElse("")
-    .split(", ")
-    .filter { it.isNotEmpty() }
-val website = config.website.convention(providers.gradleProperty("website"))
+val metadata = extensions.getByType<ProjectMetadata>()
 
-group = projectGroup.get()
-version = projectVersion.get()
+group = metadata.projectGroup.get()
+version = metadata.projectVersion.get()
 
 java {
     toolchain {
@@ -32,9 +25,9 @@ checkstyle {
 
 indraSpotlessLicenser {
     licenseHeaderFile(rootProject.file("LICENSE_HEADER"))
-    property("name", pluginName)
-    property("author", author)
-    property("contributors", contributors.joinToString(", "))
+    property("name", metadata.projectName)
+    property("author", metadata.authorName)
+    property("contributors", metadata.projectContributors.getOrElse("[]"))
 }
 
 tasks {
