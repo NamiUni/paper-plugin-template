@@ -84,6 +84,12 @@ dependencies {
     }
     runtimeDownload(libs.h2)
     runtimeDownload(libs.mysql.connector)
+
+    // bstats
+    compileOnly(libs.bstats.bukkit)
+    runtimeDownload(libs.bstats.bukkit) {
+        isTransitive = false
+    }
 }
 
 val mainPackage = "${projectMetadata.projectGroup.get()}.${projectMetadata.projectName.get().lowercase()}"
