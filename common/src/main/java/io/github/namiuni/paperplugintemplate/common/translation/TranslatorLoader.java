@@ -29,6 +29,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -114,7 +116,7 @@ final class TranslatorLoader {
             final @DataDirectory Path dataDirectory,
             final ComponentLogger logger
     ) {
-        this.translationDir = dataDirectory.resolve("translation");
+        this.translationDir = dataDirectory.resolve("translations");
         this.logger = logger;
         try {
             Files.createDirectories(this.translationDir);
@@ -196,28 +198,28 @@ final class TranslatorLoader {
     ///
     /// @param translationClass the interface annotated with [Key] and [Message]
     /// @return an unordered set of non-empty translations; one entry per locale
-    private static Set<Translation> readAllAnnotations(final Class<?> translationClass) {
+    private static List<Translation> readAllAnnotations(final Class<?> translationClass) {
         return Locale.availableLocales()
                 .map(locale -> readAnnotations(translationClass, locale))
                 .filter(translation -> !translation.messages().isEmpty())
-                .collect(Collectors.toSet());
+                .sorted(Comparator.comparing(t -> t.locale().toString()))
+                .toList();
     }
 
     /// Reads the [Translation] for a single locale from the given interface.
     ///
-    /// @param translationClass the interface whose methods carry [Key] and
-    ///                         [Message]
-    /// @param locale           the target locale to extract messages for
-    /// @return a [Translation] for the locale; message list may be empty
+    /// @param translationClass the interface annotated with [Key] and [Message]
+    /// @return an unordered set of non-empty translations; one entry per locale
     private static Translation readAnnotations(final Class<?> translationClass, final Locale locale) {
         final List<Translation.Message> messages = new ArrayList<>();
 
-        for (final var method : translationClass.getMethods()) {
-            final Key keyAnnotation = method.getAnnotation(Key.class);
-            if (keyAnnotation == null) {
-                continue;
-            }
-            final String key = keyAnnotation.value();
+        final var methods = Arrays.stream(translationClass.getMethods())
+                .filter(method -> method.isAnnotationPresent(Key.class))
+                .sorted(Comparator.comparing(method -> method.getAnnotation(Key.class).value()))
+                .toList();
+
+        for (final var method : methods) {
+            final String key = method.getAnnotation(Key.class).value();
             for (final Message msg : method.getAnnotationsByType(Message.class)) {
                 if (locale.equals(msg.locale().asLocale())) {
                     messages.add(new Translation.Message(key, msg.content()));
