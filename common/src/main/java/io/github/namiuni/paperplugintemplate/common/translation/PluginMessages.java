@@ -22,7 +22,6 @@ package io.github.namiuni.paperplugintemplate.common.translation;
 import io.github.namiuni.kotonoha.annotations.Key;
 import io.github.namiuni.kotonoha.annotations.Locales;
 import io.github.namiuni.kotonoha.annotations.Message;
-import io.github.namiuni.kotonoha.annotations.ResourceBundle;
 import io.github.namiuni.kotonoha.translatable.message.extra.miniplaceholders.PlaceholderScope;
 import io.github.namiuni.kotonoha.translatable.message.extra.miniplaceholders.WithPlaceholders;
 import net.kyori.adventure.text.Component;
@@ -44,8 +43,7 @@ import org.jspecify.annotations.NullMarked;
 /// The Kotonoha-generated proxy is stateless and therefore safe to call from
 /// any thread without additional synchronization.
 @NullMarked
-@ResourceBundle(baseName = "messages")
-public interface Messages {
+public interface PluginMessages {
 
     /// Returns the message sent to a command sender when the configuration is reloaded successfully.
     ///

@@ -26,6 +26,7 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.common.DataDirectory;
+import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
 import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.user.storage.json.JsonUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.sql.JdbiUserRepository;
@@ -194,24 +195,23 @@ public final class StorageModule extends AbstractModule {
     /// @throws IllegalStateException if the storage type is [StorageType#JSON];
     ///         this should never occur because Guice only invokes this provider
     ///         when a SQL backend is active
-    /// @implNote Replace the pool name `"YourPlugin"` with the actual plugin name
-    ///           to avoid ambiguity in HikariCP thread dumps.
     @Provides
     @Singleton
     private HikariDataSource dataSource(
             final Supplier<PrimaryConfiguration> primaryConfig,
-            final @DataDirectory Path dataDirectory
+            final @DataDirectory Path dataDirectory,
+            final PluginMetadata metadata
     ) {
         final PrimaryConfiguration.Storage storage = primaryConfig.get().storage();
         final PrimaryConfiguration.Storage.Pool pool = storage.pool();
         final HikariConfig config = new HikariConfig();
-        config.setPoolName("PaperPluginTemplate"); // TODO: replace with the actual plugin name
+        config.setPoolName(metadata.name());
         config.setMaximumPoolSize(pool.maximumPoolSize());
         config.setMinimumIdle(pool.minimumIdle());
         config.setMaxLifetime(pool.maximumLifetime());
         config.setKeepaliveTime(pool.keepaliveTime());
         config.setConnectionTimeout(pool.connectionTimeout());
-        config.setThreadFactory(Thread.ofVirtual().name("PaperPluginTemplate-Hikari-Pool", 0).factory());
+        config.setThreadFactory(Thread.ofVirtual().name(metadata.name() + "-Hikari-Pool", 0).factory());
 
         switch (storage.type()) {
             case H2 -> {
@@ -221,7 +221,7 @@ public final class StorageModule extends AbstractModule {
             }
             case MYSQL -> {
                 config.setJdbcUrl("jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
-                                .formatted(storage.host(), storage.port(), storage.database()));
+                        .formatted(storage.host(), storage.port(), storage.database()));
                 config.setUsername(storage.username());
                 config.setPassword(storage.password());
                 config.setDriverClassName("com.mysql.cj.jdbc.Driver");

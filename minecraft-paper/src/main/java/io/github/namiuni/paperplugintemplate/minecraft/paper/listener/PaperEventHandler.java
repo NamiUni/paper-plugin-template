@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.listener;
 
-import io.github.namiuni.paperplugintemplate.common.translation.Messages;
+import io.github.namiuni.paperplugintemplate.common.translation.PluginMessages;
 import io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import jakarta.inject.Inject;
@@ -74,7 +74,7 @@ public final class PaperEventHandler implements Listener {
 
     private final PluginTemplateUserServiceInternal userService;
     private final ComponentLogger logger;
-    private final Messages messages;
+    private final PluginMessages messages;
 
     /// Constructs a new event handler.
     ///
@@ -87,7 +87,8 @@ public final class PaperEventHandler implements Listener {
     private PaperEventHandler(
             final PluginTemplateUserServiceInternal userService,
             final ComponentLogger logger,
-            final Messages messages) {
+            final PluginMessages messages
+    ) {
         this.userService = userService;
         this.logger = logger;
         this.messages = messages;

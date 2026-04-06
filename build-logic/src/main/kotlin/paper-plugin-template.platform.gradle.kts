@@ -23,6 +23,8 @@ tasks {
                     relocate(it, "libraries.$it")
                 }
         }
+
+        relocate("org.bstats", "libraries.org.bstats")
     }
 
     javadoc {

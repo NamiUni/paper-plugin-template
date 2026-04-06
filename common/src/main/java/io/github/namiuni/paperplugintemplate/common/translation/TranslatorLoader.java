@@ -53,7 +53,7 @@ import org.jspecify.annotations.NullMarked;
 /// The loading strategy follows a three-step priority order:
 ///
 ///   1. **ROOT locale** – always sourced from the compile-time annotations on
-///      [Messages]; these act as the ultimate fallback.
+///      [PluginMessages]; these act as the ultimate fallback.
 ///   2. **Disk files** – `.properties` files found under the
 ///      `translation/` sub-directory override the annotation defaults for
 ///      their respective locales, allowing server operators to customize
@@ -106,11 +106,9 @@ final class TranslatorLoader {
     /// Constructs a new loader, creating the `translation/` directory if it
     /// does not already exist.
     ///
-    /// @param dataDirectory the plugin data directory, injected via
-    ///                      [DataDirectory]
+    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
     /// @param logger        the component-aware logger
-    /// @throws UncheckedIOException if the translation directory cannot be
-    ///         created
+    /// @throws UncheckedIOException if the translation directory cannot be created
     @Inject
     private TranslatorLoader(
             final @DataDirectory Path dataDirectory,
@@ -139,7 +137,7 @@ final class TranslatorLoader {
         store.defaultLocale(Locale.ROOT);
 
         // 1. Register ROOT locale from compile-time annotations (ultimate fallback)
-        final Map<String, String> rootTranslations = readAnnotations(Messages.class, Locale.ROOT)
+        final Map<String, String> rootTranslations = readAnnotations(PluginMessages.class, Locale.ROOT)
                 .messages()
                 .stream()
                 .collect(Collectors.toUnmodifiableMap(Translation.Message::key, Translation.Message::content));
@@ -166,7 +164,7 @@ final class TranslatorLoader {
 
         // 3. Fill in locales defined in annotations but absent on disk, and write them out
         int generatedFiles = 0;
-        for (final Translation translation : readAllAnnotations(Messages.class)) {
+        for (final Translation translation : readAllAnnotations(PluginMessages.class)) {
             translation.messages().stream()
                     .filter(msg -> !store.contains(msg.key(), translation.locale()))
                     .forEach(msg -> store.register(msg.key(), translation.locale(), msg.content()));

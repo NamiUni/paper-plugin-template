@@ -21,24 +21,13 @@ package io.github.namiuni.paperplugintemplate.common.permission;
 
 import org.jspecify.annotations.NullMarked;
 
-/// Enumeration of all permission nodes used by the template plugin.
+/// Enumeration of all permission nodes used by the plugin.
 @NullMarked
-public enum TemplatePermission {
+public final class PluginPermissions {
 
-    /// Grants access to the `/template reload` administration command.
-    COMMAND_RELOAD("template.command.reload"),
-    COMMAND_HELP("template.command.help");
+    public static final String COMMAND_RELOAD = "template.command.reload"; // TODO: change the prefix
+    public static final String COMMAND_HELP = "template.command.help"; // TODO: change the prefix
 
-    private final String node;
-
-    TemplatePermission(final String node) {
-        this.node = node;
-    }
-
-    /// Returns the raw permission node string.
-    ///
-    /// @return the dot-separated permission node, never `null`
-    public String node() {
-        return this.node;
+    private PluginPermissions() {
     }
 }
