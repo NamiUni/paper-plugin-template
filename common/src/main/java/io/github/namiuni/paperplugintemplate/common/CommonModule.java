@@ -1,7 +1,7 @@
 /*
  * PaperPluginTemplate
  *
- * Copyright (c) 2026. Namiu (ãã«ããã)
+ * Copyright (c) 2026. Namiu (うにたろう)
  *                     Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ import io.github.namiuni.kotonoha.translatable.message.configuration.FormatTypes
 import io.github.namiuni.kotonoha.translatable.message.policy.argument.TranslationArgumentAdaptationPolicy;
 import io.github.namiuni.kotonoha.translatable.message.policy.argument.tag.TagNameResolver;
 import io.github.namiuni.kotonoha.translatable.message.utility.TranslationArgumentAdapter;
+import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.common.command.commands.HelpCommand;
@@ -76,6 +77,16 @@ public final class CommonModule extends AbstractModule {
     ) {
         this.logger = logger;
         this.dataDirectory = dataDirectory;
+    }
+
+    /// Provides a singleton [PluginTemplate].
+    ///
+    /// @param userService the plugin user service
+    /// @return a plugin instance
+    @Provides
+    @Singleton
+    private PluginTemplate pluginTemplate(final PluginTemplateUserService userService) {
+        return new PluginTemplateImpl(userService);
     }
 
     /// Provides a singleton [ConfigurationLoader] for [PrimaryConfiguration].
