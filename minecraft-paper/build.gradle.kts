@@ -5,8 +5,8 @@ import xyz.jpenilla.runpaper.task.RunServer
 plugins {
     id("paper-plugin-template.base")
     id("paper-plugin-template.platform")
+    id("xyz.jpenilla.run-paper")
     alias(libs.plugins.resource.factory)
-    alias(libs.plugins.run.paper)
 }
 
 dependencies {
@@ -93,6 +93,7 @@ val mainPackage = "${projectMetadata.projectGroup.get()}.${projectMetadata.proje
 paperPluginYaml {
     name = projectMetadata.projectName
     version = projectMetadata.projectVersion
+    description = projectMetadata.projectDescription
     author = projectMetadata.authorName
     contributors = projectMetadata.projectContributors.getOrElse("")
         .split(", ")
@@ -109,6 +110,10 @@ paperPluginYaml {
         register("$prefix.command.reload") {
             description = "Reloads ${projectMetadata.projectName}'s config."
             default = Permission.Default.OP
+        }
+        register("$prefix.command.help") {
+            description = "Displays help for ${projectMetadata.projectName}'s commands."
+            default = Permission.Default.TRUE
         }
     }
 

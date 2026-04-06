@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 plugins {
     id("java-library")
     id("com.gradleup.shadow")
@@ -29,6 +31,14 @@ tasks {
 
     javadoc {
         enabled = false
+    }
+
+    withType(xyz.jpenilla.runtask.task.AbstractRun::class) {
+        javaLauncher = javaToolchains.launcherFor {
+            vendor = JvmVendorSpec.JETBRAINS
+            languageVersion = JavaLanguageVersion.of(25)
+        }
+        jvmArgs("-XX:+AllowEnhancedClassRedefinition")
     }
 }
 
