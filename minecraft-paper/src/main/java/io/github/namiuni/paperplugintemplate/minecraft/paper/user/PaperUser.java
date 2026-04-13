@@ -19,8 +19,8 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserInternal;
-import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
@@ -35,7 +35,7 @@ import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/// Paper-specific [PluginTemplateUserInternal] adapter that wraps a live
+/// Paper-specific [UserInternal] adapter that wraps a live
 /// [Player].
 ///
 /// All live-data access — online status, display name, locale, and any
@@ -55,7 +55,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// ## Thread safety
 ///
-/// The persistent [UserProfile] is held in an [java.util.concurrent.atomic.AtomicReference],
+/// The persistent [UserComponent] is held in an [java.util.concurrent.atomic.AtomicReference],
 /// enabling lock-free copy-on-write updates from any thread. No
 /// `synchronized` blocks are used; this class is therefore free from
 /// virtual-thread carrier-thread pinning (JEP 491).
@@ -64,30 +64,30 @@ import org.jspecify.annotations.Nullable;
 /// to the underlying [Player], whose thread-safety is governed by the
 /// Paper API contract.
 @NullMarked
-public final class PaperUser implements PluginTemplateUserInternal, ForwardingAudience.Single {
+public final class PaperUser implements UserInternal, ForwardingAudience.Single {
 
     private final Player player;
-    private final AtomicReference<UserProfile> profile;
+    private final AtomicReference<UserComponent> component;
 
     /// Constructs a new adapter binding a live player to an initial
-    /// profile snapshot.
+    /// component snapshot.
     ///
     /// @param player  the live Paper player used for all platform
     ///                delegation; must not be `null`
-    /// @param profile the initial persistent profile snapshot; must
+    /// @param component the initial persistent component snapshot; must
     ///                not be `null`
-    public PaperUser(final Player player, final UserProfile profile) {
+    public PaperUser(final Player player, final UserComponent component) {
         this.player = player;
-        this.profile = new AtomicReference<>(profile);
+        this.component = new AtomicReference<>(component);
     }
 
     /// {@inheritDoc}
     ///
     /// The returned snapshot is always fully constructed and safe to read
-    /// from any thread; [UserProfile] is an immutable record.
+    /// from any thread; [UserComponent] is an immutable record.
     @Override
-    public UserProfile profile() {
-        return this.profile.get();
+    public UserComponent profile() {
+        return this.component.get();
     }
 
     /// {@inheritDoc}
@@ -98,8 +98,8 @@ public final class PaperUser implements PluginTemplateUserInternal, ForwardingAu
     ///           used, calling this method from a virtual thread never
     ///           pins the carrier thread.
     @Override
-    public void updateProfile(final UnaryOperator<UserProfile> operator) {
-        this.profile.updateAndGet(operator);
+    public void updateProfile(final UnaryOperator<UserComponent> operator) {
+        this.component.updateAndGet(operator);
     }
 
     /// Returns `true` if the underlying player is currently connected
@@ -160,7 +160,7 @@ public final class PaperUser implements PluginTemplateUserInternal, ForwardingAu
     public String toString() {
         return "PaperUser{" +
                 "player=" + this.player +
-                ", profile=" + this.profile +
+                ", component=" + this.component +
                 '}';
     }
 
@@ -171,11 +171,11 @@ public final class PaperUser implements PluginTemplateUserInternal, ForwardingAu
         }
 
         final PaperUser paperUser = (PaperUser) that;
-        return Objects.equals(this.player, paperUser.player) && Objects.equals(this.profile.get(), paperUser.profile.get());
+        return Objects.equals(this.player, paperUser.player) && Objects.equals(this.component.get(), paperUser.component.get());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.player, this.profile);
+        return Objects.hash(this.player, this.component);
     }
 }

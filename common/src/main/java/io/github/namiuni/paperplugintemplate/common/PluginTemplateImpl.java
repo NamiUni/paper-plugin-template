@@ -21,16 +21,14 @@ package io.github.namiuni.paperplugintemplate.common;
 
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
+import jakarta.inject.Inject;
 import org.jspecify.annotations.NullMarked;
 
 /// Singleton implementation of [PluginTemplate] that exposes the plugin's
 /// public service API to third-party consumers.
 ///
 /// This class has a single responsibility: delegating service access to the
-/// injected [PluginTemplateUserService] singleton. All startup logic has been
-/// extracted to [PluginInitializer], keeping this class a pure, stateless
-/// value object whose contract can evolve independently of the initialization
-/// sequence.
+/// injected [PluginTemplateUserService] singleton.
 ///
 /// ## Obtaining an instance
 ///
@@ -47,4 +45,8 @@ import org.jspecify.annotations.NullMarked;
 /// synchronization.
 @NullMarked
 public record PluginTemplateImpl(PluginTemplateUserService userService) implements PluginTemplate {
+
+    @Inject
+    public PluginTemplateImpl {
+    }
 }

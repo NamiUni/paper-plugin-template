@@ -19,9 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserInternal;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
-import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
+import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import org.bukkit.entity.Player;
@@ -32,7 +32,7 @@ import org.jspecify.annotations.NullMarked;
 /// Performs the platform-specific narrowing cast from the generic
 /// `<P extends Audience & Identified>` type parameter to
 /// [org.bukkit.entity.Player], confining that knowledge to this single
-/// class so that neither [io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal]
+/// class so that neither [io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal]
 /// nor any other {@code common}-module class imports a Paper API type.
 ///
 /// This class carries no mutable state and is safe to bind as a Guice
@@ -65,7 +65,7 @@ public final class PaperUserFactory implements UserFactory {
     /// @throws ClassCastException if `player` is not an instance of [org.bukkit.entity.Player];
     ///                            this indicates a misconfigured Guice binding for a non-Paper platform
     @Override
-    public <P extends Audience & Identified> PluginTemplateUserInternal create(final P player, final UserProfile profile) {
+    public <P extends Audience & Identified> UserInternal create(final P player, final UserComponent profile) {
         return new PaperUser((Player) player, profile);
     }
 }

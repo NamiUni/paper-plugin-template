@@ -46,7 +46,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// [#sender()] and [#executor()] both call `getUser(uuid).orElseThrow()`.
 /// This is safe only when invoked after
-/// [io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal#loadUser]
+/// [io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal#loadUser]
 /// has completed for the player — which is guaranteed for any command
 /// handler running after the `PlayerJoinEvent`. Invoking either method
 /// during the configuration phase (before join) for a player whose userCache

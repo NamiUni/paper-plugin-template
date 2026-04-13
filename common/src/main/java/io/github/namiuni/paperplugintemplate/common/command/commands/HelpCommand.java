@@ -19,10 +19,10 @@
  */
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
-import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
+import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
-import io.github.namiuni.paperplugintemplate.common.translation.PluginMessages;
 import jakarta.inject.Inject;
 import java.util.Map;
 import net.kyori.adventure.text.Component;
@@ -79,9 +79,9 @@ public final class HelpCommand implements CommandFactory {
     private static final TextColor ACCENT = TextColor.color(0x7D7D7D);
 
     private final CommandManager<CommandSource> manager;
-    private final PluginMessages messages;
+    private final MessageAssembly messages;
     private final MinecraftHelp<CommandSource> minecraftHelp;
-    private final PluginMetadata metadata;
+    private final Metadata metadata;
 
     /// Constructs a new [HelpCommand] and eagerly initializes the
     /// [MinecraftHelp] renderer with the JIS Z 9103 color scheme.
@@ -98,8 +98,8 @@ public final class HelpCommand implements CommandFactory {
     @Inject
     private HelpCommand(
             final CommandManager<CommandSource> manager,
-            final PluginMessages messages,
-            final PluginMetadata metadata
+            final MessageAssembly messages,
+            final Metadata metadata
     ) {
         this.manager = manager;
         this.messages = messages;
@@ -172,19 +172,19 @@ public final class HelpCommand implements CommandFactory {
             final TagResolver placeholders = builder.build();
 
             return switch (key) {
-                case "arguments" -> HelpCommand.this.messages.commandHelpMiscArguments(placeholders);
-                case "available_commands" -> HelpCommand.this.messages.commandHelpMiscAvailableCommands(placeholders);
-                case "click_for_next_page" -> HelpCommand.this.messages.commandHelpMiscClickForNextPage(placeholders);
-                case "click_for_previous_page" -> HelpCommand.this.messages.commandHelpMiscClickForPreviousPage(placeholders);
-                case "click_to_show_help" -> HelpCommand.this.messages.commandHelpMiscClickToShowHelp(placeholders);
-                case "command" -> HelpCommand.this.messages.commandHelpMiscCommand(placeholders);
-                case "description" -> HelpCommand.this.messages.commandHelpMiscDescription(placeholders);
-                case "help" -> HelpCommand.this.messages.commandHelpMiscHelp(placeholders);
-                case "no_description" -> HelpCommand.this.messages.commandHelpMiscNoDescription(placeholders);
-                case "no_results_for_query" -> HelpCommand.this.messages.commandHelpMiscNoResultsForQuery(placeholders);
-                case "optional" -> HelpCommand.this.messages.commandHelpMiscOptional(placeholders);
-                case "page_out_of_range" -> HelpCommand.this.messages.commandHelpMiscPageOutOfRange(placeholders);
-                case "showing_results_for_query" -> HelpCommand.this.messages.commandHelpMiscShowingResultsForQuery(placeholders);
+                case "arguments" -> HelpCommand.this.messages.commandHelpMiscArguments(sender.sender(), placeholders);
+                case "available_commands" -> HelpCommand.this.messages.commandHelpMiscAvailableCommands(sender.sender(), placeholders);
+                case "click_for_next_page" -> HelpCommand.this.messages.commandHelpMiscClickForNextPage(sender.sender(), placeholders);
+                case "click_for_previous_page" -> HelpCommand.this.messages.commandHelpMiscClickForPreviousPage(sender.sender(), placeholders);
+                case "click_to_show_help" -> HelpCommand.this.messages.commandHelpMiscClickToShowHelp(sender.sender(), placeholders);
+                case "command" -> HelpCommand.this.messages.commandHelpMiscCommand(sender.sender(), placeholders);
+                case "description" -> HelpCommand.this.messages.commandHelpMiscDescription(sender.sender(), placeholders);
+                case "help" -> HelpCommand.this.messages.commandHelpMiscHelp(sender.sender(), placeholders);
+                case "no_description" -> HelpCommand.this.messages.commandHelpMiscNoDescription(sender.sender(), placeholders);
+                case "no_results_for_query" -> HelpCommand.this.messages.commandHelpMiscNoResultsForQuery(sender.sender(), placeholders);
+                case "optional" -> HelpCommand.this.messages.commandHelpMiscOptional(sender.sender(), placeholders);
+                case "page_out_of_range" -> HelpCommand.this.messages.commandHelpMiscPageOutOfRange(sender.sender(), placeholders);
+                case "showing_results_for_query" -> HelpCommand.this.messages.commandHelpMiscShowingResultsForQuery(sender.sender(), placeholders);
                 default -> throw new IllegalArgumentException();
             };
         }

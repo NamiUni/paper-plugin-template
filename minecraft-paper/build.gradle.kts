@@ -101,9 +101,9 @@ paperPluginYaml {
     website = projectMetadata.projectWebsite
     apiVersion = "1.21.11"
 
-    loader = "$mainPackage.minecraft.paper.PluginLoaderImpl"
-    main = "$mainPackage.minecraft.paper.JavaPluginImpl"
-    bootstrapper = "$mainPackage.minecraft.paper.PluginBootstrapImpl"
+    loader = "$mainPackage.minecraft.paper.PaperLoader"
+    main = "$mainPackage.minecraft.paper.PaperPlugin"
+    bootstrapper = "$mainPackage.minecraft.paper.PaperBootstrap"
 
     permissions {
         val prefix = projectMetadata.projectName.get().lowercase()
