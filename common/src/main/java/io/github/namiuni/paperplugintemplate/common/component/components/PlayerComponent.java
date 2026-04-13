@@ -17,14 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.user;
+package io.github.namiuni.paperplugintemplate.common.component.components;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
+import java.time.Instant;
+import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
+// TODO: Javadoc
 @NullMarked
-public interface UserInternal extends PluginTemplateUser {
+public interface PlayerComponent extends Component {
 
-    PlayerComponent player();
+    Audience audience();
+
+    boolean isOnline();
+
+    Instant lastSeen();
 }

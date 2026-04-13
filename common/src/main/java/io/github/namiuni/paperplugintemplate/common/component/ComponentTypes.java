@@ -17,14 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.user;
+package io.github.namiuni.paperplugintemplate.common.component;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
 import org.jspecify.annotations.NullMarked;
 
+/// Pre-declared [ComponentType] tokens for all built-in component types.
+///
+/// Using shared constants instead of calling `ComponentType.of(Foo.class)` at
+/// each call site avoids repeated object allocation and guarantees referential
+/// equality between tokens, which is important for the `ConcurrentHashMap` key
+/// lookups inside [ComponentRegistry].
 @NullMarked
-public interface UserInternal extends PluginTemplateUser {
+public final class ComponentTypes {
 
-    PlayerComponent player();
+    public static final ComponentType<PlayerComponent> PLAYER = new ComponentType<>(PlayerComponent.class);
+
+    private ComponentTypes() {
+    }
 }

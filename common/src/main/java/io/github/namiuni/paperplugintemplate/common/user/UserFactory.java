@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import org.jspecify.annotations.NullMarked;
@@ -62,5 +62,5 @@ public interface UserFactory {
     /// @param profile the initial persistent profile snapshot to
     ///                associate with `player`; must not be `null`
     /// @return a fully initialized, platform-specific user adapter, never `null`
-    <P extends Audience & Identified> UserInternal create(P player, UserComponent profile);
+    <P extends Audience & Identified> UserInternal create(P player, UserRecord profile);
 }

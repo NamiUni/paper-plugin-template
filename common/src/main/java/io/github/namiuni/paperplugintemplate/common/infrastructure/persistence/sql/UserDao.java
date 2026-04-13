@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.sql;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import java.util.Optional;
 import java.util.UUID;
 import org.jdbi.v3.sqlobject.SqlObject;
@@ -47,7 +47,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// Record components are bound via `@BindMethods`, which invokes each
 /// no-arg accessor and maps the method name to the SQL parameter name.
-/// [UserComponent#uuid()] is bound as `:uuid` using the dialect-specific
+/// [UserRecord#uuid()] is bound as `:uuid` using the dialect-specific
 /// [org.jdbi.v3.core.argument.QualifiedArgumentFactory] registered on the
 /// [org.jdbi.v3.core.Jdbi] instance by `StorageModule`:
 ///
@@ -82,27 +82,27 @@ public interface UserDao extends SqlObject {
     /// strategy is applied automatically.
     ///
     /// @param uuid the player UUID to look up
-    /// @return the mapped [UserComponent] wrapped in [Optional], or [Optional#empty()] if absent
+    /// @return the mapped [UserRecord] wrapped in [Optional], or [Optional#empty()] if absent
     @SqlQuery("SELECT uuid, name, last_seen FROM users WHERE uuid = :uuid")
-    Optional<UserComponent> findByUuid(@Bind("uuid") UUID uuid);
+    Optional<UserRecord> findByUuid(@Bind("uuid") UUID uuid);
 
     /// Inserts a new user row.
     ///
     /// Prefer [#upsert] over calling this method directly; direct calls do
     /// not handle the case where the row already exists.
     ///
-    /// @param userComponent the record to insert; components bound via `@BindMethods`
+    /// @param userRecord the record to insert; components bound via `@BindMethods`
     @SqlUpdate("INSERT INTO users (uuid, name, last_seen) VALUES (:uuid, :name, :lastSeen)")
-    void insert(@BindMethods UserComponent userComponent);
+    void insert(@BindMethods UserRecord userRecord);
 
     /// Updates the `name` and `last_seen` columns for an existing row.
     ///
     /// Prefer [#upsert] over calling this method directly.
     ///
-    /// @param userComponent the record to update; components bound via `@BindMethods`
+    /// @param userRecord the record to update; components bound via `@BindMethods`
     /// @return the number of affected rows; `0` indicates no row existed for this UUID
     @SqlUpdate("UPDATE users SET name = :name, last_seen = :lastSeen WHERE uuid = :uuid")
-    int update(@BindMethods UserComponent userComponent);
+    int update(@BindMethods UserRecord userRecord);
 
     /// Removes the row for `uuid`, if it exists.
     ///
@@ -121,19 +121,19 @@ public interface UserDao extends SqlObject {
     /// by catching the resulting duplicate-key exception on `insert` and
     /// retrying `update`.
     ///
-    /// @param userComponent the user data to persist
+    /// @param userRecord the user data to persist
     /// @implNote This `default` method calls sibling SQL methods on the
     ///           same transactional handle via the JDBI proxy. The
     ///           `@Transaction` annotation wraps the entire method in a
     ///           single database transaction.
     @Transaction
-    default void upsert(final UserComponent userComponent) {
-        if (this.update(userComponent) == 0) {
+    default void upsert(final UserRecord userRecord) {
+        if (this.update(userRecord) == 0) {
             try {
-                this.insert(userComponent);
+                this.insert(userRecord);
             } catch (final Exception _) {
                 // Concurrent insert raced us; the row now exists — retry update.
-                this.update(userComponent);
+                this.update(userRecord);
             }
         }
     }

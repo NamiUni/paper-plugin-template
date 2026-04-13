@@ -51,10 +51,10 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
     /// @return a stateless [QualifiedArgumentFactory]
     QualifiedArgumentFactory uuidArgumentFactory();
 
-    /// Returns a JDBI [RowMapper] that reads a [UserComponent] from a result row.
+    /// Returns a JDBI [RowMapper] that reads a [UserRecord] from a result row.
     ///
     /// @return a stateless [RowMapper]
-    RowMapper<UserComponent> profileMapper();
+    RowMapper<UserRecord> profileMapper();
 
     private static byte[] uuidToBytes(final UUID uuid) {
         final ByteBuffer bb = ByteBuffer.allocate(16);
@@ -91,8 +91,8 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
         }
 
         @Override
-        public RowMapper<UserComponent> profileMapper() {
-            return (rs, _) -> new UserComponent(
+        public RowMapper<UserRecord> profileMapper() {
+            return (rs, _) -> new UserRecord(
                     uuidFromBytes(rs.getBytes("uuid")),
                     rs.getString("name"),
                     Instant.ofEpochMilli(rs.getLong("last_seen"))
@@ -122,8 +122,8 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
         }
 
         @Override
-        public RowMapper<UserComponent> profileMapper() {
-            return (rs, _) -> new UserComponent(
+        public RowMapper<UserRecord> profileMapper() {
+            return (rs, _) -> new UserRecord(
                     rs.getObject("uuid", UUID.class),
                     rs.getString("name"),
                     Instant.ofEpochMilli(rs.getLong("last_seen"))

@@ -34,40 +34,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.jspecify.annotations.NullMarked;
 
-/// Bukkit event listener that bridges Paper lifecycle events to the user
-/// service.
-///
-/// Handles four lifecycle points for profile management:
-///
-/// - **Pre-connect** ([AsyncPlayerConnectionConfigureEvent]): pre-loads
-///   the player's profile into the pre-load userCache so that the first
-///   gameplay access is non-blocking. If the repository is unreachable,
-///   the player is disconnected with a localized error message rather than
-///   joining without a valid profile.
-///
-/// - **Join** ([PlayerJoinEvent]): promotes the preloaded profile from the
-///   connection userCache into the user userCache, ensuring all subsequent service
-///   calls are guaranteed userCache hits for the duration of the session.
-///
-/// - **Disconnect** ([PlayerQuitEvent]): stamps `lastSeen`, persists the
-///   final profile snapshot, and evicts the userCache entry. Cache eviction is
-///   guaranteed by the service's persist operation regardless of whether
-///   the repository write succeeds; this handler additionally discards the
-///   userCache entry manually only when the initial load future itself failed.
-///
-/// - **World save** ([WorldSaveEvent]): checkpoints all profiles for
-///   players in the saved world to limit data loss on unexpected shutdowns.
-///   Uses [UserServiceInternal#checkpointUser] rather than
-///   [UserServiceInternal#persistOnlinePlayer] so that userCache
-///   entries are **retained** — evicting online players from the userCache
-///   would cause subsequent `getUser` calls to return `Optional.empty()`.
-///
-/// ## Thread safety
-///
-/// The callback for [AsyncPlayerConnectionConfigureEvent] fires on Paper's
-/// async configuration thread. All other callbacks fire on the main server
-/// thread. The user service methods called here are safe from all threads;
-/// no additional synchronization is required.
+// TODO: Javadoc
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class UserSessionHandler implements Listener {
@@ -78,10 +45,8 @@ public final class UserSessionHandler implements Listener {
 
     /// Constructs a new event handler.
     ///
-    /// @param userService the internal service managing in-memory and
-    ///                    persistent user state
-    /// @param logger      the component-aware logger used for structured
-    ///                    error reporting
+    /// @param userService the internal service managing in-memory and persistent user state
+    /// @param logger      the component-aware logger used for structured error reporting
     /// @param messages    the localized message provider
     @Inject
     private UserSessionHandler(
@@ -94,13 +59,7 @@ public final class UserSessionHandler implements Listener {
         this.messages = messages;
     }
 
-    /// Pre-loads the connecting player's profile into the service userCache.
-    ///
-    /// Fires on Paper's async configuration thread before a `Player` object
-    /// exists. A load failure disconnects the player with a localized error
-    /// message so they never join without a valid profile.
-    ///
-    /// @param event the async connection configure event
+    // TODO: 失敗した場合にユーザーを切断するか否かの設定と、接続を続行する場合の動作
     @EventHandler(priority = EventPriority.MONITOR)
     private void onConnect(final AsyncPlayerConnectionConfigureEvent event) {
         final var connection = event.getConnection();
@@ -113,85 +72,35 @@ public final class UserSessionHandler implements Listener {
             return;
         }
 
-        this.userService.loadUserProfile(uuid)
-                .whenComplete((_, ex) -> {
-                    if (ex != null) {
-                        this.logger.error("Failed to pre-load profile for UUID: {}; disconnecting.", uuid, ex);
-                        connection.disconnect(this.messages.joinFailureProfile(connection.getAudience()));
-                    }
-                });
+        this.userService.loadUserRecord(
+                uuid,
+                () -> connection.disconnect(this.messages.joinFailureProfile(connection.getAudience()))
+        );
     }
 
-    /// Promotes the preloaded profile into the user userCache on join.
-    ///
-    /// Ensures all subsequent service calls during this session are
-    /// guaranteed userCache hits.
-    ///
-    /// @param event the join event
+    // TODO: 失敗した場合にユーザーを切断するか否かの設定と、接続を続行する場合の動作
     @EventHandler(priority = EventPriority.MONITOR)
     private void onJoin(final PlayerJoinEvent event) {
         final Player player = event.getPlayer();
         this.userService.loadUser(player)
-                .whenComplete((_, ex) -> {
-                    if (ex != null) {
-                        this.logger.error("Failed to load user on join for UUID: {}", player.getUniqueId(), ex);
+                .whenComplete((_, exception) -> {
+                    if (exception != null) {
+                        this.logger.error("Failed to load user on join for UUID: {}", player.getUniqueId(), exception);
                     }
                 });
     }
 
-    /// Persists the final profile snapshot and evicts the userCache entry on
-    /// disconnect.
-    ///
-    /// The service's persist operation stamps `lastSeen` with the current
-    /// instant and guarantees userCache eviction via its own completion
-    /// handler, regardless of whether the repository write succeeds or
-    /// fails. This handler therefore only discards the userCache entry manually
-    /// as a safety net for the case where the initial load future itself
-    /// fails — in which case the persist call is never reached and the
-    /// entry would otherwise leak until it expires naturally.
-    ///
-    /// @param event the quit event
     @EventHandler(priority = EventPriority.MONITOR)
     private void onDisconnect(final PlayerQuitEvent event) {
         final Player player = event.getPlayer();
         final UUID uuid = player.getUniqueId();
-        // persistOnlinePlayer guarantees discardUser on completion;
-        // no additional eviction call is needed on the success path.
-        this.userService.loadUser(player)
-                .thenCompose(this.userService::persistOnlinePlayer)
-                .whenComplete((_, ex) -> {
-                    if (ex != null) {
-                        this.logger.error("Failed to persist profile on disconnect for UUID: {}", uuid, ex);
-                        // Safety net: persistOnlinePlayer was never reached, so the
-                        // userCache entry must be evicted here to avoid a leak.
-                        this.userService.discardUser(uuid);
-                    }
-                });
+        this.userService.saveUser(uuid);
     }
 
-    /// Checkpoints profiles for all online players in the saved world.
-    ///
-    /// Reduces data loss exposure on unexpected server shutdowns. Each
-    /// checkpoint stamps `lastSeen` and persists the current profile state
-    /// via [UserServiceInternal#checkpointUser], which
-    /// **retains** the userCache entry. Using
-    /// [UserServiceInternal#persistOnlinePlayer] here would
-    /// evict the userCache entry and cause subsequent `getUser` calls — e.g.
-    /// from command handlers — to return `Optional.empty()` for the rest of
-    /// the session. Failures are logged per-player and do not interrupt the
-    /// world-save process.
-    ///
-    /// @param event the world save event
     @EventHandler(priority = EventPriority.MONITOR)
     private void onWorldSave(final WorldSaveEvent event) {
-        for (final Player player : event.getWorld().getPlayers()) {
-            this.userService.loadUser(player)
-                    .thenCompose(this.userService::checkpointUser)
-                    .whenComplete((_, ex) -> {
-                        if (ex != null) {
-                            this.logger.error("Failed to persist profile on world save for UUID: {}", player.getUniqueId(), ex);
-                        }
-                    });
-        }
+        event.getWorld().getPlayers().stream()
+                .map(Player::getUniqueId)
+                .forEach(this.userService::saveUser);
     }
 }

@@ -29,33 +29,14 @@ import org.jspecify.annotations.NullMarked;
 /// [io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal] as the unit of I/O between the service
 /// layer and the storage backend.
 ///
-/// ## Immutability
-///
-/// All record components are final. Use [#withLastSeen(Instant)] to derive an
-/// updated copy without modifying this instance. The copy-on-write pattern
-/// ensures this record is safe to share across threads without synchronization.
-///
 /// @param uuid     the player's permanent unique identifier; never `null`
 /// @param name     the player's last-known Minecraft username; never `null`
 /// @param lastSeen the instant this record was last successfully written to
 ///                 storage; set to `Instant.now()` for brand-new players
 @NullMarked
-public record UserComponent(
+public record UserRecord(
         UUID uuid,
         String name,
         Instant lastSeen
 ) {
-
-    /// Returns a new [UserComponent] identical to this one, except with `instant`
-    /// as the [#lastSeen()] value.
-    ///
-    /// This method does not mutate `this` record; it constructs and returns a
-    /// fresh instance. The original record remains valid and can be read
-    /// concurrently from other threads.
-    ///
-    /// @param instant the new last-seen timestamp; must not be `null`
-    /// @return a fresh [UserComponent] carrying the updated timestamp
-    public UserComponent withLastSeen(final Instant instant) {
-        return new UserComponent(this.uuid, this.name, instant);
-    }
 }

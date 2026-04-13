@@ -36,7 +36,7 @@ import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationLoader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.StorageDialect;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepositoryProvider;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.TranslatorHolder;
@@ -80,7 +80,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// - a Flyway migration location,
 /// - a JDBI [org.jdbi.v3.core.argument.QualifiedArgumentFactory] for binding UUIDs, and
-/// - a JDBI [org.jdbi.v3.core.mapper.RowMapper] for reading [UserComponent] rows.
+/// - a JDBI [org.jdbi.v3.core.mapper.RowMapper] for reading [UserRecord] rows.
 ///
 /// ## Schema management
 ///
@@ -106,7 +106,7 @@ public final class InfrastructureModule extends AbstractModule {
     ///
     /// - which [org.jdbi.v3.core.argument.QualifiedArgumentFactory] handles [java.util.UUID]
     ///   binding, and
-    /// - which [org.jdbi.v3.core.mapper.RowMapper] reads [UserComponent] rows.
+    /// - which [org.jdbi.v3.core.mapper.RowMapper] reads [UserRecord] rows.
     ///
     /// @param dataSource the HikariCP pool
     /// @param dialect    the `StorageDialect`
@@ -132,7 +132,7 @@ public final class InfrastructureModule extends AbstractModule {
         final Jdbi jdbi = Jdbi.create(dataSource)
                 .installPlugin(new SqlObjectPlugin())
                 .installPlugin(new CaffeineCachePlugin())
-                .registerRowMapper(UserComponent.class, dialect.profileMapper())
+                .registerRowMapper(UserRecord.class, dialect.profileMapper())
                 .registerArgument(dialect.uuidArgumentFactory())
                 .registerArgument(instantArgument)
                 .configure(SqlStatements.class, caffeineCache);

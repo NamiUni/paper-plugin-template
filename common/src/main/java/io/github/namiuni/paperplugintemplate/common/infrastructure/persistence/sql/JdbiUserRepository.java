@@ -22,7 +22,7 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.FlywayLogger;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
 import jakarta.inject.Inject;
 import java.util.Optional;
@@ -43,12 +43,6 @@ import org.jspecify.annotations.NullMarked;
 /// statements. Vendor-specific upsert syntax such as `ON DUPLICATE KEY UPDATE`
 /// is avoided; the portable update-then-insert strategy is encapsulated entirely
 /// in [UserDao#upsert], keeping this class free of SQL dialect concerns.
-///
-/// ## Schema management
-///
-/// The database schema is fully managed by Flyway, which runs migrations in
-/// [#initialize()]. Flyway output is routed through the plugin's [ComponentLogger]
-/// via [FlywayLogger].
 ///
 /// ## Ownership and lifecycle
 ///
@@ -112,7 +106,7 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
     /// {@inheritDoc}
     @Override
-    public CompletableFuture<Optional<UserComponent>> findById(final UUID uuid) {
+    public CompletableFuture<Optional<UserRecord>> findById(final UUID uuid) {
         this.logger.debug("[SQL] findById: {}", uuid);
         return this.jdbi.withExtension(UserDao.class, dao -> dao.findByUuid(uuid))
                 .toCompletableFuture();
@@ -120,9 +114,9 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
 
     /// {@inheritDoc}
     @Override
-    public CompletableFuture<Void> upsert(final UserComponent userComponent) {
-        this.logger.debug("[SQL] upsert: {} ({})", userComponent.uuid(), userComponent.name());
-        return this.jdbi.useExtension(UserDao.class, dao -> dao.upsert(userComponent))
+    public CompletableFuture<Void> upsert(final UserRecord userRecord) {
+        this.logger.debug("[SQL] upsert: {} ({})", userRecord.uuid(), userRecord.name());
+        return this.jdbi.useExtension(UserDao.class, dao -> dao.upsert(userRecord))
                 .toCompletableFuture();
     }
 

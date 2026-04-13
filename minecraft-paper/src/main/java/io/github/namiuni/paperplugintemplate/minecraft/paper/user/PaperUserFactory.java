@@ -19,9 +19,14 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.component.ComponentRegistry;
+import io.github.namiuni.paperplugintemplate.common.component.ComponentTypes;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
 import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
+import io.github.namiuni.paperplugintemplate.minecraft.paper.component.PaperPlayerComponent;
+import jakarta.inject.Inject;
+import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import org.bukkit.entity.Player;
@@ -45,27 +50,28 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class PaperUserFactory implements UserFactory {
 
-    /// Constructs a new `PaperUserFactory`.
-    public PaperUserFactory() {
+    private final ComponentRegistry registry;
+
+    @Inject
+    public PaperUserFactory(final ComponentRegistry registry) {
+        this.registry = registry;
     }
 
-    /// Creates a new [PaperUser] by narrowing `player` to
-    /// [org.bukkit.entity.Player] and pairing it with `profile`.
+    /// {@inheritDoc}
     ///
-    /// The cast is safe within the Paper platform because every player
-    /// object passed by the Paper event system satisfies
-    /// `player instanceof Player`. Invoking this factory outside the
-    /// Paper platform — for example by binding it in a Sponge module —
-    /// is a programming error and will fail immediately at this cast.
+    /// Registers [IdentityComponent], [PersistenceComponent], and
+    /// [PaperPlayerComponent] into the shared registry before
+    /// constructing the stateless [PaperUser] view.
     ///
-    /// @param <P>     the platform player type; must be [org.bukkit.entity.Player] at runtime
-    /// @param player  the connecting player; must not be `null` and must be an instance of [org.bukkit.entity.Player]
-    /// @param profile the initial persistent profile snapshot to associate with `player`; must not be `null`
-    /// @return a new [PaperUser] bound to `player` and `profile`, never `null`
-    /// @throws ClassCastException if `player` is not an instance of [org.bukkit.entity.Player];
-    ///                            this indicates a misconfigured Guice binding for a non-Paper platform
+    /// @throws ClassCastException if `player` is not a [Player]; indicates
+    ///         a misconfigured Guice binding for a non-Paper platform
     @Override
-    public <P extends Audience & Identified> UserInternal create(final P player, final UserComponent profile) {
-        return new PaperUser((Player) player, profile);
+    public <P extends Audience & Identified> UserInternal create(final P player, final UserRecord profile) {
+        final Player bukkit = (Player) player;
+        final UUID uuid = bukkit.getUniqueId();
+
+        this.registry.set(uuid, ComponentTypes.PLAYER, new PaperPlayerComponent(bukkit));
+
+        return new PaperUser(uuid, this.registry);
     }
 }

@@ -19,28 +19,27 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.component.ComponentRegistry;
+import io.github.namiuni.paperplugintemplate.common.component.ComponentTypes;
+import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
 import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.UnaryOperator;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
-import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /// Paper-specific [UserInternal] adapter that wraps a live
-/// [Player].
+/// [org.bukkit.entity.Player].
 ///
 /// All live-data access — online status, display name, locale, and any
 /// future additions such as health or inventory — delegates directly to
-/// the underlying [Player], eliminating the supplier-based workarounds
+/// the underlying [org.bukkit.entity.Player], eliminating the supplier-based workarounds
 /// that arise when a platform-agnostic class tries to abstract over
 /// platform behavior.
 ///
@@ -55,113 +54,94 @@ import org.jspecify.annotations.Nullable;
 ///
 /// ## Thread safety
 ///
-/// The persistent [UserComponent] is held in an [java.util.concurrent.atomic.AtomicReference],
+/// The persistent [io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord] is held in an [java.util.concurrent.atomic.AtomicReference],
 /// enabling lock-free copy-on-write updates from any thread. No
 /// `synchronized` blocks are used; this class is therefore free from
 /// virtual-thread carrier-thread pinning (JEP 491).
 ///
 /// Live-data methods such as [#isOnline()] and [#displayName()] delegate
-/// to the underlying [Player], whose thread-safety is governed by the
+/// to the underlying [org.bukkit.entity.Player], whose thread-safety is governed by the
 /// Paper API contract.
 @NullMarked
 public final class PaperUser implements UserInternal, ForwardingAudience.Single {
 
-    private final Player player;
-    private final AtomicReference<UserComponent> component;
+    private final UUID uuid;
+    private final ComponentRegistry registry;
 
-    /// Constructs a new adapter binding a live player to an initial
-    /// component snapshot.
+    /// Constructs a new view bound to `entityId` and `registry`.
     ///
-    /// @param player  the live Paper player used for all platform
-    ///                delegation; must not be `null`
-    /// @param component the initial persistent component snapshot; must
-    ///                not be `null`
-    public PaperUser(final Player player, final UserComponent component) {
-        this.player = player;
-        this.component = new AtomicReference<>(component);
+    /// @param uuid the entity identifier; must not be `null`
+    /// @param registry the shared component registry; must not be `null`
+    public PaperUser(final UUID uuid, final ComponentRegistry registry) {
+        this.uuid = Objects.requireNonNull(uuid, "uuid");
+        this.registry = Objects.requireNonNull(registry, "registry");
     }
+
+    // -------------------------------------------------------------------------
+    // UserInternal — component accessors and mutators
+    // -------------------------------------------------------------------------
 
     /// {@inheritDoc}
-    ///
-    /// The returned snapshot is always fully constructed and safe to read
-    /// from any thread; [UserComponent] is an immutable record.
     @Override
-    public UserComponent profile() {
-        return this.component.get();
+    public PlayerComponent player() {
+        return this.registry.getOrThrow(this.uuid, ComponentTypes.PLAYER);
     }
 
-    /// {@inheritDoc}
-    ///
-    /// @implNote Delegates to [java.util.concurrent.atomic.AtomicReference#updateAndGet],
-    ///           which is wait-free under no contention and lock-free
-    ///           under contention. Because no `synchronized` block is
-    ///           used, calling this method from a virtual thread never
-    ///           pins the carrier thread.
-    @Override
-    public void updateProfile(final UnaryOperator<UserComponent> operator) {
-        this.component.updateAndGet(operator);
-    }
+    // -------------------------------------------------------------------------
+    // PluginTemplateUser
+    // -------------------------------------------------------------------------
 
-    /// Returns `true` if the underlying player is currently connected
-    /// to the server.
-    ///
-    /// Delegates directly to [Player#isOnline()], which is safe to call
-    /// from any thread per the Paper API contract.
-    ///
-    /// @return `true` if the player is connected to the server
-    @Override
-    public boolean isOnline() {
-        return this.player.isOnline();
-    }
-
-    /// {@inheritDoc}
     @Override
     public UUID uuid() {
-        return this.player.getUniqueId();
+        return this.uuid;
     }
 
-    /// {@inheritDoc}
     @Override
     public String name() {
-        return this.player.getName();
+        return this.get(Identity.NAME).orElseThrow();
     }
 
-    /// {@inheritDoc}
     @Override
     public Component displayName() {
-        return this.player.displayName();
+        return this.get(Identity.DISPLAY_NAME).orElseThrow();
     }
 
-    /// {@inheritDoc}
     @Override
     public Locale locale() {
-        return this.player.locale();
+        return this.get(Identity.LOCALE).orElseThrow();
     }
 
-    /// {@inheritDoc}
     @Override
     public Instant lastSeen() {
-        return Instant.ofEpochMilli(this.player.getLastSeen());
+        return this.player().lastSeen();
     }
 
-    /// {@inheritDoc}
+    @Override
+    public boolean isOnline() {
+        return this.player().isOnline();
+    }
+
+    // -------------------------------------------------------------------------
+    // ForwardingAudience.Single + Identified
+    // -------------------------------------------------------------------------
+
     @Override
     public Audience audience() {
-        return this.player;
+        return this.player().audience();
     }
 
-    /// {@inheritDoc}
     @Override
     public Identity identity() {
-        return this.player.identity();
+        return Identity.identity(this.uuid);
     }
+
+    // -------------------------------------------------------------------------
+    // Object
+    // -------------------------------------------------------------------------
 
     @Override
     public String toString() {
-        return "PaperUser{" +
-                "player=" + this.player +
-                ", component=" + this.component +
-                '}';
+        return "PaperUser{uuid=%s, registry=%s}".formatted(this.uuid, this.registry);
     }
 
     @Override
@@ -169,13 +149,12 @@ public final class PaperUser implements UserInternal, ForwardingAudience.Single 
         if (that == null || getClass() != that.getClass()) {
             return false;
         }
-
         final PaperUser paperUser = (PaperUser) that;
-        return Objects.equals(this.player, paperUser.player) && Objects.equals(this.component.get(), paperUser.component.get());
+        return Objects.equals(this.uuid, paperUser.uuid) && Objects.equals(this.registry, paperUser.registry);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.player, this.component);
+        return Objects.hash(this.uuid, this.registry);
     }
 }

@@ -57,6 +57,7 @@ public final class ConfigurationHolder<T extends Record> implements Provider<T>,
         this.logger.info("Loading configuration: {}...", configLoader.configName());
         this.config = new AtomicReference<>(configLoader.loadConfiguration());
         this.logger.info("Configuration loaded: {}", configLoader.configName());
+        this.logger.debug("Loaded configuration: {}", this.config.get());
     }
 
     /// Reloads the configuration from disk and atomically updates the stored value.

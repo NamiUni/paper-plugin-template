@@ -17,14 +17,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.user;
+package io.github.namiuni.paperplugintemplate.minecraft.paper.component;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
+import java.time.Instant;
+import net.kyori.adventure.audience.Audience;
+import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
+// TODO: Javadoc
 @NullMarked
-public interface UserInternal extends PluginTemplateUser {
+public record PaperPlayerComponent(Player player) implements PlayerComponent {
 
-    PlayerComponent player();
+    /// {@inheritDoc}
+    @Override
+    public Audience audience() {
+        return this.player;
+    }
+
+    /// {@inheritDoc}
+    ///
+    /// @implNote Delegates to [Player#isOnline()], which is safe to call
+    ///           from any thread per the Paper API contract. No virtual-thread
+    ///           pinning occurs.
+    @Override
+    public boolean isOnline() {
+        return this.player.isOnline();
+    }
+
+    /// {@inheritDoc}
+    @Override
+    public Instant lastSeen() {
+        return Instant.ofEpochMilli(this.player.getLastSeen());
+    }
 }

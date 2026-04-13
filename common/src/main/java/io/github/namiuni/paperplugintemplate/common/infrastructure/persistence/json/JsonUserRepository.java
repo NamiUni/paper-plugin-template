@@ -28,7 +28,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserComponent;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
 import jakarta.inject.Inject;
 import java.io.IOException;
@@ -117,7 +117,7 @@ public final class JsonUserRepository implements UserRepository {
 
     /// {@inheritDoc}
     @Override
-    public CompletableFuture<Optional<UserComponent>> findById(final UUID uuid) {
+    public CompletableFuture<Optional<UserRecord>> findById(final UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
             final ReentrantReadWriteLock.ReadLock lock = this.lockFor(uuid).readLock();
             lock.lock();
@@ -133,7 +133,7 @@ public final class JsonUserRepository implements UserRepository {
                     return Optional.empty();
                 }
                 this.logger.debug("[JSON] findById: loaded profile for {}", uuid);
-                return Optional.of(GSON.fromJson(json, UserComponent.class));
+                return Optional.of(GSON.fromJson(json, UserRecord.class));
             } catch (final IOException exception) {
                 throw new UncheckedIOException(
                         "Failed to read user file for UUID: " + uuid, exception);
@@ -145,19 +145,19 @@ public final class JsonUserRepository implements UserRepository {
 
     /// {@inheritDoc}
     @Override
-    public CompletableFuture<Void> upsert(final UserComponent userComponent) {
-        final UUID uuid = userComponent.uuid();
+    public CompletableFuture<Void> upsert(final UserRecord userRecord) {
+        final UUID uuid = userRecord.uuid();
         return CompletableFuture.runAsync(() -> {
             final ReentrantReadWriteLock.WriteLock lock = this.lockFor(uuid).writeLock();
             lock.lock();
             try {
                 final Path file = this.fileFor(uuid);
                 final Path tmpFile = file.resolveSibling(file.getFileName() + ".tmp");
-                Files.writeString(tmpFile, GSON.toJson(userComponent));
+                Files.writeString(tmpFile, GSON.toJson(userRecord));
                 Files.move(tmpFile, file,
                         StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
-                this.logger.debug("[JSON] upsert: wrote profile for {} ({})", uuid, userComponent.name());
+                this.logger.debug("[JSON] upsert: wrote profile for {} ({})", uuid, userRecord.name());
             } catch (final IOException exception) {
                 throw new UncheckedIOException(
                         "Failed to write user file for UUID: " + uuid, exception);

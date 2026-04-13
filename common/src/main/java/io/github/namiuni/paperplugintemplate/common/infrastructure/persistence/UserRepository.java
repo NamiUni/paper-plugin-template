@@ -24,7 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.NullMarked;
 
-/// Storage-agnostic data access contract for [UserComponent].
+/// Storage-agnostic data access contract for [UserRecord].
 ///
 /// All operations are non-blocking and return [CompletableFuture]s that
 /// complete on a virtual-thread executor managed by the implementation.
@@ -46,14 +46,14 @@ public interface UserRepository {
     /// @param uuid the player UUID to look up
     /// @return a future resolving to the profile wrapped in [Optional], or
     ///         [Optional#empty()] if no record exists for this UUID
-    CompletableFuture<Optional<UserComponent>> findById(UUID uuid);
+    CompletableFuture<Optional<UserRecord>> findById(UUID uuid);
 
     /// Persists `userProfile`, inserting a new row or updating an existing
     /// one as necessary. This operation must be idempotent.
     ///
-    /// @param userComponent the profile to persist; must not be `null`
+    /// @param userRecord the profile to persist; must not be `null`
     /// @return a future that completes with `null` when the write finishes
-    CompletableFuture<Void> upsert(UserComponent userComponent);
+    CompletableFuture<Void> upsert(UserRecord userRecord);
 
     /// Removes all persisted data for `uuid`. No-op if no row exists.
     ///
