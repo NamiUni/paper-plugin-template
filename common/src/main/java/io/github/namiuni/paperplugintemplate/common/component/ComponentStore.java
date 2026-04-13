@@ -45,15 +45,15 @@ import org.jspecify.annotations.NullMarked;
 /// All methods are safe to call concurrently from any number of threads.
 @Singleton
 @NullMarked
-public final class ComponentRegistry {
+public final class ComponentStore {
 
     private static final int DEFAULT_CAPACITY = 256;
 
-    private final ConcurrentHashMap<UUID, ConcurrentHashMap<Class<? extends Component>, Component>> store;
+    private final Map<UUID, Map<Class<? extends Component>, Component>> store;
 
     /// Constructs a new empty registry with default initial capacity.
     @Inject
-    private ComponentRegistry() {
+    private ComponentStore() {
         this.store = new ConcurrentHashMap<>(DEFAULT_CAPACITY);
     }
 
@@ -187,7 +187,7 @@ public final class ComponentRegistry {
 
     // -------------------------------------------------------------------------
 
-    private ConcurrentHashMap<Class<? extends Component>, Component> bucket(final UUID uuid) {
+    private Map<Class<? extends Component>, Component> bucket(final UUID uuid) {
         return this.store.computeIfAbsent(uuid, _ -> new ConcurrentHashMap<>());
     }
 }

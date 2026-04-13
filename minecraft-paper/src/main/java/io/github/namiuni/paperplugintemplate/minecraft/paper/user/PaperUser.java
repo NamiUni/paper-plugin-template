@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.component.ComponentRegistry;
+import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
 import io.github.namiuni.paperplugintemplate.common.component.ComponentTypes;
 import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
 import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
@@ -66,13 +66,13 @@ import org.jspecify.annotations.Nullable;
 public final class PaperUser implements UserInternal, ForwardingAudience.Single {
 
     private final UUID uuid;
-    private final ComponentRegistry registry;
+    private final ComponentStore registry;
 
     /// Constructs a new view bound to `entityId` and `registry`.
     ///
     /// @param uuid the entity identifier; must not be `null`
     /// @param registry the shared component registry; must not be `null`
-    public PaperUser(final UUID uuid, final ComponentRegistry registry) {
+    public PaperUser(final UUID uuid, final ComponentStore registry) {
         this.uuid = Objects.requireNonNull(uuid, "uuid");
         this.registry = Objects.requireNonNull(registry, "registry");
     }

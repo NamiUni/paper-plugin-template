@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.component.ComponentRegistry;
+import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
 import io.github.namiuni.paperplugintemplate.common.component.ComponentTypes;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
@@ -50,10 +50,10 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class PaperUserFactory implements UserFactory {
 
-    private final ComponentRegistry registry;
+    private final ComponentStore registry;
 
     @Inject
-    public PaperUserFactory(final ComponentRegistry registry) {
+    public PaperUserFactory(final ComponentStore registry) {
         this.registry = registry;
     }
 
