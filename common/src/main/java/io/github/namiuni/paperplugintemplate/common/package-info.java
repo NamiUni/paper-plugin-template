@@ -30,7 +30,7 @@
 /// - [io.github.namiuni.paperplugintemplate.common.CommonModule] — the Guice module that binds application-layer
 ///   singletons. Installed alongside the platform-specific module during
 ///   injector creation.
-/// - [io.github.namiuni.paperplugintemplate.common.DataDirectory] — the binding annotation that qualifies a
+/// - [io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory] — the binding annotation that qualifies a
 ///   [java.nio.file.Path] injection point as the plugin's data directory.
 ///
 /// ## Module boundary

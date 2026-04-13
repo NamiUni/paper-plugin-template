@@ -24,7 +24,7 @@
 /// This package contains two types:
 ///
 /// - [io.github.namiuni.paperplugintemplate.minecraft.paper.user.PaperUser] — the Paper-specific implementation of
-///   [io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserInternal].
+///   [io.github.namiuni.paperplugintemplate.common.user.UserInternal].
 ///   Delegates all live-data access (online status, display name, locale)
 ///   directly to the underlying `Player`.
 /// - [io.github.namiuni.paperplugintemplate.minecraft.paper.user.PaperUserFactory] — the Paper-specific

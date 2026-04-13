@@ -20,29 +20,14 @@
 package io.github.namiuni.paperplugintemplate.common;
 
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import com.google.inject.Scopes;
-import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
-import io.github.namiuni.kotonoha.translatable.message.KotonohaMessage;
-import io.github.namiuni.kotonoha.translatable.message.configuration.FormatTypes;
-import io.github.namiuni.kotonoha.translatable.message.policy.argument.TranslationArgumentAdaptationPolicy;
-import io.github.namiuni.kotonoha.translatable.message.policy.argument.tag.TagNameResolver;
-import io.github.namiuni.kotonoha.translatable.message.utility.TranslationArgumentAdapter;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.common.command.commands.HelpCommand;
 import io.github.namiuni.paperplugintemplate.common.command.commands.ReloadCommand;
-import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
-import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationLoader;
-import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
-import io.github.namiuni.paperplugintemplate.common.translation.PluginMessages;
-import io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal;
-import jakarta.inject.Singleton;
-import java.nio.file.Path;
-import java.util.function.Supplier;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal;
 import org.jspecify.annotations.NullMarked;
 
 /// Guice module that binds the application-layer services shared across all
@@ -50,11 +35,7 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// Configures the following singleton bindings:
 ///
-/// - [ConfigurationLoader] for [PrimaryConfiguration]: reads and writes
-///   the primary YAML configuration file.
-/// - [PluginMessages] proxy backed by Kotonoha: provides type-safe, locale-aware
-///   access to all plugin messages.
-/// - [PluginTemplateUserService] → [PluginTemplateUserServiceInternal]:
+/// - [PluginTemplateUserService] → [UserServiceInternal]:
 ///   routes the public user-service API to its internal implementation.
 ///
 /// ## Thread safety
@@ -67,72 +48,18 @@ import org.jspecify.annotations.NullMarked;
 @SuppressWarnings("unused")
 public final class CommonModule extends AbstractModule {
 
-    private final ComponentLogger logger;
-    private final Path dataDirectory;
-    private final PluginMetadata metadata;
+    private final Metadata metadata;
 
     /// Constructs a new `CommonModule`.
-    public CommonModule(
-            final ComponentLogger logger,
-            final Path dataDirectory,
-            final PluginMetadata metadata
-    ) {
-        this.logger = logger;
-        this.dataDirectory = dataDirectory;
+    public CommonModule(final Metadata metadata) {
         this.metadata = metadata;
-    }
-
-    /// Provides a singleton [ConfigurationLoader] for [PrimaryConfiguration].
-    ///
-    /// @param dataDirectory the plugin data directory
-    /// @param logger        the component-aware logger forwarded to the loader
-    /// @return a fully constructed configuration loader
-    @Provides
-    @Singleton
-    private ConfigurationLoader<PrimaryConfiguration> primaryConfigLoader(
-            final @DataDirectory Path dataDirectory,
-            final ComponentLogger logger
-    ) {
-        return new ConfigurationLoader<>(
-                PrimaryConfiguration.class,
-                PrimaryConfiguration.DEFAULT,
-                dataDirectory,
-                logger
-        );
-    }
-
-    /// Provides a singleton [PluginTemplate].
-    ///
-    /// @param userService the plugin user service
-    /// @return a plugin instance
-    @Provides
-    @Singleton
-    private PluginTemplate pluginTemplate(final PluginTemplateUserService userService) {
-        return new PluginTemplateImpl(userService);
-    }
-
-    /// Provides a singleton [PluginMessages] proxy backed by Kotonoha.
-    ///
-    /// @return a proxied implementation of [PluginMessages]
-    @Provides
-    @Singleton
-    private PluginMessages translations() {
-        final var argumentPolicy = TranslationArgumentAdaptationPolicy.miniMessage(
-                TranslationArgumentAdapter.standard(),
-                TagNameResolver.annotationOrParameterNameResolver()
-        );
-        final var config = FormatTypes.MINI_MESSAGE.withArgumentPolicy(argumentPolicy);
-        return KotonohaMessage.createProxy(PluginMessages.class, config);
     }
 
     @Override
     protected void configure() {
-        this.bind(ComponentLogger.class).toInstance(this.logger);
-        this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.dataDirectory);
-        this.bind(PluginMetadata.class).toInstance(this.metadata);
-        this.bind(PluginTemplateUserService.class).to(PluginTemplateUserServiceInternal.class).in(Scopes.SINGLETON);
-        this.bind(new TypeLiteral<Supplier<PrimaryConfiguration>>() { })
-                .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
+        this.bind(Metadata.class).toInstance(this.metadata);
+        this.bind(PluginTemplateUserService.class).to(UserServiceInternal.class).in(Scopes.SINGLETON);
+        this.bind(PluginTemplate.class).to(PluginTemplateImpl.class).in(Scopes.SINGLETON);
 
         this.bindCommands();
     }

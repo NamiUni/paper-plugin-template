@@ -19,18 +19,14 @@
  */
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
-import io.github.namiuni.paperplugintemplate.common.PluginMetadata;
+import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.configuration.ConfigurationHolder;
-import io.github.namiuni.paperplugintemplate.common.configuration.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
-import io.github.namiuni.paperplugintemplate.common.translation.PluginMessages;
-import io.github.namiuni.paperplugintemplate.common.translation.TranslatorHolder;
 import jakarta.inject.Inject;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.Translator;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.CommandManager;
@@ -38,7 +34,6 @@ import org.incendo.cloud.context.CommandContext;
 import org.incendo.cloud.description.CommandDescription;
 import org.incendo.cloud.minecraft.extras.RichDescription;
 import org.jspecify.annotations.NullMarked;
-import org.spongepowered.configurate.ConfigurateException;
 
 /// [CommandFactory] that contributes the `/template reload` administration
 /// command to the command manager.
@@ -66,11 +61,11 @@ import org.spongepowered.configurate.ConfigurateException;
 @NullMarked
 public final class ReloadCommand implements CommandFactory {
 
-    private final ConfigurationHolder<PrimaryConfiguration> configHolder;
-    private final TranslatorHolder translatorHolder;
-    private final PluginMessages messages;
+    private final Reloadable<PrimaryConfiguration> configHolder;
+    private final Reloadable<Translator> translatorHolder;
+    private final MessageAssembly messages;
     private final CommandManager<CommandSource> manager;
-    private final PluginMetadata metadata;
+    private final Metadata metadata;
 
     /// Constructs a new registrar with its required dependencies.
     ///
@@ -80,11 +75,11 @@ public final class ReloadCommand implements CommandFactory {
     /// @param metadata         the plugin metadata
     @Inject
     private ReloadCommand(
-            final ConfigurationHolder<PrimaryConfiguration> configHolder,
-            final TranslatorHolder translatorHolder,
-            final PluginMessages messages,
+            final Reloadable<PrimaryConfiguration> configHolder,
+            final Reloadable<Translator> translatorHolder,
+            final MessageAssembly messages,
             final CommandManager<CommandSource> manager,
-            final PluginMetadata metadata
+            final Metadata metadata
     ) {
         this.configHolder = configHolder;
         this.translatorHolder = translatorHolder;
@@ -118,30 +113,14 @@ public final class ReloadCommand implements CommandFactory {
     /// added to prevent a window in which neither source is registered.
     ///
     /// @param  context the cloud command context holding the sender
-    /// @throws UncheckedIOException if configuration or translation reload fails; the exception is propagated
-    ///                              to cloud's exception handler after feedback has been sent to the sender
     private void executes(final CommandContext<CommandSource> context) {
         final Audience sender = context.sender().sender();
 
-        try {
-            this.configHolder.reload();
-            sender.sendMessage(this.messages.configurationReloadSuccess());
-        } catch (final ConfigurateException exception) {
-            sender.sendMessage(this.messages.configurationReloadFailure());
-            // ConfigurateException extends IOException; wrap for unchecked propagation.
-            throw new UncheckedIOException(exception);
-        }
+        this.configHolder.reload();
+        sender.sendMessage(this.messages.configurationReloadSuccess(sender));
 
-        try {
-            final Translator oldTranslator = this.translatorHolder.get();
-            final Translator newTranslator = this.translatorHolder.reload();
-            GlobalTranslator.translator().removeSource(oldTranslator);
-            GlobalTranslator.translator().addSource(newTranslator);
-            sender.sendMessage(this.messages.translationReloadSuccess());
-        } catch (final IOException exception) {
-            sender.sendMessage(this.messages.translationReloadFailure());
-            throw new UncheckedIOException(exception);
-        }
+        this.translatorHolder.reload();
+        sender.sendMessage(this.messages.translationReloadSuccess(sender));
     }
 
     private CommandDescription description() {

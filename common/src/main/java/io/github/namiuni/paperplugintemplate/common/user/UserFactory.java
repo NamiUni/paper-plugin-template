@@ -19,17 +19,17 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
-import io.github.namiuni.paperplugintemplate.common.user.storage.UserProfile;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import org.jspecify.annotations.NullMarked;
 
-/// Platform-specific factory for creating [PluginTemplateUserInternal]
+/// Platform-specific factory for creating [UserInternal]
 /// instances.
 ///
 /// This interface is the sole coupling point between the `common`
 /// service layer and any platform adapter class. By declaring the return
-/// type as [PluginTemplateUserInternal], callers can access profile
+/// type as [UserInternal], callers can access profile
 /// mutation methods without an explicit cast and without importing a
 /// platform class.
 ///
@@ -47,7 +47,7 @@ import org.jspecify.annotations.NullMarked;
 @FunctionalInterface
 public interface UserFactory {
 
-    /// Creates a new [PluginTemplateUserInternal] bound to the given
+    /// Creates a new [UserInternal] bound to the given
     /// player and profile.
     ///
     /// The concrete type returned by this method is determined entirely
@@ -62,5 +62,5 @@ public interface UserFactory {
     /// @param profile the initial persistent profile snapshot to
     ///                associate with `player`; must not be `null`
     /// @return a fully initialized, platform-specific user adapter, never `null`
-    <P extends Audience & Identified> PluginTemplateUserInternal create(P player, UserProfile profile);
+    <P extends Audience & Identified> UserInternal create(P player, UserRecord profile);
 }

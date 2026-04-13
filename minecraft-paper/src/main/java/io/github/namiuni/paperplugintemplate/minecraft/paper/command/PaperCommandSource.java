@@ -46,7 +46,7 @@ import org.jspecify.annotations.Nullable;
 ///
 /// [#sender()] and [#executor()] both call `getUser(uuid).orElseThrow()`.
 /// This is safe only when invoked after
-/// [io.github.namiuni.paperplugintemplate.common.user.PluginTemplateUserServiceInternal#loadUser]
+/// [io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal#loadUser]
 /// has completed for the player — which is guaranteed for any command
 /// handler running after the `PlayerJoinEvent`. Invoking either method
 /// during the configuration phase (before join) for a player whose userCache
@@ -70,7 +70,7 @@ public final class PaperCommandSource implements CommandSource {
     /// @param source      the Paper Brigadier command source stack; must not
     ///                    be `null`
     /// @param userService the user service used to resolve online players to
-    ///                    their [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
+    ///                    their [PluginTemplateUser]
     ///                    counterparts; must not be `null`
     public PaperCommandSource(
             final CommandSourceStack source,
@@ -95,7 +95,7 @@ public final class PaperCommandSource implements CommandSource {
     /// {@inheritDoc}
     ///
     /// When the underlying sender is a [Player], returns
-    /// the corresponding [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
+    /// the corresponding [PluginTemplateUser]
     /// from the user service userCache. Otherwise, returns the raw
     /// [org.bukkit.command.CommandSender] (e.g., the console).
     @Override
@@ -109,7 +109,7 @@ public final class PaperCommandSource implements CommandSource {
     /// {@inheritDoc}
     ///
     /// When the underlying executor is a [Player], returns
-    /// the corresponding [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser]
+    /// the corresponding [PluginTemplateUser]
     /// from the user service userCache. Returns `null` when
     /// [CommandSourceStack#getExecutor()] is `null` — i.e., when no
     /// `/execute as` redirect is active.
