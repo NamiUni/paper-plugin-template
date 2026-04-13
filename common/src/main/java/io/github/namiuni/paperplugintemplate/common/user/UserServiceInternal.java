@@ -24,6 +24,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
+import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
@@ -65,12 +66,12 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     private UserServiceInternal(
             final UserRepository repository,
             final UserFactory userFactory,
+            final ComponentStore componentStore,
             final Provider<PrimaryConfiguration> primaryConfig,
             final ComponentLogger logger
     ) {
         this.repository = repository;
         this.userFactory = userFactory;
-
         this.logger = logger;
 
         final PrimaryConfiguration.Storage.Cache cacheSettings = primaryConfig.get().storage().userCache();
@@ -80,6 +81,11 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         this.userCache = Caffeine.newBuilder()
                 .maximumSize(cacheSettings.maximumSize())
                 .expireAfter(new OnlineAwareExpiry(cacheSettings))
+                .removalListener((uuid, _, _) -> {
+                    if (uuid != null) {
+                        componentStore.removeAll(uuid);
+                    }
+                })
                 .build();
     }
 
