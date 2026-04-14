@@ -47,7 +47,7 @@ public final class PaperUserFactory implements UserFactory {
         final Player bukkit = (Player) player;
         final UUID uuid = bukkit.getUniqueId();
 
-        this.registry.set(uuid, ComponentTypes.PLAYER, new PaperPlayerComponent(bukkit));
+        this.registry.set(uuid, ComponentTypes.AUDIENCE, new PaperPlayerComponent(bukkit));
 
         return new PaperUser(uuid, this.registry);
     }

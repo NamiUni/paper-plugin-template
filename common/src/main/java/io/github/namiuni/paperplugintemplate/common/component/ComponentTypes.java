@@ -19,13 +19,13 @@
  */
 package io.github.namiuni.paperplugintemplate.common.component;
 
-import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
+import io.github.namiuni.paperplugintemplate.common.component.components.AudienceComponent;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class ComponentTypes {
 
-    public static final ComponentType<PlayerComponent> PLAYER = new ComponentType<>(PlayerComponent.class);
+    public static final ComponentType<AudienceComponent> AUDIENCE = new ComponentType<>(AudienceComponent.class);
 
     private ComponentTypes() {
     }

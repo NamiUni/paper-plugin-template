@@ -20,11 +20,11 @@
 package io.github.namiuni.paperplugintemplate.common.user;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
+import io.github.namiuni.paperplugintemplate.common.component.components.AudienceComponent;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public interface UserInternal extends PluginTemplateUser {
 
-    PlayerComponent playerComponent();
+    AudienceComponent audienceComponent();
 }

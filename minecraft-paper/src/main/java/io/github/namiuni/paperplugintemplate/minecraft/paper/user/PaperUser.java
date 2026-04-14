@@ -46,8 +46,8 @@ public final class PaperUser implements UserInternal, ForwardingAudience.Single 
     }
 
     @Override
-    public PaperPlayerComponent playerComponent() {
-        return (PaperPlayerComponent) this.store.getOrThrow(this.uuid, ComponentTypes.PLAYER);
+    public PaperPlayerComponent audienceComponent() {
+        return (PaperPlayerComponent) this.store.getOrThrow(this.uuid, ComponentTypes.AUDIENCE);
     }
 
     @Override
@@ -72,22 +72,22 @@ public final class PaperUser implements UserInternal, ForwardingAudience.Single 
 
     @Override
     public Instant lastSeen() {
-        return this.playerComponent().lastSeen();
+        return Instant.ofEpochMilli(this.audienceComponent().player().getLastSeen());
     }
 
     @Override
     public boolean isOnline() {
-        return this.playerComponent().isOnline();
+        return this.audienceComponent().player().isOnline();
     }
 
     @Override
     public Audience audience() {
-        return this.playerComponent().audience();
+        return this.audienceComponent().audience();
     }
 
     @Override
     public Identity identity() {
-        return this.playerComponent().player().identity();
+        return this.audienceComponent().player().identity();
     }
 
     @Override

@@ -49,7 +49,8 @@ public final class CommandRegistrar {
             final var command = factory.command();
             this.commandManager.command(command);
             this.logger.debug(
-                    "Registered command: /{} ({})",
+                    "[{}] Registered command: /{} ({})",
+                    CommandRegistrar.class.getSimpleName(),
                     command.rootComponent().name(),
                     factory.getClass().getSimpleName()
             );

@@ -19,28 +19,16 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.component;
 
-import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
-import java.time.Instant;
+import io.github.namiuni.paperplugintemplate.common.component.components.AudienceComponent;
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record PaperPlayerComponent(Player player) implements PlayerComponent {
+public record PaperPlayerComponent(Player player) implements AudienceComponent {
 
-    /// {@inheritDoc}
     @Override
     public Audience audience() {
         return this.player;
-    }
-
-    @Override
-    public boolean isOnline() {
-        return this.player.isOnline();
-    }
-
-    @Override
-    public Instant lastSeen() {
-        return Instant.ofEpochMilli(this.player.getLastSeen());
     }
 }

@@ -19,16 +19,11 @@
  */
 package io.github.namiuni.paperplugintemplate.common.component.components;
 
-import java.time.Instant;
 import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public interface PlayerComponent extends Component {
+public interface AudienceComponent extends Component {
 
     Audience audience();
-
-    boolean isOnline();
-
-    Instant lastSeen();
 }
