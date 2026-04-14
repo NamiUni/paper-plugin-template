@@ -27,6 +27,7 @@ import jakarta.inject.Inject;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -48,34 +49,6 @@ import net.kyori.adventure.text.minimessage.translation.MiniMessageTranslationSt
 import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 
-/// Loads a fully initialized [Translator] from annotation-embedded defaults
-/// and overrides stored in the plugin's translation directory.
-///
-/// The loading strategy follows a three-step priority order:
-///
-///   1. **ROOT locale** – always sourced from the compile-time annotations on
-///      [PluginMessages]; these act as the ultimate fallback.
-///   2. **Disk files** – `.properties` files found under the
-///      `translation/` sub-directory override the annotation defaults for
-///      their respective locales, allowing server operators to customize
-///      messages.
-///   3. **Annotation fill-in** – any locale defined in annotations but absent
-///      from disk is registered programmatically and also written to disk so
-///      operators can edit it later.
-///
-/// Custom MiniMessage tags registered by this loader:
-///
-///   - `<error>` – [#RED] (JIS Z 9103 safety red)
-///   - `<warn>`  – [#YELLOW] (JIS Z 9103 safety yellow)
-///   - `<info>`  – [#GREEN] (JIS Z 9103 safety green)
-///   - `<debug>` – [#BLUE] (JIS Z 9103 safety blue)
-///
-/// ## Thread safety
-///
-/// This class carries no mutable state after construction. Each call to
-/// [#loadTranslator()] constructs an independent [Translator] instance and
-/// performs its own file I/O; multiple concurrent calls are safe provided
-/// no other process modifies the translation files concurrently.
 @NullMarked
 final class TranslatorLoader {
 
@@ -104,12 +77,6 @@ final class TranslatorLoader {
     private final Path translationDir;
     private final ComponentLogger logger;
 
-    /// Constructs a new loader, creating the `translation/` directory if it
-    /// does not already exist.
-    ///
-    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
-    /// @param logger        the component-aware logger
-    /// @throws UncheckedIOException if the translation directory cannot be created
     @Inject
     private TranslatorLoader(
             final @DataDirectory Path dataDirectory,
@@ -124,16 +91,8 @@ final class TranslatorLoader {
         }
     }
 
-    /// Builds and returns a fresh [Translator] instance containing all
-    /// registered message translations.
-    ///
-    /// Calling this method more than once produces independent translator
-    /// instances; the previous instance is not modified.
-    ///
-    /// @return a fully populated [Translator]
-    /// @throws UncheckedIOException if reading or writing translation files fails
     Translator loadTranslator() throws UncheckedIOException {
-        this.logger.debug("Building translation store...");
+        this.logger.debug("[{}] Building translation store...", TranslatorLoader.class.getSimpleName());
         final var store = MiniMessageTranslationStore.create(TRANSLATION_KEY, MINI_MESSAGE);
         store.defaultLocale(Locale.ROOT);
 
@@ -143,7 +102,7 @@ final class TranslatorLoader {
                 .stream()
                 .collect(Collectors.toUnmodifiableMap(Translation.Message::key, Translation.Message::content));
         store.registerAll(Locale.ROOT, rootTranslations);
-        this.logger.debug("Registered {} ROOT-locale messages from annotations.", rootTranslations.size());
+        this.logger.debug("[{}] Registered {} ROOT-locale messages from annotations.", TranslatorLoader.class.getSimpleName(), rootTranslations.size());
 
         // 2. Register all translation files present on disk (operator overrides)
         final Set<Locale> diskLocales = new HashSet<>();
@@ -154,14 +113,14 @@ final class TranslatorLoader {
                         final Locale locale = parseLocale(file);
                         store.registerAll(locale, file, false);
                         diskLocales.add(locale);
-                        this.logger.debug("Loaded translation file: {} (locale: {})", file.getFileName(), locale);
+                        this.logger.debug("[{}] Loaded translation file: {} (locale: {})", TranslatorLoader.class.getSimpleName(), file.getFileName(), locale);
                     });
         } catch (final IOException exception) {
             throw new UncheckedIOException(exception);
         }
 
         if (diskLocales.isEmpty()) {
-            this.logger.debug("No operator-provided translation files found in {}.", this.translationDir);
+            this.logger.debug("[{}] No operator-provided translation files found in {}.", TranslatorLoader.class.getSimpleName(), this.translationDir);
         } else {
             this.logger.info("Loaded {} translation file(s) from disk: {}.", diskLocales.size(), diskLocales);
         }
@@ -176,7 +135,7 @@ final class TranslatorLoader {
             if (!diskLocales.contains(translation.locale())) {
                 writeTranslationFile(this.translationDir, translation);
                 generatedFiles++;
-                this.logger.debug("Generated default translation file for locale: {}.", translation.locale());
+                this.logger.debug("[{}] Generated default translation file: {}.", TranslatorLoader.class.getSimpleName(), translation);
             }
         }
         if (generatedFiles > 0) {
@@ -187,40 +146,27 @@ final class TranslatorLoader {
             );
         }
 
-        this.logger.debug("Translation store build complete.");
+        this.logger.debug("[{}] Translation store build complete.", TranslatorLoader.class.getSimpleName());
         return store;
     }
 
-    // -------------------------------------------------------------------------
-    // Annotation reading
-    // -------------------------------------------------------------------------
-
-    /// Reads all non-empty [Translation] instances from the given interface
-    /// across every locale available in the JVM.
-    ///
-    /// @param translationClass the interface annotated with [Key] and [Message]
-    /// @return an unordered set of non-empty translations; one entry per locale
     private static List<Translation> readAllAnnotations(final Class<?> translationClass) {
         return Locale.availableLocales()
                 .map(locale -> readAnnotations(translationClass, locale))
                 .filter(translation -> !translation.messages().isEmpty())
-                .sorted(Comparator.comparing(t -> t.locale().toString()))
+                .sorted(Comparator.comparing(translation -> translation.locale().toString()))
                 .toList();
     }
 
-    /// Reads the [Translation] for a single locale from the given interface.
-    ///
-    /// @param translationClass the interface annotated with [Key] and [Message]
-    /// @return an unordered set of non-empty translations; one entry per locale
     private static Translation readAnnotations(final Class<?> translationClass, final Locale locale) {
         final List<Translation.Message> messages = new ArrayList<>();
 
-        final var methods = Arrays.stream(translationClass.getMethods())
+        final List<Method> methods = Arrays.stream(translationClass.getMethods())
                 .filter(method -> method.isAnnotationPresent(Key.class))
                 .sorted(Comparator.comparing(method -> method.getAnnotation(Key.class).value()))
                 .toList();
 
-        for (final var method : methods) {
+        for (final Method method : methods) {
             final String key = method.getAnnotation(Key.class).value();
             for (final Message msg : method.getAnnotationsByType(Message.class)) {
                 if (locale.equals(msg.locale().asLocale())) {
@@ -232,31 +178,11 @@ final class TranslatorLoader {
         return new Translation(locale, messages);
     }
 
-    // -------------------------------------------------------------------------
-    // File name helpers
-    // -------------------------------------------------------------------------
-
-    /// Returns `true` if the given path looks like a translation file.
-    ///
-    /// A file matches when its name starts with [#FILE_PREFIX] and ends
-    /// with [#FILE_SUFFIX].
-    ///
-    /// @param file the path to test; only the file name component is examined
-    /// @return `true` if the file is a candidate translation file
     private static boolean isTranslationFile(final Path file) {
         final String name = file.getFileName().toString();
         return name.startsWith(FILE_PREFIX) && name.endsWith(FILE_SUFFIX);
     }
 
-    /// Parses and returns the [Locale] encoded in the given file's name.
-    ///
-    /// The locale tag is the substring between the trailing `'_'` after
-    /// [#FILE_PREFIX] and the leading `'.'` of [#FILE_SUFFIX].
-    /// For example, `messages_ja_JP.properties` yields `ja_JP`.
-    ///
-    /// @param file the translation file whose name encodes the locale
-    /// @return the parsed locale
-    /// @throws IllegalArgumentException if the locale tag cannot be resolved
     private static Locale parseLocale(final Path file) {
         final String name = file.getFileName().toString();
         final String tag = name.substring(FILE_PREFIX.length() + 1, name.length() - FILE_SUFFIX.length());
@@ -267,11 +193,6 @@ final class TranslatorLoader {
         return locale;
     }
 
-    /// Returns the file name for the given locale.
-    ///
-    /// @param locale the locale to convert
-    /// @return the file name (e.g. `messages_ja_JP.properties`),
-    ///         or an empty string when `locale` is [Locale#ROOT]
     private static String fileNameFromLocale(final Locale locale) {
         if (locale == Locale.ROOT) {
             return "";
@@ -279,20 +200,6 @@ final class TranslatorLoader {
         return FILE_PREFIX + "_" + locale + FILE_SUFFIX;
     }
 
-    // -------------------------------------------------------------------------
-    // File writing
-    // -------------------------------------------------------------------------
-
-    /// Writes a [Translation] to a `.properties` file inside `parentDir`.
-    ///
-    /// [Locale#ROOT] is treated as [Locale#US] for the file name because
-    /// the root locale has no standard BCP-47 tag. If the resulting file name
-    /// would be empty this method returns without writing anything.
-    ///
-    /// @param parentDir   the directory in which the file will be created
-    /// @param translation the translation to persist; any existing file is
-    ///                    overwritten
-    /// @throws UncheckedIOException if the file cannot be created or written
     private static void writeTranslationFile(final Path parentDir, final Translation translation) throws UncheckedIOException {
         final Locale locale = translation.locale() == Locale.ROOT ? Locale.US : translation.locale();
         final String fileName = fileNameFromLocale(locale);

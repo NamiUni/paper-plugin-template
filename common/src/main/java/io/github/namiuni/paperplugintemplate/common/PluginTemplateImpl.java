@@ -24,25 +24,6 @@ import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import jakarta.inject.Inject;
 import org.jspecify.annotations.NullMarked;
 
-/// Singleton implementation of [PluginTemplate] that exposes the plugin's
-/// public service API to third-party consumers.
-///
-/// This class has a single responsibility: delegating service access to the
-/// injected [PluginTemplateUserService] singleton.
-///
-/// ## Obtaining an instance
-///
-/// Third-party plugins must not depend on this class directly; they should
-/// use [io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider#pluginTemplate()]
-/// to obtain the [PluginTemplate] reference after the plugin has finished
-/// bootstrapping.
-///
-/// ## Thread safety
-///
-/// This class is effectively immutable after construction: all fields are
-/// `final` and the injected services are themselves thread-safe singletons.
-/// [#userService()] is safe to call from any thread without additional
-/// synchronization.
 @NullMarked
 public record PluginTemplateImpl(PluginTemplateUserService userService) implements PluginTemplate {
 

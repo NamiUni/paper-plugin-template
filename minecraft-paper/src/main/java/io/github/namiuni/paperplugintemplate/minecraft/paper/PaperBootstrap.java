@@ -35,35 +35,12 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/// Paper [PluginBootstrap] implementation that constructs the Guice injector,
-/// runs the startup sequence, and publishes the public API singleton.
-///
-/// ## Startup sequence
-///
-/// [#bootstrap] performs the following steps in order:
-///
-/// 1. Reads plugin identity from the Paper plugin descriptor and builds a [Metadata] record.
-/// 2. Creates the Guice injector from [InfrastructureModule], [CommonModule], and [PaperModule].
-/// 3. Registers all commands via [CommandRegistrar#registerCommands()].
-/// 4. Publishes the [PluginTemplate] singleton to [PluginTemplateProvider].
-///
-/// [#createPlugin] retrieves the fully initialized [PaperPlugin] from the injector.
-///
-/// ## Thread safety
-///
-/// Both [#bootstrap] and [#createPlugin] are called sequentially by the Paper framework on
-/// the server's main thread. The `injector` field is written once in [#bootstrap] and read
-/// once in [#createPlugin]; no concurrent access occurs.
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class PaperBootstrap implements PluginBootstrap {
 
     private @Nullable Injector injector;
 
-    /// {@inheritDoc}
-    ///
-    /// Constructs the Guice injector, registers all commands, and publishes the
-    /// [PluginTemplate] singleton with [PluginTemplateProvider].
     @Override
     public void bootstrap(final BootstrapContext context) {
         final var paperMeta = context.getPluginMeta();
@@ -84,7 +61,6 @@ public final class PaperBootstrap implements PluginBootstrap {
         PluginTemplateProvider.register(this.injector.getInstance(PluginTemplate.class));
     }
 
-    /// {@inheritDoc}
     @Override
     public JavaPlugin createPlugin(final PluginProviderContext context) {
         Objects.requireNonNull(this.injector);

@@ -22,11 +22,14 @@ package io.github.namiuni.paperplugintemplate.common.command.commands;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.UncheckedConfigurateException;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
 import jakarta.inject.Inject;
+import java.io.UncheckedIOException;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.translation.Translator;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.CommandManager;
@@ -35,26 +38,6 @@ import org.incendo.cloud.description.CommandDescription;
 import org.incendo.cloud.minecraft.extras.RichDescription;
 import org.jspecify.annotations.NullMarked;
 
-/// [CommandFactory] that contributes the `/template reload` administration command.
-///
-/// Moving this class into the `common` module removes the dependency on Paper's Brigadier
-/// API from the command logic. The platform adapter in `minecraft-paper` is responsible
-/// solely for constructing the Cloud [CommandManager] with the correct
-/// [org.incendo.cloud.SenderMapper]; all command semantics live here, independent of the
-/// runtime platform.
-///
-/// ## Registered commands
-///
-/// | Command | Permission | Effect |
-/// |---|---|---|
-/// | `/template reload` | [PluginPermissions#COMMAND_RELOAD] | Reloads config and translations |
-///
-/// ## Thread safety
-///
-/// [#command()] is invoked once on the bootstrap thread. Each command handler executes on
-/// Cloud's async execution coordinator (a virtual thread), so the reload operations
-/// performed inside [#executes] may block briefly on I/O without stalling the Paper main
-/// thread.
 @NullMarked
 public final class ReloadCommand implements CommandFactory {
 
@@ -63,33 +46,25 @@ public final class ReloadCommand implements CommandFactory {
     private final MessageAssembly messages;
     private final CommandManager<CommandSource> manager;
     private final Metadata metadata;
+    private final ComponentLogger logger;
 
-    /// Constructs a new registrar with its required dependencies.
-    ///
-    /// @param configHolder     holder for the primary plugin configuration, reloaded on
-    ///                         `/template reload`
-    /// @param translatorHolder holder for the active Adventure translator, replaced on
-    ///                         `/template reload`
-    /// @param messages         localized message provider used to send feedback to the
-    ///                         command sender
-    /// @param manager          the Cloud command manager used to build the command tree
-    /// @param metadata         the plugin metadata
     @Inject
     private ReloadCommand(
             final Reloadable<PrimaryConfiguration> configHolder,
             final Reloadable<Translator> translatorHolder,
             final MessageAssembly messages,
             final CommandManager<CommandSource> manager,
-            final Metadata metadata
+            final Metadata metadata,
+            final ComponentLogger logger
     ) {
         this.configHolder = configHolder;
         this.translatorHolder = translatorHolder;
         this.messages = messages;
         this.manager = manager;
         this.metadata = metadata;
+        this.logger = logger;
     }
 
-    /// {@inheritDoc}
     @Override
     public Command<CommandSource> command() {
         return this.manager.commandBuilder(this.metadata.namespace())
@@ -100,26 +75,24 @@ public final class ReloadCommand implements CommandFactory {
                 .build();
     }
 
-    /// Executes the reload sequence: configuration reload followed by translation reload.
-    ///
-    /// Delegates to [Reloadable#reload()] on each holder in order. Each successful step
-    /// sends a localized success message to the sender via [MessageAssembly]. If either
-    /// reload throws an unchecked exception it propagates to Cloud's exception handler
-    /// without an explicit catch; no partial-success notification is sent in that case.
-    ///
-    /// The atomic swap of the active [Translator] in
-    /// [net.kyori.adventure.translation.GlobalTranslator] is handled internally by
-    /// [io.github.namiuni.paperplugintemplate.common.infrastructure.translation.TranslatorHolder#reload()].
-    ///
-    /// @param context the Cloud command context holding the sender
     private void executes(final CommandContext<CommandSource> context) {
         final Audience sender = context.sender().sender();
 
-        this.configHolder.reload();
-        sender.sendMessage(this.messages.configurationReloadSuccess(sender));
+        try {
+            this.configHolder.reload();
+            sender.sendMessage(this.messages.configurationReloadSuccess(sender));
+        } catch (final UncheckedConfigurateException exception) {
+            this.logger.error("Failed to reload configuration", exception);
+            sender.sendMessage(this.messages.configurationReloadFailure(sender));
+        }
 
-        this.translatorHolder.reload();
-        sender.sendMessage(this.messages.translationReloadSuccess(sender));
+        try {
+            this.translatorHolder.reload();
+            sender.sendMessage(this.messages.translationReloadSuccess(sender));
+        } catch (final UncheckedIOException exception) {
+            this.logger.error("Failed to reload translations", exception);
+            sender.sendMessage(this.messages.translationReloadFailure(sender));
+        }
     }
 
     private CommandDescription description() {

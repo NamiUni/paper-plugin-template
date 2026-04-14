@@ -21,29 +21,6 @@ package io.github.namiuni.paperplugintemplate.common.component.components;
 
 import org.jspecify.annotations.NullMarked;
 
-/// Marker interface for all ECS component types in the plugin.
-///
-/// Components are pure data containers — they carry no behavioral logic.
-/// Each implementation models one independent, orthogonal facet of an entity.
-/// Behavior that reads from or writes to components is expressed in system
-/// classes, never here.
-///
-/// ## Extension
-///
-/// Third-party plugins may introduce custom component types by implementing
-/// this interface. Custom components are stored alongside built-in ones in the
-/// [io.github.namiuni.paperplugintemplate.common.component.ComponentRegistry].
-///
-/// ## Immutability contract
-///
-/// Implementations **must** be effectively immutable. Mutable state inside
-/// a component causes data races when multiple systems access the registry
-/// concurrently. Immutable records are strongly recommended.
-///
-/// ## Thread safety
-///
-/// No state here. Thread-safety of each component is governed by its own
-/// implementation.
 @NullMarked
 public interface Component {
 }

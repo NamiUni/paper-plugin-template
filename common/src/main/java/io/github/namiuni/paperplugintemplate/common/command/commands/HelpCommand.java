@@ -43,32 +43,6 @@ import org.incendo.cloud.suggestion.BlockingSuggestionProvider;
 import org.incendo.cloud.suggestion.Suggestion;
 import org.jspecify.annotations.NullMarked;
 
-/// [CommandFactory] that contributes the `/template help [query]` command.
-///
-/// Uses [MinecraftHelp] from `cloud-minecraft-extras` to render an
-/// Adventure-styled, clickable help menu.
-///
-/// ## Command structure
-///
-/// ```
-/// /template help             -- shows the root index
-/// /template help <query>     -- shows verbose info for a specific command
-/// ```
-///
-/// The `<query>` argument is optional and defaults to `""`, which triggers
-/// the index view. When `<query>` matches a full command syntax string the
-/// verbose view is displayed instead.
-///
-/// Tab-completion for `<query>` is sourced from
-/// [org.incendo.cloud.help.HelpHandler#queryRootIndex] so suggestions
-/// always reflect the live command tree and respect per-sender permissions.
-///
-/// ## Thread safety
-///
-/// [#command()] is invoked once on the bootstrap thread. Both the
-/// [SuggestionProvider] callback and the command handler execute on
-/// Cloud's async execution coordinator (a virtual thread) and are safe to
-/// call from any thread.
 @NullMarked
 public final class HelpCommand implements CommandFactory {
 
@@ -83,18 +57,6 @@ public final class HelpCommand implements CommandFactory {
     private final MinecraftHelp<CommandSource> minecraftHelp;
     private final Metadata metadata;
 
-    /// Constructs a new [HelpCommand] and eagerly initializes the
-    /// [MinecraftHelp] renderer with the JIS Z 9103 color scheme.
-    ///
-    /// The [MinecraftHelp] instance is created once at injection time and
-    /// reused for every command invocation. The `commandPrefix` is set to
-    /// `"/template help"` so that click-through navigation in the help UI
-    /// re-issues this command with the selected query string pre-filled.
-    ///
-    /// @param manager the Cloud command manager; used both to build the command tree and to query the root index for
-    ///                tab-completion suggestions
-    /// @param messages the localized message provider used to send feedback to the command sender
-    /// @param metadata the plugin metadata
     @Inject
     private HelpCommand(
             final CommandManager<CommandSource> manager,
@@ -115,16 +77,6 @@ public final class HelpCommand implements CommandFactory {
                 .build();
     }
 
-    /// {@inheritDoc}
-    ///
-    /// Registers `/template help [query]` where `query` is an optional
-    /// greedy-string argument that defaults to `""`.
-    ///
-    /// Omitting `query` renders the root index view; supplying a full
-    /// command-syntax string renders the verbose detail view. The
-    /// [SuggestionProvider] populates completions from
-    /// [org.incendo.cloud.help.HelpHandler#queryRootIndex], which evaluates
-    /// command permissions for the requesting sender at completion time.
     @Override
     public Command<CommandSource> command() {
         return this.manager.commandBuilder(this.metadata.namespace())

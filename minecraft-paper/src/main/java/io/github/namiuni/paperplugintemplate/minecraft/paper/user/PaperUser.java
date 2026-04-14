@@ -21,8 +21,8 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
 import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
 import io.github.namiuni.paperplugintemplate.common.component.ComponentTypes;
-import io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent;
 import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
+import io.github.namiuni.paperplugintemplate.minecraft.paper.component.PaperPlayerComponent;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Objects;
@@ -34,62 +34,21 @@ import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-/// Paper-specific [UserInternal] adapter that wraps a live
-/// [org.bukkit.entity.Player].
-///
-/// All live-data access — online status, display name, locale, and any
-/// future additions such as health or inventory — delegates directly to
-/// the underlying [org.bukkit.entity.Player], eliminating the supplier-based workarounds
-/// that arise when a platform-agnostic class tries to abstract over
-/// platform behavior.
-///
-/// ## Extensibility
-///
-/// Adding a new capability to the public API requires only two steps:
-///
-/// 1. Declare the method in [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser] (the port).
-/// 2. Implement it here by delegating to `this.player`.
-///
-/// The constructor signature never changes as capabilities are added.
-///
-/// ## Thread safety
-///
-/// The persistent [io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord] is held in an [java.util.concurrent.atomic.AtomicReference],
-/// enabling lock-free copy-on-write updates from any thread. No
-/// `synchronized` blocks are used; this class is therefore free from
-/// virtual-thread carrier-thread pinning (JEP 491).
-///
-/// Live-data methods such as [#isOnline()] and [#displayName()] delegate
-/// to the underlying [org.bukkit.entity.Player], whose thread-safety is governed by the
-/// Paper API contract.
 @NullMarked
 public final class PaperUser implements UserInternal, ForwardingAudience.Single {
 
     private final UUID uuid;
-    private final ComponentStore registry;
+    private final ComponentStore store;
 
-    /// Constructs a new view bound to `entityId` and `registry`.
-    ///
-    /// @param uuid the entity identifier; must not be `null`
-    /// @param registry the shared component registry; must not be `null`
-    public PaperUser(final UUID uuid, final ComponentStore registry) {
+    public PaperUser(final UUID uuid, final ComponentStore store) {
         this.uuid = Objects.requireNonNull(uuid, "uuid");
-        this.registry = Objects.requireNonNull(registry, "registry");
+        this.store = Objects.requireNonNull(store, "store");
     }
 
-    // -------------------------------------------------------------------------
-    // UserInternal — component accessors and mutators
-    // -------------------------------------------------------------------------
-
-    /// {@inheritDoc}
     @Override
-    public PlayerComponent player() {
-        return this.registry.getOrThrow(this.uuid, ComponentTypes.PLAYER);
+    public PaperPlayerComponent playerComponent() {
+        return (PaperPlayerComponent) this.store.getOrThrow(this.uuid, ComponentTypes.PLAYER);
     }
-
-    // -------------------------------------------------------------------------
-    // PluginTemplateUser
-    // -------------------------------------------------------------------------
 
     @Override
     public UUID uuid() {
@@ -113,48 +72,40 @@ public final class PaperUser implements UserInternal, ForwardingAudience.Single 
 
     @Override
     public Instant lastSeen() {
-        return this.player().lastSeen();
+        return this.playerComponent().lastSeen();
     }
 
     @Override
     public boolean isOnline() {
-        return this.player().isOnline();
+        return this.playerComponent().isOnline();
     }
-
-    // -------------------------------------------------------------------------
-    // ForwardingAudience.Single + Identified
-    // -------------------------------------------------------------------------
 
     @Override
     public Audience audience() {
-        return this.player().audience();
+        return this.playerComponent().audience();
     }
 
     @Override
     public Identity identity() {
-        return Identity.identity(this.uuid);
+        return this.playerComponent().player().identity();
     }
-
-    // -------------------------------------------------------------------------
-    // Object
-    // -------------------------------------------------------------------------
 
     @Override
     public String toString() {
-        return "PaperUser{uuid=%s, registry=%s}".formatted(this.uuid, this.registry);
+        return "PaperUser{uuid=%s, store=%s}".formatted(this.uuid, this.store);
     }
 
     @Override
     public boolean equals(final @Nullable Object that) {
-        if (that == null || getClass() != that.getClass()) {
+        if (that == null || this.getClass() != that.getClass()) {
             return false;
         }
-        final PaperUser paperUser = (PaperUser) that;
-        return Objects.equals(this.uuid, paperUser.uuid) && Objects.equals(this.registry, paperUser.registry);
+        final PaperUser other = (PaperUser) that;
+        return Objects.equals(this.uuid, other.uuid) && Objects.equals(this.store, other.store);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.uuid, this.registry);
+        return Objects.hash(this.uuid, this.store);
     }
 }

@@ -59,35 +59,6 @@ import org.jdbi.v3.postgres.PostgresPlugin;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.jspecify.annotations.NullMarked;
 
-/// Guice module responsible for selecting and binding the active
-/// [UserRepository] based on the configured [StorageType].
-///
-/// ## Supported backends
-///
-/// | [StorageType] | Driver | UUID column | Migration location |
-/// |---|---|---|---|
-/// | `H2`         | `org.h2.Driver` (`MODE=MySQL`)     | `BINARY(16)` | `db/migration/mysql`      |
-/// | `MYSQL`      | `com.mysql.cj.jdbc.Driver`         | `BINARY(16)` | `db/migration/mysql`      |
-/// | `POSTGRESQL` | `org.postgresql.Driver`            | `uuid`       | `db/migration/postgresql` |
-/// | `JSON`       | — (no JDBC)                        | —            | —                         |
-///
-/// ## Dialect-aware UUID handling
-///
-/// MySQL/H2 and PostgreSQL require fundamentally different UUID strategies.
-/// This difference is modeled by [StorageDialect]: a sealed interface whose
-/// two implementations ([StorageDialect.MySql] and [StorageDialect.PostgreSql])
-/// each provide:
-///
-/// - a Flyway migration location,
-/// - a JDBI [org.jdbi.v3.core.argument.QualifiedArgumentFactory] for binding UUIDs, and
-/// - a JDBI [org.jdbi.v3.core.mapper.RowMapper] for reading [UserRecord] rows.
-///
-/// ## Schema management
-///
-/// For SQL backends, Flyway runs migrations before the [Jdbi] instance is
-/// constructed. A failed migration throws a
-/// [org.flywaydb.core.api.FlywayException] that propagates through Guice's
-/// provider chain and aborts plugin startup cleanly.
 @NullMarked
 public final class InfrastructureModule extends AbstractModule {
 
@@ -100,17 +71,6 @@ public final class InfrastructureModule extends AbstractModule {
         this.dataDirectory = dataDirectory;
     }
 
-    /// Provides a singleton [Jdbi] instance configured for the active [StorageDialect].
-    ///
-    /// The dialect is resolved from the storage configuration and determines:
-    ///
-    /// - which [org.jdbi.v3.core.argument.QualifiedArgumentFactory] handles [java.util.UUID]
-    ///   binding, and
-    /// - which [org.jdbi.v3.core.mapper.RowMapper] reads [UserRecord] rows.
-    ///
-    /// @param dataSource the HikariCP pool
-    /// @param dialect    the `StorageDialect`
-    /// @return a fully configured `Jdbi` singleton
     @Provides
     @Singleton
     @SuppressWarnings("unused")
@@ -172,22 +132,6 @@ public final class InfrastructureModule extends AbstractModule {
                 .load();
     }
 
-    /// Provides a singleton [HikariDataSource] for SQL storage backends.
-    ///
-    /// H2 is opened with `MODE=MySQL;DB_CLOSE_DELAY=-1` to share the same DDL
-    /// and UUID binding strategy as the MySQL backend. PostgreSQL uses a plain
-    /// `jdbc:postgresql://` URL; no extra query parameters are required for
-    /// basic UTF-8 connections.
-    ///
-    /// This provider is never called when [io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.StorageType#JSON] is selected.
-    ///
-    /// @param primaryConfig the configuration holder supplying JDBC parameters
-    /// @param dataDirectory the plugin data directory; used to resolve the H2
-    ///        database file path
-    /// @return a started [HikariDataSource] with the configured pool size
-    /// @throws IllegalStateException if the storage type is [io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.StorageType#JSON];
-    ///         this should never occur because Guice only invokes this provider
-    ///         when a SQL backend is active
     @Provides
     @Singleton
     @SuppressWarnings("unused")
@@ -233,11 +177,6 @@ public final class InfrastructureModule extends AbstractModule {
         return new HikariDataSource(config);
     }
 
-    /// Provides a singleton [ConfigurationLoader] for [PrimaryConfiguration].
-    ///
-    /// @param dataDirectory the plugin data directory
-    /// @param logger        the component-aware logger forwarded to the loader
-    /// @return a fully constructed configuration loader
     @Provides
     @Singleton
     @SuppressWarnings("unused")
@@ -253,9 +192,6 @@ public final class InfrastructureModule extends AbstractModule {
         );
     }
 
-    /// Provides a singleton [MessageAssembly] proxy backed by Kotonoha.
-    ///
-    /// @return a proxied implementation of [MessageAssembly]
     @Provides
     @Singleton
     @SuppressWarnings("unused")
@@ -276,20 +212,13 @@ public final class InfrastructureModule extends AbstractModule {
                 .toInstance(this.dataDirectory);
 
         this.bind(PrimaryConfiguration.class)
-                .toProvider(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() {
-                });
-        this.bind(new TypeLiteral<Reloadable<PrimaryConfiguration>>() {
-                })
-                .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() {
-                });
+                .toProvider(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
+        this.bind(new TypeLiteral<Reloadable<PrimaryConfiguration>>() { })
+                .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
 
-        this.bind(Translator.class)
-                .toProvider(new TypeLiteral<TranslatorHolder>() {
-                });
-        this.bind(new TypeLiteral<Reloadable<Translator>>() {
-                })
-                .to(new TypeLiteral<TranslatorHolder>() {
-                });
+        this.bind(Translator.class).toProvider(new TypeLiteral<TranslatorHolder>() { });
+        this.bind(new TypeLiteral<Reloadable<Translator>>() { })
+                .to(new TypeLiteral<TranslatorHolder>() { });
 
         this.bind(UserRepository.class)
                 .toProvider(UserRepositoryProvider.class)

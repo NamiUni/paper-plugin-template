@@ -5,4 +5,6 @@
 <suppressions>
     <!-- add any necessary suppressions here -->
     <suppress files="src[\\/]test[\\/].*" checks=".*"/>
+    <suppress checks="MissingJavadoc.*" files="src[\\/]main[\\/]java[\\/]io[\\/]github[\\/]namiuni[\\/]paperplugintemplate[\\/](?!api).*"/>
+    <suppress checks="JavadocPackage" files="src[\\/]main[\\/]java[\\/]io[\\/]github[\\/]namiuni[\\/]paperplugintemplate[\\/](?!api).*"/>
 </suppressions>

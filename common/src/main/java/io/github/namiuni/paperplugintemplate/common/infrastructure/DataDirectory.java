@@ -26,12 +26,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jspecify.annotations.NullMarked;
 
-/// Guice binding annotation that qualifies a [java.nio.file.Path] injection point
-/// as the plugin's data directory.
-///
-/// Apply this annotation to [java.nio.file.Path] parameters or fields to
-/// distinguish the plugin data directory binding from other `Path` bindings in the
-/// Guice injector.
 @NullMarked
 @BindingAnnotation
 @Target(ElementType.PARAMETER)

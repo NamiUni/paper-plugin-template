@@ -25,26 +25,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.jspecify.annotations.NullMarked;
 
-/// Specifies the comment header written at the top of a configuration file.
-///
-/// Place this annotation on a configuration record class to inject a
-/// descriptive comment block when the file is first generated or saved by
-/// [io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationLoader]. The value is forwarded directly to Configurate's
-/// node header option.
-///
-/// ```java
-/// @ConfigHeader("""
-///         Main configuration.
-///         Restart the server after editing.""")
-/// public record MyConfig(String someValue) {}
-/// ```
 @NullMarked
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ConfigHeader {
 
-    /// The header text to prepend to the configuration file.
-    ///
-    /// @return the header string; may contain newlines
     String value();
 }

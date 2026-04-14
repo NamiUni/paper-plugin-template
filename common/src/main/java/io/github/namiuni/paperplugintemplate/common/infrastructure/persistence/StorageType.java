@@ -21,27 +21,10 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.persistence;
 
 import org.jspecify.annotations.NullMarked;
 
-/// Supported storage backend types.
-///
-/// The active type is determined at startup from the primary configuration
-/// and cannot be changed without restarting the server.
 @NullMarked
 public enum StorageType {
-
-    /// Embedded H2 SQL database. No external server required; suitable for
-    /// single-server deployments. Uses the same migration scripts and UUID
-    /// binding strategy as [#MYSQL] (`MODE=MySQL`).
     H2,
-
-    /// External MySQL (or MariaDB) database server. UUIDs are persisted as
-    /// `BINARY(16)` for compact storage.
     MYSQL,
-
-    /// External PostgreSQL database server. UUIDs are persisted using
-    /// PostgreSQL's native `UUID` type.
     POSTGRESQL,
-
-    /// Flat JSON file storage. Human-readable but not suitable for
-    /// high-concurrency workloads.
     JSON,
 }

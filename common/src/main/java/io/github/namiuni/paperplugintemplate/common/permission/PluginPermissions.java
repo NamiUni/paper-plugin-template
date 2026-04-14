@@ -21,7 +21,6 @@ package io.github.namiuni.paperplugintemplate.common.permission;
 
 import org.jspecify.annotations.NullMarked;
 
-/// Enumeration of all permission nodes used by the plugin.
 @NullMarked
 public final class PluginPermissions {
 

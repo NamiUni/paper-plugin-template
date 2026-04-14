@@ -23,22 +23,12 @@ import java.io.Serial;
 import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
-/// Thrown by [ComponentRegistry#getOrThrow] and [ComponentRegistry#updateAndGet]
-/// when no component of the requested type exists for the target entity.
-///
-/// This is a programming error — callers must either verify component
-/// presence with [ComponentRegistry#has] before calling `getOrThrow`, or
-/// ensure the component was registered earlier in the entity's lifecycle.
 @NullMarked
 public final class ComponentNotFoundException extends RuntimeException {
 
     @Serial
     private static final long serialVersionUID = -5596109184340026029L;
 
-    /// Constructs a new exception for the given uuid and missing component type.
-    ///
-    /// @param uuid the uuid that was queried
-    /// @param type   the component type that was absent
     public ComponentNotFoundException(final UUID uuid, final ComponentType<?> type) {
         super("No component %s for uuid [%s]".formatted(type, uuid));
     }

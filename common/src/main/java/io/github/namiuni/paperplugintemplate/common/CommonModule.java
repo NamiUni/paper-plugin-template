@@ -30,20 +30,6 @@ import io.github.namiuni.paperplugintemplate.common.command.commands.ReloadComma
 import io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal;
 import org.jspecify.annotations.NullMarked;
 
-/// Guice module that binds the application-layer services shared across all
-/// platform implementations.
-///
-/// Configures the following singleton bindings:
-///
-/// - [PluginTemplateUserService] → [UserServiceInternal]:
-///   routes the public user-service API to its internal implementation.
-///
-/// ## Thread safety
-///
-/// This class carries no mutable state after construction. Guice modules are
-/// configured on a single thread during injector creation; once the injector
-/// is built, this module instance is no longer used and may be safely
-/// discarded.
 @NullMarked
 @SuppressWarnings("unused")
 public final class CommonModule extends AbstractModule {

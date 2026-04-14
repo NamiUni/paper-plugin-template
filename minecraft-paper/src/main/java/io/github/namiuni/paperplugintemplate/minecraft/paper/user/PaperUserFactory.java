@@ -32,41 +32,16 @@ import net.kyori.adventure.identity.Identified;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
-/// [UserFactory] implementation for the Paper platform.
-///
-/// Performs the platform-specific narrowing cast from the generic
-/// `<P extends Audience & Identified>` type parameter to
-/// [Player], confining that knowledge to this single class so that neither
-/// [io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal]
-/// nor any other `common`-module class imports a Paper API type.
-///
-/// This class carries no mutable state and is safe to bind as a Guice singleton.
-///
-/// ## Thread safety
-///
-/// Stateless; safe to call from any thread, including virtual threads, without
-/// additional synchronization.
 @NullMarked
 public final class PaperUserFactory implements UserFactory {
 
     private final ComponentStore registry;
 
-    /// Constructs a new factory backed by the shared component store.
-    ///
-    /// @param registry the shared ECS component store; must not be `null`
     @Inject
     private PaperUserFactory(final ComponentStore registry) {
         this.registry = registry;
     }
 
-    /// {@inheritDoc}
-    ///
-    /// Registers a [PaperPlayerComponent] into the shared store under
-    /// [io.github.namiuni.paperplugintemplate.common.component.ComponentTypes#PLAYER]
-    /// before constructing the stateless [PaperUser] view.
-    ///
-    /// @throws ClassCastException if `player` is not a [Player]; indicates a
-    ///         misconfigured Guice binding for a non-Paper platform
     @Override
     public <P extends Audience & Identified> UserInternal create(final P player, final UserRecord profile) {
         final Player bukkit = (Player) player;

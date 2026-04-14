@@ -23,16 +23,6 @@ import java.time.Instant;
 import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
-/// Immutable persistent data snapshot for a tracked player.
-///
-/// Stored and retrieved by [UserRepository]; consumed by
-/// [io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal] as the unit of I/O between the service
-/// layer and the storage backend.
-///
-/// @param uuid     the player's permanent unique identifier; never `null`
-/// @param name     the player's last-known Minecraft username; never `null`
-/// @param lastSeen the instant this record was last successfully written to
-///                 storage; set to `Instant.now()` for brand-new players
 @NullMarked
 public record UserRecord(
         UUID uuid,

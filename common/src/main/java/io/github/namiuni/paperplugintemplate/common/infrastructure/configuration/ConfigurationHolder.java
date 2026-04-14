@@ -27,13 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
-/// Thread-safe holder for a live configuration instance.
-///
-/// Wraps a [ConfigurationLoader] and stores the most recently loaded
-/// configuration in an [AtomicReference], allowing the value to be atomically
-/// replaced during a hot-reload without blocking readers.
-///
-/// @param <T> the configuration record type managed by this holder
 @Singleton
 @NullMarked
 public final class ConfigurationHolder<T extends Record> implements Provider<T>, Reloadable<T> {
@@ -42,10 +35,6 @@ public final class ConfigurationHolder<T extends Record> implements Provider<T>,
     private final AtomicReference<T> config;
     private final ComponentLogger logger;
 
-    /// Constructs a new holder by performing an initial load from disk.
-    ///
-    /// @param configLoader the loader used for both initial and subsequent loads
-    /// @param logger       the component-aware logger
     @Inject
     private ConfigurationHolder(
             final ConfigurationLoader<T> configLoader,
@@ -57,13 +46,8 @@ public final class ConfigurationHolder<T extends Record> implements Provider<T>,
         this.logger.info("Loading configuration: {}...", configLoader.configName());
         this.config = new AtomicReference<>(configLoader.loadConfiguration());
         this.logger.info("Configuration loaded: {}", configLoader.configName());
-        this.logger.debug("Loaded configuration: {}", this.config.get());
     }
 
-    /// Reloads the configuration from disk and atomically updates the stored value.
-    ///
-    /// @return the freshly loaded configuration instance
-    /// @throws UncheckedConfigurateException if the configuration file cannot be read or parsed
     public T reload() throws UncheckedConfigurateException {
         this.logger.info("Reloading configuration: {}...", this.configLoader.configName());
         final T loaded = this.configLoader.loadConfiguration();

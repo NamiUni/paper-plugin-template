@@ -34,32 +34,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.WorldSaveEvent;
 import org.jspecify.annotations.NullMarked;
 
-/// Bukkit event listener that drives the player user lifecycle for the plugin.
-///
-/// Bridges four Paper events to [UserServiceInternal]:
-///
-/// - [AsyncPlayerConnectionConfigureEvent] — triggers a profile preload during
-///   the configuration phase so that the user's persistent record is warm in the
-///   preload cache before the `Player` object is constructed. Disconnects the
-///   client on repository failure.
-/// - [PlayerJoinEvent] — constructs and caches the fully initialized
-///   [io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser] once the
-///   live `Player` object is available.
-/// - [PlayerQuitEvent] — persists the user's current state to storage.
-/// - [WorldSaveEvent] — persists the state of every online player on each
-///   world-save cycle to bound data loss on unexpected shutdown.
-///
-/// ## Error handling
-///
-/// Profile-load failures during `onConnect` result in a graceful client disconnect
-/// with a localized error message. Failures during `onJoin` are logged at ERROR
-/// level; the player is allowed to remain online but may have a default profile.
-///
-/// ## Thread safety
-///
-/// `onConnect` executes on an async Paper network thread. `onJoin`, `onDisconnect`,
-/// and `onWorldSave` execute on the main server thread. All delegate exclusively to
-/// thread-safe methods on [UserServiceInternal].
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 public final class UserSessionHandler implements Listener {
@@ -68,11 +42,6 @@ public final class UserSessionHandler implements Listener {
     private final ComponentLogger logger;
     private final MessageAssembly messages;
 
-    /// Constructs a new event handler.
-    ///
-    /// @param userService the internal service managing in-memory and persistent user state
-    /// @param logger      the component-aware logger used for structured error reporting
-    /// @param messages    the localized message provider
     @Inject
     private UserSessionHandler(
             final UserServiceInternal userService,

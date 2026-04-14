@@ -30,15 +30,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.jspecify.annotations.NullMarked;
 
-/// Centralised message definitions for the plugin.
-///
-/// Each method corresponds to a single translatable message identified by
-/// its [Key] annotation. Instances are obtained from the Guice injector via
-/// the Kotonoha proxy created in `CoreModule`.
-///
-/// ## Thread safety
-///
-/// The Kotonoha-generated proxy is stateless and safe to call from any thread.
 @NullMarked
 @ResourceBundle(baseName = "messages")
 public interface MessageAssembly {

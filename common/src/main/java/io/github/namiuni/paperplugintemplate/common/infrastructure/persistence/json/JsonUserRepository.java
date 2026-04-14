@@ -62,6 +62,14 @@ import org.jspecify.annotations.NullMarked;
 /// ## Atomicity
 ///
 /// Writes use a `.tmp`-then-atomic-rename strategy for crash-safety.
+///
+/// ## Lifecycle
+///
+/// This implementation uses a virtual-thread-per-task executor
+/// ([Executors#newThreadPerTaskExecutor]). Virtual threads complete immediately
+/// when their task finishes and require no explicit shutdown. [#close()] is
+/// therefore a no-op but is provided for symmetric lifecycle management with
+/// [io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.sql.JdbiUserRepository].
 @NullMarked
 public final class JsonUserRepository implements UserRepository {
 
@@ -90,6 +98,7 @@ public final class JsonUserRepository implements UserRepository {
     ///
     /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
     /// @param logger        the component-aware logger
+    /// @param metadata      the plugin metadata; used for virtual-thread naming
     @Inject
     private JsonUserRepository(
             final @DataDirectory Path dataDirectory,
@@ -115,7 +124,6 @@ public final class JsonUserRepository implements UserRepository {
         }
     }
 
-    /// {@inheritDoc}
     @Override
     public CompletableFuture<Optional<UserRecord>> findById(final UUID uuid) {
         return CompletableFuture.supplyAsync(() -> {
@@ -124,26 +132,24 @@ public final class JsonUserRepository implements UserRepository {
             try {
                 final Path file = this.fileFor(uuid);
                 if (!Files.exists(file)) {
-                    this.logger.debug("[JSON] findById: no file for {}", uuid);
+                    this.logger.debug("[{}] no file for {}", JsonUserRepository.class.getSimpleName(), uuid);
                     return Optional.empty();
                 }
                 final String json = Files.readString(file);
                 if (json.isBlank()) {
-                    this.logger.debug("[JSON] findById: empty file for {}", uuid);
+                    this.logger.debug("[{}] empty file for {}", JsonUserRepository.class.getSimpleName(), uuid);
                     return Optional.empty();
                 }
-                this.logger.debug("[JSON] findById: loaded profile for {}", uuid);
+                this.logger.debug("[{}] loaded profile for {}: {}", JsonUserRepository.class.getSimpleName(), uuid, json);
                 return Optional.of(GSON.fromJson(json, UserRecord.class));
             } catch (final IOException exception) {
-                throw new UncheckedIOException(
-                        "Failed to read user file for UUID: " + uuid, exception);
+                throw new UncheckedIOException("Failed to read user file for UUID: " + uuid, exception);
             } finally {
                 lock.unlock();
             }
         }, this.ioExecutor);
     }
 
-    /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> upsert(final UserRecord userRecord) {
         final UUID uuid = userRecord.uuid();
@@ -154,20 +160,16 @@ public final class JsonUserRepository implements UserRepository {
                 final Path file = this.fileFor(uuid);
                 final Path tmpFile = file.resolveSibling(file.getFileName() + ".tmp");
                 Files.writeString(tmpFile, GSON.toJson(userRecord));
-                Files.move(tmpFile, file,
-                        StandardCopyOption.ATOMIC_MOVE,
-                        StandardCopyOption.REPLACE_EXISTING);
-                this.logger.debug("[JSON] upsert: wrote profile for {} ({})", uuid, userRecord.name());
+                Files.move(tmpFile, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+                this.logger.debug("[{}] wrote profile for {} ({})", JsonUserRepository.class.getSimpleName(), uuid, userRecord);
             } catch (final IOException exception) {
-                throw new UncheckedIOException(
-                        "Failed to write user file for UUID: " + uuid, exception);
+                throw new UncheckedIOException("Failed to write user file for UUID: " + uuid, exception);
             } finally {
                 lock.unlock();
             }
         }, this.ioExecutor);
     }
 
-    /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> delete(final UUID uuid) {
         return CompletableFuture.runAsync(() -> {
@@ -176,17 +178,21 @@ public final class JsonUserRepository implements UserRepository {
             try {
                 final boolean deleted = Files.deleteIfExists(this.fileFor(uuid));
                 if (deleted) {
-                    this.logger.debug("[JSON] delete: removed profile file for {}", uuid);
+                    this.logger.debug("[{}] removed profile file for {}", JsonUserRepository.class.getSimpleName(), uuid);
                 } else {
-                    this.logger.debug("[JSON] delete: no file to remove for {}", uuid);
+                    this.logger.debug("[{}] no file to remove for {}", JsonUserRepository.class.getSimpleName(), uuid);
                 }
             } catch (final IOException exception) {
-                throw new UncheckedIOException(
-                        "Failed to delete user file for UUID: " + uuid, exception);
+                throw new UncheckedIOException("Failed to delete user file for UUID: " + uuid, exception);
             } finally {
                 lock.unlock();
             }
         }, this.ioExecutor);
+    }
+
+    @Override
+    public void close() {
+        this.logger.debug("[{}] JSON repository closed (no-op).", JsonUserRepository.class.getSimpleName());
     }
 
     private ReentrantReadWriteLock lockFor(final UUID uuid) {

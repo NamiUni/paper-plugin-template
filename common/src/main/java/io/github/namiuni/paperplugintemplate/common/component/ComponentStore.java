@@ -31,17 +31,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.jspecify.annotations.NullMarked;
 
-/// Thread-safe, heterogeneous data store that associates [Component] instances
-/// with entities, keyed by ([UUID], [ComponentType]).
-///
-/// ## Memory management
-///
-/// Components are retained until explicitly removed. Callers must invoke
-/// [#removeAll] when an entity's lifecycle ends to prevent unbounded memory growth.
-///
-/// ## Thread safety
-///
-/// All methods are safe to call concurrently from any number of threads.
 @Singleton
 @NullMarked
 public final class ComponentStore {
@@ -50,101 +39,53 @@ public final class ComponentStore {
 
     private final Map<UUID, Map<Class<? extends Component>, Component>> store;
 
-    /// Constructs a new empty store with default initial capacity.
     @Inject
     private ComponentStore() {
         this.store = new ConcurrentHashMap<>(DEFAULT_CAPACITY);
     }
 
-    /// Stores or replaces the component for the given uuid and type.
-    ///
-    /// @param <C>       the component type
-    /// @param uuid      the target entity UUID; must not be `null`
-    /// @param type      the component type token; must not be `null`
-    /// @param component the component to store; must not be `null`
     public <C extends Component> void set(final UUID uuid, final ComponentType<C> type, final C component) {
         this.bucket(uuid).put(type.rawType(), component);
     }
 
-    /// Returns the component of the given type for `uuid`, if present.
-    ///
-    /// @param <C>  the component type
-    /// @param uuid the entity UUID to query
-    /// @param type the component type token
-    /// @return the component wrapped in [Optional], or [Optional#empty()] on a miss
-    @SuppressWarnings("unchecked")
     public <C extends Component> Optional<C> get(final UUID uuid, final ComponentType<C> type) {
-        final var bucket = this.store.get(uuid);
+        final Map<Class<? extends Component>, Component> bucket = this.store.get(uuid);
         if (bucket == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable((C) bucket.get(type.rawType()));
+        return Optional.of(type.rawType()
+                .cast(bucket.get(type.rawType())));
     }
 
-    /// Returns the component of the given type for `uuid`.
-    ///
-    /// @param <C>  the component type
-    /// @param uuid the entity UUID to query
-    /// @param type the component type token
-    /// @return the component, never `null`
-    /// @throws ComponentNotFoundException if no component of `type` exists for `uuid`
     public <C extends Component> C getOrThrow(final UUID uuid, final ComponentType<C> type) {
         return this.get(uuid, type)
                 .orElseThrow(() -> new ComponentNotFoundException(uuid, type));
     }
 
-    /// Returns `true` if `uuid` currently has a component of the given type.
-    ///
-    /// @param uuid the entity UUID to query
-    /// @param type the component type token
-    /// @return `true` if the component is present
     public boolean has(final UUID uuid, final ComponentType<?> type) {
-        final var bucket = this.store.get(uuid);
+        final Map<Class<? extends Component>, Component> bucket = this.store.get(uuid);
         return bucket != null && bucket.containsKey(type.rawType());
     }
 
-    /// Atomically replaces the stored component by applying `operator` to the
-    /// current value and persisting the result.
-    ///
-    /// `operator` executes inside `ConcurrentHashMap#compute` and may be invoked
-    /// more than once under high contention. It must therefore be a pure,
-    /// side-effect-free function.
-    ///
-    /// @param <C>      the component type
-    /// @param uuid     the target entity UUID
-    /// @param type     the component type token
-    /// @param operator pure function from current to updated component;
-    ///                 must not return `null`
-    /// @return the updated component, never `null`
-    /// @throws ComponentNotFoundException if no component of `type` exists for `uuid`
-    @SuppressWarnings("unchecked")
     public <C extends Component> C updateAndGet(
             final UUID uuid,
             final ComponentType<C> type,
             final UnaryOperator<C> operator
     ) {
-        // Wrapper array gives us the typed return value from inside the lambda,
-        // which is the idiomatic approach for ConcurrentHashMap#compute.
-        final C[] holder = (C[]) new Component[1];
+        @SuppressWarnings("unchecked") final C[] holder = (C[]) new Component[1];
         this.bucket(uuid).compute(type.rawType(), (_, current) -> {
             if (current == null) {
                 throw new ComponentNotFoundException(uuid, type);
             }
-            final C updated = operator.apply((C) current);
+            final C updated = operator.apply(type.rawType().cast(current));
             holder[0] = updated;
             return updated;
         });
         return Objects.requireNonNull(holder[0]);
     }
 
-    /// Removes the component of the given type for `uuid`.
-    ///
-    /// Idempotent: removing an absent component is a no-op.
-    ///
-    /// @param uuid the target entity UUID
-    /// @param type the component type token
     public void remove(final UUID uuid, final ComponentType<?> type) {
-        final var bucket = this.store.get(uuid);
+        final Map<Class<? extends Component>, Component> bucket = this.store.get(uuid);
         if (bucket != null) {
             bucket.remove(type.rawType());
             if (bucket.isEmpty()) {
@@ -153,38 +94,20 @@ public final class ComponentStore {
         }
     }
 
-    /// Removes **all** components for `entity`.
-    ///
-    /// Must be called when the entity's lifecycle ends (e.g. after a player's
-    /// user cache entry is evicted) to prevent unbounded memory growth. Idempotent.
-    ///
-    /// @param entity the entity UUID whose components should be purged
     public void removeAll(final UUID entity) {
         this.store.remove(entity);
     }
 
-    /// Returns a snapshot stream of all (UUID, component) pairs of the given type
-    /// at the moment of invocation.
-    ///
-    /// The stream does **not** reflect concurrent modifications made after it is
-    /// created. Materialize it into a collection before performing further store
-    /// operations to avoid stale reads.
-    ///
-    /// Designed for system-wide processing, for example iterating every online
-    /// player's [io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent]
-    /// during a world-save checkpoint.
-    ///
-    /// @param <C>  the component type
-    /// @param type the component type token
-    /// @return a stream of (entityId, component) pairs; may be empty
-    @SuppressWarnings("unchecked")
     public <C extends Component> Stream<Map.Entry<UUID, C>> query(final ComponentType<C> type) {
         return this.store.entrySet().stream()
-                .filter(uuid -> uuid.getValue().containsKey(type.rawType()))
-                .map(uuid -> Map.entry(uuid.getKey(), (C) uuid.getValue().get(type.rawType())));
+                .flatMap(entry -> {
+                    final Component raw = entry.getValue().get(type.rawType());
+                    if (raw == null) {
+                        return Stream.empty();
+                    }
+                    return Stream.of(Map.entry(entry.getKey(), type.rawType().cast(raw)));
+                });
     }
-
-    // -------------------------------------------------------------------------
 
     private Map<Class<? extends Component>, Component> bucket(final UUID uuid) {
         return this.store.computeIfAbsent(uuid, _ -> new ConcurrentHashMap<>());

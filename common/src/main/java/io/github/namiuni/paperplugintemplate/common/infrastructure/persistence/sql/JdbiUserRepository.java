@@ -37,38 +37,13 @@ import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.async.JdbiExecutor;
 import org.jspecify.annotations.NullMarked;
 
-/// [UserRepository] implementation backed by a SQL database via JDBI 3.
-///
-/// Supports H2 (in `MODE=MySQL`) and MySQL/MariaDB using identical SQL
-/// statements. Vendor-specific upsert syntax such as `ON DUPLICATE KEY UPDATE`
-/// is avoided; the portable update-then-insert strategy is encapsulated entirely
-/// in [UserDao#upsert], keeping this class free of SQL dialect concerns.
-///
-/// ## Ownership and lifecycle
-///
-/// The [HikariDataSource] passed at construction is **owned** by this
-/// repository. Call [#close()] on plugin disable to release all pooled JDBC
-/// connections and stop the HikariCP housekeeping thread.
-///
-/// ## Thread safety
-///
-/// All operations are submitted to a virtual-thread-per-task executor. No
-/// `synchronized` blocks are used; this class is safe from carrier-thread
-/// pinning (JEP 491).
 @NullMarked
-public final class JdbiUserRepository implements UserRepository, AutoCloseable {
+public final class JdbiUserRepository implements UserRepository {
 
     private final JdbiExecutor jdbi;
     private final HikariDataSource dataSource;
     private final ComponentLogger logger;
 
-    /// Constructs a new repository.
-    ///
-    /// @param jdbi         the configured JDBI instance with all required plugins and row mappers installed
-    /// @param dataSource   the HikariCP connection pool; this repository takes ownership and closes it on [#close()]
-    /// @param flyway       the Flyway instance managing schema migrations
-    /// @param flywayLogger the logger adapter that routes Flyway output to the plugin logger
-    /// @param logger       the component-aware logger
     @Inject
     private JdbiUserRepository(
             final Jdbi jdbi,
@@ -89,50 +64,37 @@ public final class JdbiUserRepository implements UserRepository, AutoCloseable {
         LogFactory.setLogCreator(flywayLogger);
         try {
             flyway.repair();
-            final var result = flyway.migrate();
-            if (result.migrationsExecuted == 0) {
-                this.logger.info("Schema is up-to-date. No migrations applied.");
-            } else {
-                this.logger.info(
-                        "Applied {} migration(s). Schema is now at version {}.",
-                        result.migrationsExecuted,
-                        result.targetSchemaVersion
-                );
-            }
+            flyway.migrate();
         } finally {
             LogFactory.setLogCreator(null);
         }
     }
 
-    /// {@inheritDoc}
     @Override
     public CompletableFuture<Optional<UserRecord>> findById(final UUID uuid) {
-        this.logger.debug("[SQL] findById: {}", uuid);
-        return this.jdbi.withExtension(UserDao.class, dao -> dao.findByUuid(uuid))
-                .toCompletableFuture();
+        return this.jdbi.withExtension(UserDao.class, dao -> {
+            final var existing = dao.findByUuid(uuid);
+            this.logger.debug("[{}] findById: {}", JdbiUserRepository.class.getSimpleName(), existing);
+            return existing;
+        }).toCompletableFuture();
     }
 
-    /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> upsert(final UserRecord userRecord) {
-        this.logger.debug("[SQL] upsert: {} ({})", userRecord.uuid(), userRecord.name());
-        return this.jdbi.useExtension(UserDao.class, dao -> dao.upsert(userRecord))
-                .toCompletableFuture();
+        return this.jdbi.useExtension(UserDao.class, dao -> {
+            this.logger.debug("[{}] upsert: {}", JdbiUserRepository.class.getSimpleName(), userRecord);
+            dao.upsert(userRecord);
+        }).toCompletableFuture();
     }
 
-    /// {@inheritDoc}
     @Override
     public CompletableFuture<Void> delete(final UUID uuid) {
-        this.logger.debug("[SQL] delete: {}", uuid);
-        return this.jdbi.useExtension(UserDao.class, dao -> dao.deleteByUuid(uuid))
-                .toCompletableFuture();
+        return this.jdbi.useExtension(UserDao.class, dao -> {
+            this.logger.debug("[{}] delete: {}", JdbiUserRepository.class.getSimpleName(), uuid);
+            dao.deleteByUuid(uuid);
+        }).toCompletableFuture();
     }
 
-    /// Closes the underlying [HikariDataSource], terminating all pooled
-    /// connections and the HikariCP housekeeping thread.
-    ///
-    /// Must be called during plugin disable. Subsequent calls to any other
-    /// method on this instance will result in undefined behavior.
     @Override
     public void close() {
         this.logger.info("Closing HikariCP connection pool...");

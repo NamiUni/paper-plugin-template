@@ -21,38 +21,27 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.sql.JdbiUserRepository;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.listeners.UserSessionHandler;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.bstats.bukkit.Metrics;
+import org.bstats.charts.CustomChart;
 import org.bstats.charts.SimplePie;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
 
-/// Main plugin class for the template plugin.
-///
-/// Instantiated by the Guice injector inside [PaperBootstrap] rather
-/// than directly by the Paper framework. All dependencies are supplied via
-/// constructor injection; no static accessors or service-locator calls are
-/// needed.
 @NullMarked
+@SuppressWarnings("unused")
 public final class PaperPlugin extends JavaPlugin {
+
+    private static final int BSTATS_PLUGIN_ID = 30597;
 
     private final UserSessionHandler sessionHandler;
     private final UserRepository userRepository;
     private final ComponentLogger logger;
     private final Provider<PrimaryConfiguration> primaryConfig;
 
-    /// Constructs a new [PaperPlugin] instance.
-    ///
-    /// This constructor is invoked exclusively by the Guice injector.
-    ///
-    /// @param sessionHandler the event listener that drives user data loading and saving
-    /// @param userRepository    the active storage backend; closed on [#onDisable()]
-    /// @param logger            the component-aware logger
-    /// @param primaryConfig     the primary config
     @Inject
     private PaperPlugin(
             final UserSessionHandler sessionHandler,
@@ -66,37 +55,28 @@ public final class PaperPlugin extends JavaPlugin {
         this.primaryConfig = primaryConfig;
     }
 
-    /// {@inheritDoc}
-    ///
-    /// Registers event listeners. Everything else (commands, translations)
-    /// is already set up by [PaperBootstrap] before this method is
-    /// called.
     @Override
     public void onEnable() {
         this.getServer().getPluginManager().registerEvents(this.sessionHandler, this);
 
-        final int pluginId = 30597;
-        final Metrics metrics = new Metrics(this, pluginId);
-
-        metrics.addCustomChart(
-                new SimplePie("user_storage_type", () -> this.primaryConfig.get().storage().type().name())
+        final Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
+        final CustomChart chart = new SimplePie(
+                "user_storage_type",
+                () -> this.primaryConfig.get().storage().type().name()
         );
+        metrics.addCustomChart(chart);
 
         this.logger.info("Plugin enabled.");
     }
 
-    /// {@inheritDoc}
-    ///
-    /// Closes the [UserRepository] to release connection pool resources
-    /// (HikariCP threads and JDBC connections, or file handles) before the
-    /// server shuts down.
     @Override
     public void onDisable() {
         this.logger.info("Disabling plugin...");
-        if (this.userRepository instanceof final JdbiUserRepository jdbiUserRepository) {
-            jdbiUserRepository.close();
+        try {
+            this.userRepository.close();
+        } catch (final Exception exception) {
+            this.logger.error("Failed to close user repository during shutdown", exception);
         }
-
         this.logger.info("Plugin disabled.");
     }
 }

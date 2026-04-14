@@ -40,20 +40,10 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDialect.PostgreSQL {
 
-    /// Returns the Flyway classpath location for this dialect's migration scripts.
-    ///
-    /// @return the classpath location string
     String migrationLocation();
 
-    /// Returns a JDBI [QualifiedArgumentFactory] that binds [UUID] values in
-    /// the format expected by this dialect's schema.
-    ///
-    /// @return a stateless [QualifiedArgumentFactory]
     QualifiedArgumentFactory uuidArgumentFactory();
 
-    /// Returns a JDBI [RowMapper] that reads a [UserRecord] from a result row.
-    ///
-    /// @return a stateless [RowMapper]
     RowMapper<UserRecord> profileMapper();
 
     private static byte[] uuidToBytes(final UUID uuid) {
@@ -68,7 +58,6 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
         return new UUID(bb.getLong(), bb.getLong());
     }
 
-    /// Dialect for MySQL and H2 (`MODE=MySQL`). UUIDs stored as `BINARY(16)`.
     @NullMarked
     record MySQL() implements StorageDialect {
 
@@ -100,7 +89,6 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
         }
     }
 
-    /// Dialect for PostgreSQL. UUIDs stored as the native `uuid` type.
     @NullMarked
     record PostgreSQL() implements StorageDialect {
 

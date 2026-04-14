@@ -21,24 +21,6 @@ package io.github.namiuni.paperplugintemplate.common;
 
 import org.jspecify.annotations.NullMarked;
 
-/// Immutable snapshot of plugin identity metadata sourced from the platform manifest.
-///
-/// Populated once during bootstrap from the platform plugin descriptor
-/// (e.g. `paper-plugin.yml`) and injected wherever identity information is required
-/// without importing a platform-specific type. This record is the single source of
-/// truth for the plugin's name, namespace, and version across all modules.
-///
-/// ## Thread safety
-///
-/// Effectively immutable after construction; all components are `final` record
-/// fields. Safe to share across threads without additional synchronization.
-///
-/// @param name        the internal plugin identifier (e.g. `"PaperPluginTemplate"`);
-///                    used for thread-pool naming and log attribution
-/// @param displayName the human-readable display name shown in the server console
-/// @param namespace   the lowercase namespace used for command roots, resource keys,
-///                    and connection-pool thread naming
-/// @param version     the version string as declared in the plugin descriptor
 @NullMarked
 public record Metadata(
         String name,

@@ -23,11 +23,6 @@ import java.io.Serial;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.ConfigurateException;
 
-/// Unchecked wrapper for [ConfigurateException].
-///
-/// Use this exception to propagate Configurate failures through call sites that
-/// do not or cannot declare checked exceptions (e.g. lambdas passed to functional
-/// interfaces that do not throw).
 @NullMarked
 @SuppressWarnings("unused")
 public final class UncheckedConfigurateException extends RuntimeException {
@@ -35,9 +30,6 @@ public final class UncheckedConfigurateException extends RuntimeException {
     @Serial
     private static final long serialVersionUID = -2214743499979182898L;
 
-    /// Constructs a new unchecked exception wrapping the given cause.
-    ///
-    /// @param cause the checked [ConfigurateException] to wrap
     public UncheckedConfigurateException(final ConfigurateException cause) {
         super(cause);
     }

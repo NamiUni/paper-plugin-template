@@ -40,29 +40,12 @@ import org.incendo.cloud.execution.ExecutionCoordinator;
 import org.incendo.cloud.paper.PaperCommandManager;
 import org.jspecify.annotations.NullMarked;
 
-/// Root Guice module for the `minecraft-paper` platform module.
-///
-/// Binds all Paper-specific singletons — logger, data directory, plugin
-/// instance, event handler, and user factory — and initializes the
-/// [org.incendo.cloud.CommandFactory] [com.google.inject.multibindings.Multibinder] so that [io.github.namiuni.paperplugintemplate.common.CommonModule] and any future
-/// platform-specific modules can safely add their own command registrars
-/// without encountering an uninitialized binder.
-///
-/// ## Thread safety
-///
-/// This class carries no mutable state after construction. Guice modules
-/// are configured on a single thread during injector creation; once the
-/// injector is built, this module instance is no longer used and may be
-/// safely discarded.
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
 final class PaperModule extends AbstractModule {
 
     private final BootstrapContext context;
 
-    /// Constructs a new `PluginModule` from the Paper bootstrap context.
-    ///
-    /// @param context the Paper bootstrap context
     PaperModule(final BootstrapContext context) {
         this.context = context;
     }
@@ -81,7 +64,6 @@ final class PaperModule extends AbstractModule {
                 .buildBootstrapped(this.context);
     }
 
-    /// {@inheritDoc}
     @Override
     protected void configure() {
         this.bind(JavaPlugin.class).to(PaperPlugin.class).in(Scopes.SINGLETON);
