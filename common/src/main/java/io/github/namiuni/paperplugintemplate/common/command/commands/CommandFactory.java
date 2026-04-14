@@ -27,5 +27,5 @@ import org.jspecify.annotations.NullMarked;
 @FunctionalInterface
 public interface CommandFactory {
 
-    Command<CommandSource> command();
+    Command<CommandSource> createCommand();
 }

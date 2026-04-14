@@ -46,7 +46,7 @@ public final class CommandRegistrar {
 
     public void registerCommands() {
         this.commandFactories.forEach(factory -> {
-            final var command = factory.command();
+            final var command = factory.createCommand();
             this.commandManager.command(command);
             this.logger.debug(
                     "[{}] Registered command: /{} ({})",

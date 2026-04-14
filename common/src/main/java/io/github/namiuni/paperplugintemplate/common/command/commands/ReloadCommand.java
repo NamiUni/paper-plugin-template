@@ -66,7 +66,7 @@ public final class ReloadCommand implements CommandFactory {
     }
 
     @Override
-    public Command<CommandSource> command() {
+    public Command<CommandSource> createCommand() {
         return this.manager.commandBuilder(this.metadata.namespace())
                 .literal("reload")
                 .permission(PluginPermissions.COMMAND_RELOAD)

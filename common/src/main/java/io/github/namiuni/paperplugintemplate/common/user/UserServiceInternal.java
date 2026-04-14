@@ -151,7 +151,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         final UserRecord preloaded = this.preloadCache.getIfPresent(uuid);
         if (preloaded != null) {
             this.logger.debug("[{}] Tier-2 (preloadCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
-            final PluginTemplateUser user = this.userFactory.create(player, preloaded);
+            final PluginTemplateUser user = this.userFactory.createUser(player, preloaded);
             this.userCache.put(uuid, user);
             return CompletableFuture.completedFuture(user);
         }
@@ -161,7 +161,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         return this.repository.findById(uuid)
                 .thenApply(existing -> existing.orElseGet(() -> new UserRecord(uuid, currentName, Instant.now())))
                 .thenApply(profile -> {
-                    final PluginTemplateUser platformUser = this.userFactory.create(player, profile);
+                    final PluginTemplateUser platformUser = this.userFactory.createUser(player, profile);
                     this.userCache.put(uuid, platformUser);
                     this.logger.debug("[{}] Profile cached for {} ({}).", UserServiceInternal.class.getSimpleName(), uuid, currentName);
                     return platformUser;

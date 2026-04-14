@@ -28,5 +28,5 @@ import org.jspecify.annotations.NullMarked;
 @FunctionalInterface
 public interface UserFactory {
 
-    <P extends Audience & Identified> UserInternal create(P player, UserRecord profile);
+    <P extends Audience & Identified> UserInternal createUser(P player, UserRecord profile);
 }

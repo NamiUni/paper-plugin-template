@@ -43,7 +43,7 @@ public final class PaperUserFactory implements UserFactory {
     }
 
     @Override
-    public <P extends Audience & Identified> UserInternal create(final P player, final UserRecord profile) {
+    public <P extends Audience & Identified> UserInternal createUser(final P player, final UserRecord profile) {
         final Player bukkit = (Player) player;
         final UUID uuid = bukkit.getUniqueId();
 

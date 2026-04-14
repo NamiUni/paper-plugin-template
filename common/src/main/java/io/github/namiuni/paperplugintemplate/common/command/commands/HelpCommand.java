@@ -78,7 +78,7 @@ public final class HelpCommand implements CommandFactory {
     }
 
     @Override
-    public Command<CommandSource> command() {
+    public Command<CommandSource> createCommand() {
         return this.manager.commandBuilder(this.metadata.namespace())
                 .literal("help")
                 .permission(PluginPermissions.COMMAND_HELP)
