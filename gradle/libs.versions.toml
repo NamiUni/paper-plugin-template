@@ -29,7 +29,7 @@ hikari = "7.0.2"
 h2 = "2.4.240"
 mysql-connector = "9.6.0"
 postgresql = "42.7.10"
-flyway = "12.3.0"
+flyway = "12.4.0"
 
 # Test
 junit = "6.1.0-SNAPSHOT"
