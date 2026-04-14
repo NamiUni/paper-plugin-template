@@ -21,10 +21,37 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure;
 
 import org.jspecify.annotations.NullMarked;
 
-// TODO: Javadoc
+/// Functional contract for components that support hot-reload without a server restart.
+///
+/// Implementations atomically replace their internal state with a freshly loaded version
+/// and return the updated value so callers can chain further operations or swap
+/// external registrations — for example, removing the old source from
+/// [net.kyori.adventure.translation.GlobalTranslator] and adding the new one.
+///
+/// ## Usage pattern
+///
+/// ```java
+/// T fresh = reloadable.reload();
+/// // act on fresh value as needed
+/// ```
+///
+/// ## Thread safety
+///
+/// Implementations are not required to serialize concurrent [#reload()] calls unless they
+/// document otherwise.
+/// [io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder]
+/// and [io.github.namiuni.paperplugintemplate.common.infrastructure.translation.TranslatorHolder]
+/// both use [java.util.concurrent.atomic.AtomicReference] to make their reload paths safe
+/// when called from a single thread; callers must replace any held reference to the old
+/// value with the returned result.
+///
+/// @param <T> the type of value produced by each reload
 @NullMarked
 @FunctionalInterface
 public interface Reloadable<T> {
 
+    /// Reloads this component and returns the refreshed value.
+    ///
+    /// @return the freshly loaded value, never `null`
     T reload();
 }

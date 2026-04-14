@@ -42,7 +42,38 @@ import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
-// TODO: Javadoc
+/// Internal [PluginTemplateUserService] implementation that manages the full
+/// lifecycle of plugin-tracked players.
+///
+/// ## Three-tier resolution
+///
+/// [#loadUser] resolves through three cache tiers in order, stopping at the
+/// first hit:
+///
+/// 1. **User cache** — the primary in-memory cache holding fully initialized
+///    [PluginTemplateUser] instances. Non-blocking; always preferred.
+/// 2. **Preload cache** — populated during
+///    [io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent],
+///    before the `Player` object exists. Allows [#loadUser] to be synchronous
+///    for returning players whose profile was already fetched.
+/// 3. **Repository** — asynchronous I/O via [UserRepository]. Only reached
+///    on a cold miss. New players receive a default profile.
+///
+/// ## Cache expiry
+///
+/// The user cache uses a custom [com.github.benmanes.caffeine.cache.Expiry]
+/// policy: online players (where [PluginTemplateUser#isOnline()] returns
+/// `true`) are pinned indefinitely; offline players expire
+/// `expireAfterOffline` nanoseconds after their last cache access.
+///
+/// On eviction, all ECS components registered under the evicted UUID are
+/// purged from the [ComponentStore] to prevent unbounded memory growth.
+///
+/// ## Thread safety
+///
+/// All public methods are safe to call from any thread. The Caffeine caches
+/// are themselves thread-safe, and all repository interactions are dispatched
+/// to a virtual-thread executor.
 @Singleton
 @NullMarked
 public final class UserServiceInternal implements PluginTemplateUserService {
@@ -51,17 +82,19 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     private final UserFactory userFactory;
     private final ComponentLogger logger;
 
-    private final Cache<UUID, UserRecord> preloadCache;     // UUID → EntityId
+    private final Cache<UUID, UserRecord> preloadCache;   // UUID → UserRecord (pre-join snapshot)
     private final Cache<UUID, PluginTemplateUser> userCache;
 
     /// Constructs a new service, initializing both in-memory caches.
     ///
-    /// @param repository    the storage backend used for cold-cache misses and
-    ///                      persistence operations
-    /// @param userFactory   the platform-specific factory used to construct
-    ///                      user adapter instances
-    /// @param primaryConfig the configuration supplier providing cache settings
-    /// @param logger        the component-aware logger
+    /// @param repository      the storage backend used for cold-cache misses and
+    ///                        persistence operations
+    /// @param userFactory     the platform-specific factory used to construct user
+    ///                        adapter instances
+    /// @param componentStore  the shared ECS store; components are purged from this
+    ///                        store when a user's cache entry is evicted
+    /// @param primaryConfig   the configuration provider supplying cache settings
+    /// @param logger          the component-aware logger
     @Inject
     private UserServiceInternal(
             final UserRepository repository,
@@ -89,21 +122,23 @@ public final class UserServiceInternal implements PluginTemplateUserService {
                 .build();
     }
 
-    /// Pre-loads a player's record into the preload cache so that the
-    /// subsequent [#loadUser] call can resolve without a repository
+    /// Pre-loads a player's persistent record into the preload cache so that
+    /// the subsequent [#loadUser] call can resolve without a repository
     /// round-trip.
     ///
-    /// If the record is already present in `userCache` (e.g. the player
-    /// reconnects quickly after a disconnect), the cached entry is returned
+    /// If the record is already present in the user cache (e.g. the player
+    /// reconnects quickly after a disconnect), the cached entry is reused
     /// immediately without touching the repository.
     ///
-    /// Called during `AsyncPlayerConnectionConfigureEvent`, where no live
-    /// `Player` object exists yet.
+    /// Called during `AsyncPlayerConnectionConfigureEvent`, before the live
+    /// `Player` object exists.
     ///
-    /// @param uuid the connecting player's UUID
-    /// @return a future resolving to the profile wrapped in [Optional], or
-    ///         [Optional#empty()] for first-time players; may complete
-    ///         exceptionally if repository I/O fails
+    /// @param uuid       the connecting player's UUID
+    /// @param disconnect a callback invoked when the repository lookup fails;
+    ///                   implementations should disconnect the client gracefully
+    /// @return a future that completes with `null` on success; if the repository
+    ///         is unreachable the future still completes normally after invoking
+    ///         `disconnect`
     public CompletableFuture<Void> loadUserRecord(final UUID uuid, final Runnable disconnect) {
         final PluginTemplateUser cachedUser = this.userCache.getIfPresent(uuid);
         if (cachedUser instanceof UserInternal) {
@@ -135,13 +170,13 @@ public final class UserServiceInternal implements PluginTemplateUserService {
                 });
     }
 
-    /// Persists the current state of `user` to storage without modifying
-    /// any system-managed fields.
+    /// Persists the current state of the user identified by `uuid` to storage.
     ///
-    /// @param uuid the user uuid
-    /// @return a future that completes when the repository write finishes,
-    ///         or completes immediately with `null` if `user` does not
-    ///         implement [UserInternal]
+    /// A no-op if no user is currently cached for `uuid`.
+    ///
+    /// @param uuid the UUID of the user to persist
+    /// @return a future that completes when the repository write finishes, or
+    ///         completes immediately with `null` if no cached user exists
     public CompletableFuture<Void> saveUser(final UUID uuid) {
         final var user = this.userCache.getIfPresent(uuid);
         if (user != null) {
@@ -180,7 +215,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
             return CompletableFuture.completedFuture(cached);
         }
 
-        // 2. Preload cache — profile was fetched during onConnection.
+        // 2. Preload cache — profile was fetched during onConnect.
         final UserRecord preloaded = this.preloadCache.getIfPresent(uuid);
         if (preloaded != null) {
             final PluginTemplateUser user = this.userFactory.create(player, preloaded);
@@ -213,8 +248,12 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     // Cache expiry policy
     // -------------------------------------------------------------------------
 
-    /// Caffeine [Expiry] policy that pins online players indefinitely in
-    /// cache and applies access-based expiry to offline players.
+    /// Caffeine [Expiry] policy that pins online players indefinitely in the
+    /// user cache and applies access-based expiry to offline players.
+    ///
+    /// Online status is re-evaluated on every cache interaction by calling
+    /// [PluginTemplateUser#isOnline()], keeping the TTL dynamic without
+    /// external invalidation.
     ///
     /// @implNote TTL values are in nanoseconds as required by the Caffeine API.
     ///           `Long.MAX_VALUE` nanoseconds is effectively infinite (~292 years).

@@ -24,13 +24,28 @@ import org.jspecify.annotations.NullMarked;
 
 /// Pre-declared [ComponentType] tokens for all built-in component types.
 ///
-/// Using shared constants instead of calling `ComponentType.of(Foo.class)` at
+/// Using shared constants instead of calling `new ComponentType<>(Foo.class)` at
 /// each call site avoids repeated object allocation and guarantees referential
-/// equality between tokens, which is important for the `ConcurrentHashMap` key
-/// lookups inside [ComponentRegistry].
+/// equality between tokens, which matters for the `ConcurrentHashMap` key
+/// lookups inside [ComponentStore].
+///
+/// ## Adding new component types
+///
+/// Declare a new `public static final ComponentType<MyComponent>` constant here
+/// when introducing a built-in component. Third-party plugins may declare their
+/// own tokens in their own utility classes; they do not need to modify this class.
+///
+/// ## Thread safety
+///
+/// All constants are `static final` and therefore safely published to any thread
+/// via the class-initialization guarantee.
 @NullMarked
 public final class ComponentTypes {
 
+    /// Token for [PlayerComponent] — the platform player handle and its live-data accessors.
+    ///
+    /// Registered by the platform [io.github.namiuni.paperplugintemplate.common.user.UserFactory]
+    /// implementation on every player login and removed on cache eviction.
     public static final ComponentType<PlayerComponent> PLAYER = new ComponentType<>(PlayerComponent.class);
 
     private ComponentTypes() {

@@ -25,7 +25,21 @@ import net.kyori.adventure.audience.Audience;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
-// TODO: Javadoc
+/// Paper-specific [PlayerComponent] backed by a live [Player].
+///
+/// Holds a direct reference to the `Player` object and delegates all live-data
+/// queries to it. One instance is created per login by
+/// [io.github.namiuni.paperplugintemplate.minecraft.paper.user.PaperUserFactory]
+/// and stored in the shared
+/// [io.github.namiuni.paperplugintemplate.common.component.ComponentStore]
+/// under the [io.github.namiuni.paperplugintemplate.common.component.ComponentTypes#PLAYER]
+/// token, where it remains until the user's cache entry is evicted.
+///
+/// ## Thread safety
+///
+/// All methods delegate to `Player` accessors that Paper guarantees are safe to call
+/// from any thread, including virtual threads. This record holds no mutable state
+/// of its own.
 @NullMarked
 public record PaperPlayerComponent(Player player) implements PlayerComponent {
 
@@ -37,15 +51,17 @@ public record PaperPlayerComponent(Player player) implements PlayerComponent {
 
     /// {@inheritDoc}
     ///
-    /// @implNote Delegates to [Player#isOnline()], which is safe to call
-    ///           from any thread per the Paper API contract. No virtual-thread
-    ///           pinning occurs.
+    /// @implNote Delegates to [Player#isOnline()], which is safe to call from any thread
+    ///           per the Paper API contract. No virtual-thread pinning occurs.
     @Override
     public boolean isOnline() {
         return this.player.isOnline();
     }
 
     /// {@inheritDoc}
+    ///
+    /// @implNote Delegates to [Player#getLastSeen()], converting the epoch-millisecond
+    ///           long to an [Instant].
     @Override
     public Instant lastSeen() {
         return Instant.ofEpochMilli(this.player.getLastSeen());

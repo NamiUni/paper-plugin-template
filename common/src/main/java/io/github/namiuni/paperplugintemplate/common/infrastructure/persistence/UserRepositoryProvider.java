@@ -26,6 +26,28 @@ import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import org.jspecify.annotations.NullMarked;
 
+/// Guice [Provider] that selects and returns the active [UserRepository] implementation
+/// based on the configured [StorageType].
+///
+/// The selection is deferred to first access rather than performed at injector-creation
+/// time. This allows the [PrimaryConfiguration] to be fully loaded before the repository
+/// is instantiated, and ensures that provider-scoped sub-providers for SQL and JSON
+/// backends are only constructed when actually required by the configured type.
+///
+/// ## Selection logic
+///
+/// | [StorageType] | Implementation |
+/// |---|---|
+/// | `JSON`       | [JsonUserRepository]  |
+/// | `H2`         | [JdbiUserRepository]  |
+/// | `MYSQL`      | [JdbiUserRepository]  |
+/// | `POSTGRESQL` | [JdbiUserRepository]  |
+///
+/// ## Thread safety
+///
+/// This class carries no mutable state after construction. The provider is invoked
+/// on a single thread during Guice eager-singleton initialization, so no concurrent
+/// access occurs.
 @NullMarked
 public final class UserRepositoryProvider implements Provider<UserRepository> {
 
@@ -33,6 +55,11 @@ public final class UserRepositoryProvider implements Provider<UserRepository> {
     private final Provider<JsonUserRepository> jsonRepository;
     private final Provider<JdbiUserRepository> jdbiRepository;
 
+    /// Constructs a new provider.
+    ///
+    /// @param primaryConfig   the configuration provider used to read the active storage type
+    /// @param jsonRepository  the provider for the JSON flat-file backend
+    /// @param jdbiRepository  the provider for the SQL (JDBI) backend
     @Inject
     private UserRepositoryProvider(
             final Provider<PrimaryConfiguration> primaryConfig,
@@ -44,6 +71,9 @@ public final class UserRepositoryProvider implements Provider<UserRepository> {
         this.jdbiRepository = jdbiRepository;
     }
 
+    /// Returns the [UserRepository] implementation for the configured [StorageType].
+    ///
+    /// @return the active repository implementation, never `null`
     @Override
     public UserRepository get() {
         final PrimaryConfiguration.Storage storage = this.primaryConfig.get().storage();

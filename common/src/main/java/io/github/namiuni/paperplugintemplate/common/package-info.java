@@ -23,27 +23,26 @@
 /// This package contains three types that form the structural backbone of
 /// the plugin:
 ///
-/// - [io.github.namiuni.paperplugintemplate.common.PluginInternal] — the internal implementation of
-///   [io.github.namiuni.paperplugintemplate.api.PluginTemplate] that
-///   sequences one-time startup: translation registration, storage
-///   initialization, and command registration.
-/// - [io.github.namiuni.paperplugintemplate.common.CommonModule] — the Guice module that binds application-layer
-///   singletons. Installed alongside the platform-specific module during
+/// - [io.github.namiuni.paperplugintemplate.common.PluginTemplateImpl] — the internal singleton
+///   implementation of [io.github.namiuni.paperplugintemplate.api.PluginTemplate], bound by
+///   [io.github.namiuni.paperplugintemplate.common.CommonModule] and registered with
+///   [io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider] during bootstrap.
+/// - [io.github.namiuni.paperplugintemplate.common.CommonModule] — the Guice module that binds
+///   application-layer singletons. Installed alongside the platform-specific module during
 ///   injector creation.
-/// - [io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory] — the binding annotation that qualifies a
-///   [java.nio.file.Path] injection point as the plugin's data directory.
+/// - [io.github.namiuni.paperplugintemplate.common.Metadata] — an immutable record carrying
+///   plugin identity information sourced from the platform manifest.
 ///
 /// ## Module boundary
 ///
-/// No platform API (Paper, Sponge, Fabric, etc.) may be imported anywhere
-/// in this package or its sub-packages. Platform-specific behavior is
-/// expressed as interfaces here (ports) and implemented in each platform
-/// module (adapters). This boundary is enforced at compile time by the
-/// Gradle module structure.
+/// No platform API (Paper, Sponge, Fabric, etc.) may be imported anywhere in this
+/// package or its sub-packages. Platform-specific behavior is expressed as interfaces
+/// here (ports) and implemented in each platform module (adapters). This boundary is
+/// enforced at compile time by the Gradle module structure.
 ///
 /// ## Thread safety
 ///
-/// `PluginInternal` and `CommonModule` carry no mutable state after the
-/// Guice injector is built. All three types are safe to reference from any
-/// thread once plugin initialization is complete.
+/// `PluginTemplateImpl` and `CommonModule` carry no mutable state after the Guice
+/// injector is built. All three types are safe to reference from any thread once
+/// plugin initialization is complete.
 package io.github.namiuni.paperplugintemplate.common;

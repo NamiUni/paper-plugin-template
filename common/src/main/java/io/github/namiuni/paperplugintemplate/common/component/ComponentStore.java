@@ -36,9 +36,8 @@ import org.jspecify.annotations.NullMarked;
 ///
 /// ## Memory management
 ///
-/// Components are retained until explicitly removed. Callers must call
-/// [#removeAll] when an entity's lifecycle ends to prevent unbounded memory
-/// growth.
+/// Components are retained until explicitly removed. Callers must invoke
+/// [#removeAll] when an entity's lifecycle ends to prevent unbounded memory growth.
 ///
 /// ## Thread safety
 ///
@@ -51,7 +50,7 @@ public final class ComponentStore {
 
     private final Map<UUID, Map<Class<? extends Component>, Component>> store;
 
-    /// Constructs a new empty registry with default initial capacity.
+    /// Constructs a new empty store with default initial capacity.
     @Inject
     private ComponentStore() {
         this.store = new ConcurrentHashMap<>(DEFAULT_CAPACITY);
@@ -60,7 +59,7 @@ public final class ComponentStore {
     /// Stores or replaces the component for the given uuid and type.
     ///
     /// @param <C>       the component type
-    /// @param uuid    the target uuid; must not be `null`
+    /// @param uuid      the target entity UUID; must not be `null`
     /// @param type      the component type token; must not be `null`
     /// @param component the component to store; must not be `null`
     public <C extends Component> void set(final UUID uuid, final ComponentType<C> type, final C component) {
@@ -70,7 +69,7 @@ public final class ComponentStore {
     /// Returns the component of the given type for `uuid`, if present.
     ///
     /// @param <C>  the component type
-    /// @param uuid the uuid to query
+    /// @param uuid the entity UUID to query
     /// @param type the component type token
     /// @return the component wrapped in [Optional], or [Optional#empty()] on a miss
     @SuppressWarnings("unchecked")
@@ -85,7 +84,7 @@ public final class ComponentStore {
     /// Returns the component of the given type for `uuid`.
     ///
     /// @param <C>  the component type
-    /// @param uuid the uuid to query
+    /// @param uuid the entity UUID to query
     /// @param type the component type token
     /// @return the component, never `null`
     /// @throws ComponentNotFoundException if no component of `type` exists for `uuid`
@@ -96,7 +95,7 @@ public final class ComponentStore {
 
     /// Returns `true` if `uuid` currently has a component of the given type.
     ///
-    /// @param uuid the uuid to query
+    /// @param uuid the entity UUID to query
     /// @param type the component type token
     /// @return `true` if the component is present
     public boolean has(final UUID uuid, final ComponentType<?> type) {
@@ -107,12 +106,12 @@ public final class ComponentStore {
     /// Atomically replaces the stored component by applying `operator` to the
     /// current value and persisting the result.
     ///
-    /// `operator` executes inside `ConcurrentHashMap#compute` and may be
-    /// invoked more than once under high contention. It must therefore be a
-    /// pure, side-effect-free function.
+    /// `operator` executes inside `ConcurrentHashMap#compute` and may be invoked
+    /// more than once under high contention. It must therefore be a pure,
+    /// side-effect-free function.
     ///
     /// @param <C>      the component type
-    /// @param uuid     the target uuid
+    /// @param uuid     the target entity UUID
     /// @param type     the component type token
     /// @param operator pure function from current to updated component;
     ///                 must not return `null`
@@ -142,7 +141,7 @@ public final class ComponentStore {
     ///
     /// Idempotent: removing an absent component is a no-op.
     ///
-    /// @param uuid the target uuid
+    /// @param uuid the target entity UUID
     /// @param type the component type token
     public void remove(final UUID uuid, final ComponentType<?> type) {
         final var bucket = this.store.get(uuid);
@@ -156,28 +155,28 @@ public final class ComponentStore {
 
     /// Removes **all** components for `entity`.
     ///
-    /// Must be called when the entity's lifecycle ends (e.g. on player
-    /// disconnect after cache eviction) to prevent unbounded memory growth.
-    /// Idempotent.
+    /// Must be called when the entity's lifecycle ends (e.g. after a player's
+    /// user cache entry is evicted) to prevent unbounded memory growth. Idempotent.
     ///
-    /// @param entity the entity whose components should be purged
+    /// @param entity the entity UUID whose components should be purged
     public void removeAll(final UUID entity) {
         this.store.remove(entity);
     }
 
-    /// Returns a snapshot stream of all (entity, component) pairs for the
-    /// given type at the moment of invocation.
+    /// Returns a snapshot stream of all (UUID, component) pairs of the given type
+    /// at the moment of invocation.
     ///
-    /// The stream does **not** reflect concurrent modifications made after
-    /// it is created. Materialize it into a collection before performing any
-    /// further registry operations to avoid stale reads.
+    /// The stream does **not** reflect concurrent modifications made after it is
+    /// created. Materialize it into a collection before performing further store
+    /// operations to avoid stale reads.
     ///
-    /// This method is designed for system-wide processing (e.g. world-save
-    /// checkpoints that iterate every online player's [PersistenceComponent]).
+    /// Designed for system-wide processing, for example iterating every online
+    /// player's [io.github.namiuni.paperplugintemplate.common.component.components.PlayerComponent]
+    /// during a world-save checkpoint.
     ///
     /// @param <C>  the component type
     /// @param type the component type token
-    /// @return an ordered stream of (entityId, component) pairs
+    /// @return a stream of (entityId, component) pairs; may be empty
     @SuppressWarnings("unchecked")
     public <C extends Component> Stream<Map.Entry<UUID, C>> query(final ComponentType<C> type) {
         return this.store.entrySet().stream()
