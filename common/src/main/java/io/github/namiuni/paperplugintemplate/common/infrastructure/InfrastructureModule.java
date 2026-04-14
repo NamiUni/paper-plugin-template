@@ -65,7 +65,6 @@ public final class InfrastructureModule extends AbstractModule {
     private final ComponentLogger logger;
     private final Path dataDirectory;
 
-    /// Constructs a new `StorageModule`.
     public InfrastructureModule(final ComponentLogger logger, final Path dataDirectory) {
         this.logger = logger;
         this.dataDirectory = dataDirectory;

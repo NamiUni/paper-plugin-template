@@ -56,9 +56,6 @@ public final class ConfigurationHolder<T extends Record> implements Provider<T>,
         return loaded;
     }
 
-    /// Returns the currently active configuration instance.
-    ///
-    /// @return the current configuration, never `null`
     @Override
     public T get() {
         return this.config.get();

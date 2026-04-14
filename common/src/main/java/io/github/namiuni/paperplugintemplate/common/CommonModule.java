@@ -36,7 +36,6 @@ public final class CommonModule extends AbstractModule {
 
     private final Metadata metadata;
 
-    /// Constructs a new `CommonModule`.
     public CommonModule(final Metadata metadata) {
         this.metadata = metadata;
     }

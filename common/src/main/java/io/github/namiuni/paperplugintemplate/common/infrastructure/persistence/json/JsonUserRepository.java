@@ -47,29 +47,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
-/// [UserRepository] implementation that stores each user profile as an
-/// individual JSON file under `<dataDirectory>/users/<uuid>.json`.
-///
-/// Suitable only for low-traffic, single-server deployments. Prefer the H2 or
-/// MySQL backend for anything beyond that.
-///
-/// ## Thread safety
-///
-/// `synchronized` blocks are avoided entirely to prevent carrier-thread pinning
-/// on virtual threads (JEP 491). A per-UUID [ReentrantReadWriteLock] maintained
-/// in a Caffeine cache provides the necessary mutual exclusion.
-///
-/// ## Atomicity
-///
-/// Writes use a `.tmp`-then-atomic-rename strategy for crash-safety.
-///
-/// ## Lifecycle
-///
-/// This implementation uses a virtual-thread-per-task executor
-/// ([Executors#newThreadPerTaskExecutor]). Virtual threads complete immediately
-/// when their task finishes and require no explicit shutdown. [#close()] is
-/// therefore a no-op but is provided for symmetric lifecycle management with
-/// [io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.sql.JdbiUserRepository].
 @NullMarked
 public final class JsonUserRepository implements UserRepository {
 
@@ -93,12 +70,6 @@ public final class JsonUserRepository implements UserRepository {
     private final Executor ioExecutor;
     private final Cache<UUID, ReentrantReadWriteLock> locks;
 
-    /// Constructs a new repository whose files live under
-    /// `<dataDirectory>/users/`.
-    ///
-    /// @param dataDirectory the plugin data directory, injected via [DataDirectory]
-    /// @param logger        the component-aware logger
-    /// @param metadata      the plugin metadata; used for virtual-thread naming
     @Inject
     private JsonUserRepository(
             final @DataDirectory Path dataDirectory,

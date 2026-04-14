@@ -27,16 +27,6 @@ import org.jdbi.v3.core.argument.QualifiedArgumentFactory;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jspecify.annotations.NullMarked;
 
-/// Encapsulates SQL dialect differences between MySQL/H2 and PostgreSQL.
-///
-/// Sealed to make the exhaustive variant set statically known to the
-/// compiler; `switch` expressions over this type are exhaustively checked
-/// without a `default` arm.
-///
-/// ## Thread safety
-///
-/// Both record implementations are stateless. All methods return freshly
-/// constructed objects or primitives. Safe to call from any thread.
 @NullMarked
 public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDialect.PostgreSQL {
 
