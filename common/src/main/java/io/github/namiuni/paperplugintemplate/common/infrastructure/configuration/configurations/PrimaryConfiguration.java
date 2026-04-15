@@ -91,7 +91,7 @@ public record PrimaryConfiguration(
             @Comment("HikariCP connection pool settings.")
             Pool pool,
 
-            @Comment("In-memory user-profile cache settings.")
+            @Comment("In-memory player-profile cache settings.")
             Cache userCache
     ) {
 
@@ -130,7 +130,7 @@ public record PrimaryConfiguration(
         @ConfigSerializable
         public record Cache(
 
-                @Comment("Maximum number of user entries held in the in-memory cache.")
+                @Comment("Maximum number of player entries held in the in-memory cache.")
                 long maximumSize,
 
                 @Comment("""

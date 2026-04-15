@@ -19,6 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
@@ -28,5 +29,5 @@ import org.jspecify.annotations.NullMarked;
 @FunctionalInterface
 public interface UserFactory {
 
-    <P extends Audience & Identified> UserInternal createUser(P player, UserRecord profile);
+    <P extends Audience & Identified> PluginTemplateUser createUser(P player, UserRecord userRecord);
 }
