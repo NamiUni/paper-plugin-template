@@ -19,93 +19,58 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
-import io.github.namiuni.paperplugintemplate.common.component.ComponentTypes;
-import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
-import io.github.namiuni.paperplugintemplate.minecraft.paper.component.PaperPlayerComponent;
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import java.time.Instant;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
+import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public final class PaperUser implements UserInternal, ForwardingAudience.Single {
-
-    private final UUID uuid;
-    private final ComponentStore store;
-
-    public PaperUser(final UUID uuid, final ComponentStore store) {
-        this.uuid = Objects.requireNonNull(uuid, "uuid");
-        this.store = Objects.requireNonNull(store, "store");
-    }
-
-    @Override
-    public PaperPlayerComponent audienceComponent() {
-        return (PaperPlayerComponent) this.store.getOrThrow(this.uuid, ComponentTypes.AUDIENCE);
-    }
+public record PaperUser(Player player, UserRecord userRecord) implements PluginTemplateUser, ForwardingAudience.Single {
 
     @Override
     public UUID uuid() {
-        return this.uuid;
+        return this.player.getUniqueId();
     }
 
     @Override
     public String name() {
-        return this.get(Identity.NAME).orElseThrow();
+        return this.player.getName();
     }
 
     @Override
     public Component displayName() {
-        return this.get(Identity.DISPLAY_NAME).orElseThrow();
+        return this.player.displayName();
     }
 
     @Override
     public Locale locale() {
-        return this.get(Identity.LOCALE).orElseThrow();
+        return this.player.locale();
     }
 
     @Override
     public Instant lastSeen() {
-        return Instant.ofEpochMilli(this.audienceComponent().player().getLastSeen());
+        return Instant.ofEpochMilli(this.player.getLastSeen());
     }
 
     @Override
     public boolean isOnline() {
-        return this.audienceComponent().player().isOnline();
+        return this.player.isOnline();
     }
 
     @Override
     public Audience audience() {
-        return this.audienceComponent().audience();
+        return this.player;
     }
 
     @Override
     public Identity identity() {
-        return this.audienceComponent().player().identity();
-    }
-
-    @Override
-    public String toString() {
-        return "PaperUser{uuid=%s, store=%s}".formatted(this.uuid, this.store);
-    }
-
-    @Override
-    public boolean equals(final @Nullable Object that) {
-        if (that == null || this.getClass() != that.getClass()) {
-            return false;
-        }
-        final PaperUser other = (PaperUser) that;
-        return Objects.equals(this.uuid, other.uuid) && Objects.equals(this.store, other.store);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.uuid, this.store);
+        return this.player.identity();
     }
 }

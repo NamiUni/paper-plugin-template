@@ -17,18 +17,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.minecraft.paper.component;
+package io.github.namiuni.paperplugintemplate.common.event.events;
 
-import io.github.namiuni.paperplugintemplate.common.component.components.AudienceComponent;
-import net.kyori.adventure.audience.Audience;
-import org.bukkit.entity.Player;
+import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record PaperPlayerComponent(Player player) implements AudienceComponent {
-
-    @Override
-    public Audience audience() {
-        return this.player;
-    }
+public record PlayerDisconnectEvent(UUID uuid) implements Event {
 }

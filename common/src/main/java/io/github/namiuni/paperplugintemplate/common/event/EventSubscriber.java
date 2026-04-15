@@ -17,11 +17,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.component;
+package io.github.namiuni.paperplugintemplate.common.event;
 
-import io.github.namiuni.paperplugintemplate.common.component.components.Component;
+import io.github.namiuni.paperplugintemplate.common.event.events.Event;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record ComponentType<C extends Component>(Class<C> rawType) {
+@FunctionalInterface
+public interface EventSubscriber<E extends Event> {
+
+    void on(E event);
 }

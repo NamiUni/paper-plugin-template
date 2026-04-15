@@ -17,16 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.component;
+package io.github.namiuni.paperplugintemplate.common.event.events;
 
-import io.github.namiuni.paperplugintemplate.common.component.components.AudienceComponent;
+import java.util.Set;
+import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public final class ComponentTypes {
-
-    public static final ComponentType<AudienceComponent> AUDIENCE = new ComponentType<>(AudienceComponent.class);
-
-    private ComponentTypes() {
-    }
+public record WorldCheckPointEvent(Set<UUID> onlinePlayerUuids) implements Event {
 }

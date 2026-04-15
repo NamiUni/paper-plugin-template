@@ -17,14 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.user;
+package io.github.namiuni.paperplugintemplate.common.event;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.component.components.AudienceComponent;
+import io.github.namiuni.paperplugintemplate.common.event.events.Event;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public interface UserInternal extends PluginTemplateUser {
+public interface EventBus {
 
-    AudienceComponent audienceComponent();
+    <E extends Event> void subscribe(Class<E> eventType, EventSubscriber<? super E> subscriber);
+
+    <E extends Event> void unsubscribe(Class<E> eventType, EventSubscriber<? super E> subscriber);
+
+    <E extends Event> void publish(E event);
 }

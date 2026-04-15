@@ -17,19 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.component;
+package io.github.namiuni.paperplugintemplate.common.event.events;
 
-import java.io.Serial;
-import java.util.UUID;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.identity.Identified;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public final class ComponentNotFoundException extends RuntimeException {
-
-    @Serial
-    private static final long serialVersionUID = -5596109184340026029L;
-
-    public ComponentNotFoundException(final UUID uuid, final ComponentType<?> type) {
-        super("No component %s for uuid [%s]".formatted(type, uuid));
-    }
+public record PlayerConnectEvent<P extends Audience & Identified>(P player) implements Event {
 }

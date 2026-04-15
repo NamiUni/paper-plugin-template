@@ -27,10 +27,8 @@ import jakarta.inject.Inject;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -159,21 +157,16 @@ final class TranslatorLoader {
     }
 
     private static Translation readAnnotations(final Class<?> translationClass, final Locale locale) {
-        final List<Translation.Message> messages = new ArrayList<>();
-
-        final List<Method> methods = Arrays.stream(translationClass.getMethods())
+        final List<Translation.Message> messages = Arrays.stream(translationClass.getMethods())
                 .filter(method -> method.isAnnotationPresent(Key.class))
                 .sorted(Comparator.comparing(method -> method.getAnnotation(Key.class).value()))
+                .flatMap(method -> {
+                    final String key = method.getAnnotation(Key.class).value();
+                    return Arrays.stream(method.getAnnotationsByType(Message.class))
+                            .filter(msg -> locale.equals(msg.locale().asLocale()))
+                            .map(msg -> new Translation.Message(key, msg.content()));
+                })
                 .toList();
-
-        for (final Method method : methods) {
-            final String key = method.getAnnotation(Key.class).value();
-            for (final Message msg : method.getAnnotationsByType(Message.class)) {
-                if (locale.equals(msg.locale().asLocale())) {
-                    messages.add(new Translation.Message(key, msg.content()));
-                }
-            }
-        }
 
         return new Translation(locale, messages);
     }

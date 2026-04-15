@@ -19,14 +19,10 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
-import io.github.namiuni.paperplugintemplate.common.component.ComponentTypes;
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
-import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
-import io.github.namiuni.paperplugintemplate.minecraft.paper.component.PaperPlayerComponent;
 import jakarta.inject.Inject;
-import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import org.bukkit.entity.Player;
@@ -35,20 +31,12 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class PaperUserFactory implements UserFactory {
 
-    private final ComponentStore registry;
-
     @Inject
-    private PaperUserFactory(final ComponentStore registry) {
-        this.registry = registry;
+    private PaperUserFactory() {
     }
 
     @Override
-    public <P extends Audience & Identified> UserInternal createUser(final P player, final UserRecord profile) {
-        final Player bukkit = (Player) player;
-        final UUID uuid = bukkit.getUniqueId();
-
-        this.registry.set(uuid, ComponentTypes.AUDIENCE, new PaperPlayerComponent(bukkit));
-
-        return new PaperUser(uuid, this.registry);
+    public <P extends Audience & Identified> PluginTemplateUser createUser(final P player, final UserRecord userRecord) {
+        return new PaperUser((Player) player, userRecord);
     }
 }

@@ -25,6 +25,8 @@ import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.t
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
 import jakarta.inject.Inject;
 import java.util.Map;
+import java.util.function.BiFunction;
+import net.kyori.adventure.pointer.Pointered;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
@@ -117,28 +119,33 @@ public final class HelpCommand implements CommandFactory {
 
     private final class MessageProvider implements MinecraftHelp.MessageProvider<CommandSource> {
 
-        @Override
-        public Component provide(final CommandSource sender, final String key, final Map<String, String> args) {
-            final TagResolver.Builder builder = TagResolver.builder();
-            args.forEach((k, value) -> builder.resolver(Placeholder.parsed(k, value)));
-            final TagResolver placeholders = builder.build();
+        private final Map<String, BiFunction<Pointered, TagResolver, Component>> resolvers = Map.ofEntries(
+                Map.entry("arguments", HelpCommand.this.messages::commandHelpMiscArguments),
+                Map.entry("available_commands", HelpCommand.this.messages::commandHelpMiscAvailableCommands),
+                Map.entry("click_for_next_page", HelpCommand.this.messages::commandHelpMiscClickForNextPage),
+                Map.entry("click_for_previous_page", HelpCommand.this.messages::commandHelpMiscClickForPreviousPage),
+                Map.entry("click_to_show_help", HelpCommand.this.messages::commandHelpMiscClickToShowHelp),
+                Map.entry("command", HelpCommand.this.messages::commandHelpMiscCommand),
+                Map.entry("description", HelpCommand.this.messages::commandHelpMiscDescription),
+                Map.entry("help", HelpCommand.this.messages::commandHelpMiscHelp),
+                Map.entry("no_description", HelpCommand.this.messages::commandHelpMiscNoDescription),
+                Map.entry("no_results_for_query", HelpCommand.this.messages::commandHelpMiscNoResultsForQuery),
+                Map.entry("optional", HelpCommand.this.messages::commandHelpMiscOptional),
+                Map.entry("page_out_of_range", HelpCommand.this.messages::commandHelpMiscPageOutOfRange),
+                Map.entry("showing_results_for_query", HelpCommand.this.messages::commandHelpMiscShowingResultsForQuery)
+        );
 
-            return switch (key) {
-                case "arguments" -> HelpCommand.this.messages.commandHelpMiscArguments(sender.sender(), placeholders);
-                case "available_commands" -> HelpCommand.this.messages.commandHelpMiscAvailableCommands(sender.sender(), placeholders);
-                case "click_for_next_page" -> HelpCommand.this.messages.commandHelpMiscClickForNextPage(sender.sender(), placeholders);
-                case "click_for_previous_page" -> HelpCommand.this.messages.commandHelpMiscClickForPreviousPage(sender.sender(), placeholders);
-                case "click_to_show_help" -> HelpCommand.this.messages.commandHelpMiscClickToShowHelp(sender.sender(), placeholders);
-                case "command" -> HelpCommand.this.messages.commandHelpMiscCommand(sender.sender(), placeholders);
-                case "description" -> HelpCommand.this.messages.commandHelpMiscDescription(sender.sender(), placeholders);
-                case "help" -> HelpCommand.this.messages.commandHelpMiscHelp(sender.sender(), placeholders);
-                case "no_description" -> HelpCommand.this.messages.commandHelpMiscNoDescription(sender.sender(), placeholders);
-                case "no_results_for_query" -> HelpCommand.this.messages.commandHelpMiscNoResultsForQuery(sender.sender(), placeholders);
-                case "optional" -> HelpCommand.this.messages.commandHelpMiscOptional(sender.sender(), placeholders);
-                case "page_out_of_range" -> HelpCommand.this.messages.commandHelpMiscPageOutOfRange(sender.sender(), placeholders);
-                case "showing_results_for_query" -> HelpCommand.this.messages.commandHelpMiscShowingResultsForQuery(sender.sender(), placeholders);
-                default -> throw new IllegalArgumentException();
-            };
+        @Override
+        @SuppressWarnings("PatternValidation")
+        public Component provide(final CommandSource sender, final String key, final Map<String, String> args) {
+            final TagResolver placeholders = TagResolver.resolver(
+                    args.entrySet().stream()
+                            .map(entry -> Placeholder.parsed(entry.getKey(), entry.getValue()))
+                            .toArray(TagResolver[]::new)
+            );
+
+            final BiFunction<Pointered, TagResolver, Component> resolver = this.resolvers.get(key);
+            return resolver.apply(sender.sender(), placeholders);
         }
     }
 }

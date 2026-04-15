@@ -24,10 +24,15 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
-import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
+import io.github.namiuni.paperplugintemplate.common.event.EventBus;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerConnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerDisconnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -57,9 +62,10 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     private UserServiceInternal(
             final UserRepository repository,
             final UserFactory userFactory,
-            final ComponentStore componentStore,
             final Provider<PrimaryConfiguration> primaryConfig,
-            final ComponentLogger logger
+            final ComponentLogger logger,
+            final EventBus eventBus,
+            final MessageAssembly messages
     ) {
         this.repository = repository;
         this.userFactory = userFactory;
@@ -72,23 +78,38 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         this.userCache = Caffeine.newBuilder()
                 .maximumSize(cacheSettings.maximumSize())
                 .expireAfter(new OnlineAwareExpiry(cacheSettings))
-                .removalListener((uuid, _, _) -> {
-                    if (uuid != null) {
-                        componentStore.removeAll(uuid);
-                    }
-                })
                 .build();
+
+        eventBus.subscribe(PlayerPreConnectEvent.class, event ->
+                this.preloadUserRecord(
+                        event.uuid(),
+                        () -> event.disconnector().disconnect(messages.joinFailureProfile(event.audience()))
+                ));
+
+        eventBus.subscribe(PlayerConnectEvent.class, event ->
+                this.loadUser((Audience & Identified) event.player())
+                        .whenComplete((_, exception) -> {
+                            if (exception != null) {
+                                logger.error(
+                                        "Failed to load player on join for UUID: {}",
+                                        event.player().get(Identity.UUID).orElseThrow(),
+                                        exception
+                                );
+                            }
+                        }));
+
+        eventBus.subscribe(PlayerDisconnectEvent.class, event -> this.saveUser(event.uuid()));
+
+        eventBus.subscribe(WorldCheckPointEvent.class, event -> event.onlinePlayerUuids().forEach(this::saveUser));
     }
 
-    public CompletableFuture<Void> loadUserRecord(final UUID uuid, final Runnable disconnect) {
-        final PluginTemplateUser cachedUser = this.userCache.getIfPresent(uuid);
-        if (cachedUser instanceof UserInternal) {
+    public CompletableFuture<Void> preloadUserRecord(final UUID uuid, final Runnable disconnect) {
+        if (this.userCache.getIfPresent(uuid) != null) {
             this.logger.debug("[{}] userCache hit for {} — skipping repository.", UserServiceInternal.class.getSimpleName(), uuid);
             return CompletableFuture.completedFuture(null);
         }
 
-        final UserRecord preloaded = this.preloadCache.getIfPresent(uuid);
-        if (preloaded != null) {
+        if (this.preloadCache.getIfPresent(uuid) != null) {
             this.logger.debug("[{}] preloadCache hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
             return CompletableFuture.completedFuture(null);
         }
@@ -96,10 +117,11 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         this.logger.debug("[{}] Cold miss for {} — querying repository.", UserServiceInternal.class.getSimpleName(), uuid);
         return this.repository.findById(uuid)
                 .thenAccept(existing -> {
-                    if (existing.isPresent()) {
-                        this.preloadCache.put(uuid, existing.get());
+                    existing.ifPresent(record -> {
+                        this.preloadCache.put(uuid, record);
                         this.logger.debug("[{}] Profile stored in preloadCache for {}.", UserServiceInternal.class.getSimpleName(), uuid);
-                    } else {
+                    });
+                    if (existing.isEmpty()) {
                         this.logger.debug("[{}] No existing profile for {} (first join).", UserServiceInternal.class.getSimpleName(), uuid);
                     }
                 })
@@ -112,22 +134,15 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     }
 
     public CompletableFuture<Void> saveUser(final UUID uuid) {
-        final var user = this.userCache.getIfPresent(uuid);
-        if (user != null) {
-            final var userRecord = new UserRecord(
-                    user.uuid(),
-                    user.name(),
-                    user.lastSeen()
-            );
-            return this.repository.upsert(userRecord)
-                    .whenComplete((_, exception) -> {
-                        if (exception != null) {
-                            this.logger.error("Failed save user record on disconnect for UUID: {}", uuid, exception);
-                        }
-                    });
-        }
-
-        return CompletableFuture.completedFuture(null);
+        return Optional.ofNullable(this.userCache.getIfPresent(uuid))
+                .map(user -> new UserRecord(user.uuid(), user.name(), user.lastSeen()))
+                .map(record -> this.repository.upsert(record)
+                        .whenComplete((_, exception) -> {
+                            if (exception != null) {
+                                this.logger.error("Failed save player record on disconnect for UUID: {}", uuid, exception);
+                            }
+                        }))
+                .orElseGet(() -> CompletableFuture.completedFuture(null));
     }
 
     @Override
@@ -137,35 +152,27 @@ public final class UserServiceInternal implements PluginTemplateUserService {
 
     @Override
     public <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(final P player) {
-        final UUID uuid = player.get(Identity.UUID).orElseThrow();
-        final String currentName = player.get(Identity.NAME).orElseThrow();
+        final UUID uuid = player.get(Identity.UUID)
+                .orElseThrow(() -> new IllegalArgumentException("Player is missing UUID identity: " + player.getClass().getName()));
+        final String currentName = player.get(Identity.NAME)
+                .orElseThrow(() -> new IllegalArgumentException("Player is missing NAME identity: " + player.getClass().getName()));
 
-        // Tier 1: user cache — non-blocking, always preferred.
         final PluginTemplateUser cached = this.userCache.getIfPresent(uuid);
         if (cached != null) {
             this.logger.debug("[{}] Tier-1 (userCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
             return CompletableFuture.completedFuture(cached);
         }
 
-        // Tier 2: preload cache — profile was fetched during onConnect.
         final UserRecord preloaded = this.preloadCache.getIfPresent(uuid);
         if (preloaded != null) {
             this.logger.debug("[{}] Tier-2 (preloadCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
-            final PluginTemplateUser user = this.userFactory.createUser(player, preloaded);
-            this.userCache.put(uuid, user);
-            return CompletableFuture.completedFuture(user);
+            return CompletableFuture.completedFuture(this.cacheUser(uuid, player, preloaded));
         }
 
-        // Tier 3: repository — async I/O; new players receive a default profile.
-        this.logger.debug("[{}] Tier-3 (repository) miss for {} ({}) — querying storage.", UserServiceInternal.class.getSimpleName(), uuid, currentName);
+        this.logger.debug("[{}] Tier-3 (repository) miss for {} — querying storage.", UserServiceInternal.class.getSimpleName(), uuid);
         return this.repository.findById(uuid)
                 .thenApply(existing -> existing.orElseGet(() -> new UserRecord(uuid, currentName, Instant.now())))
-                .thenApply(profile -> {
-                    final PluginTemplateUser platformUser = this.userFactory.createUser(player, profile);
-                    this.userCache.put(uuid, platformUser);
-                    this.logger.debug("[{}] Profile cached for {} ({}).", UserServiceInternal.class.getSimpleName(), uuid, currentName);
-                    return platformUser;
-                });
+                .thenApply(profile -> this.cacheUser(uuid, player, profile));
     }
 
     @Override
@@ -174,6 +181,16 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         this.userCache.invalidate(uuid);
         this.preloadCache.invalidate(uuid);
         return this.repository.delete(uuid);
+    }
+
+    private <P extends Audience & Identified> PluginTemplateUser cacheUser(
+            final UUID uuid,
+            final P player,
+            final UserRecord record
+    ) {
+        final PluginTemplateUser user = this.userFactory.createUser(player, record);
+        this.userCache.put(uuid, user);
+        return user;
     }
 
     private static final class OnlineAwareExpiry implements Expiry<UUID, PluginTemplateUser> {

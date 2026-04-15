@@ -17,14 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.minecraft.paper.listeners;
+package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
-import io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal;
+import io.github.namiuni.paperplugintemplate.common.event.EventBus;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerConnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerDisconnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import jakarta.inject.Inject;
+import java.util.Set;
 import java.util.UUID;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import java.util.stream.Collectors;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -36,65 +40,44 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @SuppressWarnings({"UnstableApiUsage", "unused"})
-public final class UserSessionHandler implements Listener {
+public final class UserSessionAdapter implements Listener {
 
-    private final UserServiceInternal userService;
-    private final ComponentLogger logger;
-    private final MessageAssembly messages;
+    private final EventBus eventBus;
 
     @Inject
-    private UserSessionHandler(
-            final UserServiceInternal userService,
-            final ComponentLogger logger,
-            final MessageAssembly messages
-    ) {
-        this.userService = userService;
-        this.logger = logger;
-        this.messages = messages;
+    private UserSessionAdapter(final EventBus eventBus) {
+        this.eventBus = eventBus;
     }
 
-    // TODO: 失敗した場合にユーザーを切断するか否かの設定と、接続を続行する場合の動作
     @EventHandler(priority = EventPriority.MONITOR)
-    private void onConnect(final AsyncPlayerConnectionConfigureEvent event) {
+    private void onPreConnect(final AsyncPlayerConnectionConfigureEvent event) {
         final var connection = event.getConnection();
         if (!connection.isConnected()) {
             return;
         }
-
         final UUID uuid = connection.getProfile().getId();
         if (uuid == null) {
             return;
         }
 
-        this.userService.loadUserRecord(
-                uuid,
-                () -> connection.disconnect(this.messages.joinFailureProfile(connection.getAudience()))
-        );
+        this.eventBus.publish(new PlayerPreConnectEvent(uuid, connection.getAudience(), connection::disconnect));
     }
 
-    // TODO: 失敗した場合にユーザーを切断するか否かの設定と、接続を続行する場合の動作
     @EventHandler(priority = EventPriority.MONITOR)
     private void onJoin(final PlayerJoinEvent event) {
-        final Player player = event.getPlayer();
-        this.userService.loadUser(player)
-                .whenComplete((_, exception) -> {
-                    if (exception != null) {
-                        this.logger.error("Failed to load user on join for UUID: {}", player.getUniqueId(), exception);
-                    }
-                });
+        this.eventBus.publish(new PlayerConnectEvent<>(event.getPlayer()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    private void onDisconnect(final PlayerQuitEvent event) {
-        final Player player = event.getPlayer();
-        final UUID uuid = player.getUniqueId();
-        this.userService.saveUser(uuid);
+    private void onQuit(final PlayerQuitEvent event) {
+        this.eventBus.publish(new PlayerDisconnectEvent(event.getPlayer().getUniqueId()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     private void onWorldSave(final WorldSaveEvent event) {
-        event.getWorld().getPlayers().stream()
+        final Set<UUID> uuids = event.getWorld().getPlayers().stream()
                 .map(Player::getUniqueId)
-                .forEach(this.userService::saveUser);
+                .collect(Collectors.toUnmodifiableSet());
+        this.eventBus.publish(new WorldCheckPointEvent(uuids));
     }
 }

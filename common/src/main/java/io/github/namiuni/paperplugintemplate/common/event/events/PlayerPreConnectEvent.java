@@ -17,13 +17,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.component.components;
+package io.github.namiuni.paperplugintemplate.common.event.events;
 
+import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public interface AudienceComponent extends Component {
+public record PlayerPreConnectEvent(
+        UUID uuid,
+        Audience audience,
+        Disconnector disconnector
+) implements Event {
 
-    Audience audience();
+    @FunctionalInterface
+    public interface Disconnector {
+        void disconnect(Component reason);
+    }
 }
