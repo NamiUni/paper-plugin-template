@@ -91,7 +91,7 @@ public final class JsonUserRepository implements UserRepository {
             Files.createDirectories(this.storageDir);
             this.logger.info("JSON storage directory ready: {}", this.storageDir);
         } catch (final IOException exception) {
-            throw new UncheckedIOException("Failed to create user data directory", exception);
+            throw new UncheckedIOException("Failed to create player data directory", exception);
         }
     }
 
@@ -114,7 +114,7 @@ public final class JsonUserRepository implements UserRepository {
                 this.logger.debug("[{}] loaded profile for {}: {}", JsonUserRepository.class.getSimpleName(), uuid, json);
                 return Optional.of(GSON.fromJson(json, UserRecord.class));
             } catch (final IOException exception) {
-                throw new UncheckedIOException("Failed to read user file for UUID: " + uuid, exception);
+                throw new UncheckedIOException("Failed to read player file for UUID: " + uuid, exception);
             } finally {
                 lock.unlock();
             }
@@ -134,7 +134,7 @@ public final class JsonUserRepository implements UserRepository {
                 Files.move(tmpFile, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
                 this.logger.debug("[{}] wrote profile for {} ({})", JsonUserRepository.class.getSimpleName(), uuid, userRecord);
             } catch (final IOException exception) {
-                throw new UncheckedIOException("Failed to write user file for UUID: " + uuid, exception);
+                throw new UncheckedIOException("Failed to write player file for UUID: " + uuid, exception);
             } finally {
                 lock.unlock();
             }
@@ -154,7 +154,7 @@ public final class JsonUserRepository implements UserRepository {
                     this.logger.debug("[{}] no file to remove for {}", JsonUserRepository.class.getSimpleName(), uuid);
                 }
             } catch (final IOException exception) {
-                throw new UncheckedIOException("Failed to delete user file for UUID: " + uuid, exception);
+                throw new UncheckedIOException("Failed to delete player file for UUID: " + uuid, exception);
             } finally {
                 lock.unlock();
             }

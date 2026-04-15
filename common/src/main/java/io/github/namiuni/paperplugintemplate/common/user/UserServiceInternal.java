@@ -24,10 +24,15 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
-import io.github.namiuni.paperplugintemplate.common.component.ComponentStore;
+import io.github.namiuni.paperplugintemplate.common.event.EventBus;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerConnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerDisconnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnectEvent;
+import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -57,9 +62,10 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     private UserServiceInternal(
             final UserRepository repository,
             final UserFactory userFactory,
-            final ComponentStore componentStore,
             final Provider<PrimaryConfiguration> primaryConfig,
-            final ComponentLogger logger
+            final ComponentLogger logger,
+            final EventBus eventBus,
+            final MessageAssembly messages
     ) {
         this.repository = repository;
         this.userFactory = userFactory;
@@ -72,17 +78,34 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         this.userCache = Caffeine.newBuilder()
                 .maximumSize(cacheSettings.maximumSize())
                 .expireAfter(new OnlineAwareExpiry(cacheSettings))
-                .removalListener((uuid, _, _) -> {
-                    if (uuid != null) {
-                        componentStore.removeAll(uuid);
-                    }
-                })
                 .build();
+
+        eventBus.subscribe(PlayerPreConnectEvent.class, event ->
+                this.preloadUserRecord(
+                        event.uuid(),
+                        () -> event.disconnector().disconnect(messages.joinFailureProfile(event.audience()))
+                ));
+
+        eventBus.subscribe(PlayerConnectEvent.class, event ->
+                this.loadUser((Audience & Identified) event.player())
+                        .whenComplete((_, exception) -> {
+                            if (exception != null) {
+                                logger.error(
+                                        "Failed to load player on join for UUID: {}",
+                                        event.player().get(Identity.UUID).orElseThrow(),
+                                        exception
+                                );
+                            }
+                        }));
+
+        eventBus.subscribe(PlayerDisconnectEvent.class, event -> this.saveUser(event.uuid()));
+
+        eventBus.subscribe(WorldCheckPointEvent.class, event -> event.onlinePlayerUuids().forEach(this::saveUser));
     }
 
-    public CompletableFuture<Void> loadUserRecord(final UUID uuid, final Runnable disconnect) {
+    public CompletableFuture<Void> preloadUserRecord(final UUID uuid, final Runnable disconnect) {
         final PluginTemplateUser cachedUser = this.userCache.getIfPresent(uuid);
-        if (cachedUser instanceof UserInternal) {
+        if (cachedUser != null) {
             this.logger.debug("[{}] userCache hit for {} — skipping repository.", UserServiceInternal.class.getSimpleName(), uuid);
             return CompletableFuture.completedFuture(null);
         }
@@ -122,7 +145,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
             return this.repository.upsert(userRecord)
                     .whenComplete((_, exception) -> {
                         if (exception != null) {
-                            this.logger.error("Failed save user record on disconnect for UUID: {}", uuid, exception);
+                            this.logger.error("Failed save player record on disconnect for UUID: {}", uuid, exception);
                         }
                     });
         }
@@ -137,17 +160,15 @@ public final class UserServiceInternal implements PluginTemplateUserService {
 
     @Override
     public <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(final P player) {
-        final UUID uuid = player.get(Identity.UUID).orElseThrow();
-        final String currentName = player.get(Identity.NAME).orElseThrow();
+        final UUID uuid = player.get(Identity.UUID).orElseThrow(() -> new IllegalArgumentException());
+        final String currentName = player.get(Identity.NAME).orElseThrow(() -> new IllegalArgumentException());
 
-        // Tier 1: user cache — non-blocking, always preferred.
         final PluginTemplateUser cached = this.userCache.getIfPresent(uuid);
         if (cached != null) {
             this.logger.debug("[{}] Tier-1 (userCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
             return CompletableFuture.completedFuture(cached);
         }
 
-        // Tier 2: preload cache — profile was fetched during onConnect.
         final UserRecord preloaded = this.preloadCache.getIfPresent(uuid);
         if (preloaded != null) {
             this.logger.debug("[{}] Tier-2 (preloadCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
@@ -156,14 +177,12 @@ public final class UserServiceInternal implements PluginTemplateUserService {
             return CompletableFuture.completedFuture(user);
         }
 
-        // Tier 3: repository — async I/O; new players receive a default profile.
-        this.logger.debug("[{}] Tier-3 (repository) miss for {} ({}) — querying storage.", UserServiceInternal.class.getSimpleName(), uuid, currentName);
+        this.logger.debug("[{}] Tier-3 (repository) miss for {} — querying storage.", UserServiceInternal.class.getSimpleName(), uuid);
         return this.repository.findById(uuid)
                 .thenApply(existing -> existing.orElseGet(() -> new UserRecord(uuid, currentName, Instant.now())))
                 .thenApply(profile -> {
                     final PluginTemplateUser platformUser = this.userFactory.createUser(player, profile);
                     this.userCache.put(uuid, platformUser);
-                    this.logger.debug("[{}] Profile cached for {} ({}).", UserServiceInternal.class.getSimpleName(), uuid, currentName);
                     return platformUser;
                 });
     }

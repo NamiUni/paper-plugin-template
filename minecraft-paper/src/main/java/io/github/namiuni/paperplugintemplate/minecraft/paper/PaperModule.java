@@ -27,8 +27,8 @@ import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.command.PaperCommandSource;
-import io.github.namiuni.paperplugintemplate.minecraft.paper.listeners.UserSessionHandler;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.user.PaperUserFactory;
+import io.github.namiuni.paperplugintemplate.minecraft.paper.user.UserSessionAdapter;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import jakarta.inject.Singleton;
@@ -67,13 +67,12 @@ final class PaperModule extends AbstractModule {
     @Override
     protected void configure() {
         this.bind(JavaPlugin.class).to(PaperPlugin.class).in(Scopes.SINGLETON);
-        this.bind(UserSessionHandler.class).in(Scopes.SINGLETON);
         this.bind(UserFactory.class).to(PaperUserFactory.class).in(Scopes.SINGLETON);
-        this.bindListeners();
+        this.bindAdapters();
     }
 
-    private void bindListeners() {
-        final Multibinder<Listener> listeners = Multibinder.newSetBinder(this.binder(), Listener.class);
-        listeners.addBinding().to(UserSessionHandler.class).in(Scopes.SINGLETON);
+    private void bindAdapters() {
+        final Multibinder<Listener> multibinder = Multibinder.newSetBinder(this.binder(), Listener.class);
+        multibinder.addBinding().to(UserSessionAdapter.class).in(Scopes.SINGLETON);
     }
 }

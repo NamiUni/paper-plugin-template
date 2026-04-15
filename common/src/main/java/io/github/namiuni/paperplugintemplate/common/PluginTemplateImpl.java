@@ -25,9 +25,9 @@ import jakarta.inject.Inject;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record PluginTemplateImpl(PluginTemplateUserService userService) implements PluginTemplate {
+record PluginTemplateImpl(PluginTemplateUserService userService) implements PluginTemplate {
 
     @Inject
-    public PluginTemplateImpl {
+    PluginTemplateImpl {
     }
 }

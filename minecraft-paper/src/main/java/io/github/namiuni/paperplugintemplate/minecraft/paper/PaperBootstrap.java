@@ -21,15 +21,14 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
-import io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider;
+import io.github.namiuni.paperplugintemplate.common.CommonLifecycle;
 import io.github.namiuni.paperplugintemplate.common.CommonModule;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.InfrastructureModule;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import java.util.Objects;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jspecify.annotations.NullMarked;
@@ -43,7 +42,7 @@ public final class PaperBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(final BootstrapContext context) {
-        final var paperMeta = context.getPluginMeta();
+        final PluginMeta paperMeta = context.getPluginMeta();
         final Metadata metadata = new Metadata(
                 paperMeta.getName(),
                 paperMeta.getDisplayName(),
@@ -57,8 +56,7 @@ public final class PaperBootstrap implements PluginBootstrap {
         );
 
         Objects.requireNonNull(this.injector);
-        this.injector.getInstance(CommandRegistrar.class).registerCommands();
-        PluginTemplateProvider.register(this.injector.getInstance(PluginTemplate.class));
+        this.injector.getInstance(CommonLifecycle.class).bootstrap();
     }
 
     @Override
