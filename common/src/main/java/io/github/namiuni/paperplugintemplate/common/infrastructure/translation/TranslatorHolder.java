@@ -23,7 +23,6 @@ import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
-import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicReference;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.translation.GlobalTranslator;
@@ -53,7 +52,8 @@ public final class TranslatorHolder implements Provider<Translator>, Reloadable<
         this.logger.info("Translations loaded.");
     }
 
-    public Translator reload() throws UncheckedIOException {
+    @Override
+    public Translator reload() {
         return this.translator.updateAndGet(current -> {
             this.logger.info("Reloading translations...");
             GlobalTranslator.translator().removeSource(current);
