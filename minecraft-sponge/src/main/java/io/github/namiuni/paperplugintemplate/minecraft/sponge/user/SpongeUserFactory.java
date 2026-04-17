@@ -1,0 +1,42 @@
+/*
+ * PaperPluginTemplate
+ *
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors []
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package io.github.namiuni.paperplugintemplate.minecraft.sponge.user;
+
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
+import jakarta.inject.Inject;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.identity.Identified;
+import org.jspecify.annotations.NullMarked;
+import org.spongepowered.api.entity.living.player.server.ServerPlayer;
+
+@NullMarked
+public final class SpongeUserFactory implements UserFactory {
+
+    @Inject
+    private SpongeUserFactory() {
+    }
+
+    @Override
+    public <P extends Audience & Identified> PluginTemplateUser createUser(final P player, final UserRecord userRecord) {
+        return new SpongeUser((ServerPlayer) player, userRecord);
+    }
+}

@@ -19,11 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
-import com.google.inject.Guice;
 import com.google.inject.Injector;
-import io.github.namiuni.paperplugintemplate.common.CommonLifecycle;
-import io.github.namiuni.paperplugintemplate.common.CommonModule;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
+import io.github.namiuni.paperplugintemplate.common.PluginBootstrapper;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
@@ -42,26 +40,25 @@ public final class PaperBootstrap implements PluginBootstrap {
 
     @Override
     public void bootstrap(final BootstrapContext context) {
-        final PluginMeta paperMeta = context.getPluginMeta();
-        final @Subst("namespace") String namespace = paperMeta.namespace();
+        final PluginMeta meta = context.getPluginMeta();
+        final @Subst("namespace") String namespace = meta.namespace();
         final Metadata metadata = new Metadata(
-                paperMeta.getName(),
-                paperMeta.getDisplayName(),
+                meta.getName(),
+                meta.getDisplayName(),
                 namespace,
-                paperMeta.getVersion()
+                meta.getVersion()
         );
-        this.injector = Guice.createInjector(
-                new CommonModule(metadata, context.getLogger(), context.getDataDirectory(), context.getPluginSource()),
+        this.injector = PluginBootstrapper.bootstrap(
+                metadata,
+                context.getLogger(),
+                context.getDataDirectory(),
+                context.getPluginSource(),
                 new PaperModule(context)
         );
-
-        Objects.requireNonNull(this.injector);
-        this.injector.getInstance(CommonLifecycle.class).bootstrap();
     }
 
     @Override
     public JavaPlugin createPlugin(final PluginProviderContext context) {
-        Objects.requireNonNull(this.injector);
-        return this.injector.getInstance(JavaPlugin.class);
+        return Objects.requireNonNull(this.injector).getInstance(JavaPlugin.class);
     }
 }

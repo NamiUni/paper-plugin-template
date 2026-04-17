@@ -1,11 +1,12 @@
 @file:Suppress("UnstableApiUsage")
 
-rootProject.name = "paper-plugin-template" // TODO: change
+rootProject.name = "paper-plugin-template"
 
 dependencyResolutionManagement {
     repositories {
         mavenCentral()
         maven("https://repo.papermc.io/repository/maven-public/")
+        maven("https://repo.spongepowered.org/repository/maven-public/")
     }
 }
 
@@ -16,7 +17,8 @@ pluginManagement {
 sequenceOf(
     "api",
     "common",
-    "minecraft-paper"
+    "minecraft-paper",
+    "minecraft-sponge"
 ).forEach {
     include("${rootProject.name}-$it")
     project(":${rootProject.name}-$it").projectDir = file(it)

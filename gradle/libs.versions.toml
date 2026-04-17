@@ -14,6 +14,7 @@ caffeine = "3.2.3"
 gson = "2.13.2"
 guice = "7.0.0"
 paper-api = "26.1.2.build.+"
+sponge-api = "14.0.0"
 luckperms = "5.5.29"
 mini-placeholders = "3.2.0"
 configurate = "4.2.0"
@@ -21,6 +22,7 @@ adventure = "4.26.1"
 kotonoha = "0.2.1"
 cloud = "2.0.0"
 cloud-minecraft = "2.0.0-SNAPSHOT"
+cloud-sponge = "2.0.0-SNAPSHOT"
 bstats = "3.2.1"
 
 # Storage
@@ -47,6 +49,7 @@ caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 guice = { group = "com.google.inject", name = "guice", version.ref = "guice" }
 paper-api = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper-api" }
+sponge-api = { group = "org.spongepowered", name = "spongeapi", version.ref = "sponge-api" }
 mini-placeholders = { group = "io.github.miniplaceholders", name = "miniplaceholders-api", version.ref = "mini-placeholders" }
 configurate-hocon = { group = "org.spongepowered", name = "configurate-hocon", version.ref = "configurate" }
 adventure-serializer-configurate = { group = "net.kyori", name = "adventure-serializer-configurate4", version.ref = "adventure" }
@@ -59,9 +62,11 @@ kotonoha-message-extra-miniplaceholders = { group = "io.github.namiuni", name = 
 kotonoha-resourcebundle-generator-processor = { group = "io.github.namiuni", name = "kotonoha-resourcebundle-generator-processor", version.ref = "kotonoha" }
 cloud-core = { group = "org.incendo", name = "cloud-core", version.ref = "cloud" }
 cloud-paper = { group = "org.incendo", name = "cloud-paper", version.ref = "cloud-minecraft" }
+cloud-sponge = { group = "org.incendo", name = "cloud-sponge", version.ref = "cloud-sponge" }
 cloud-minecraft-extras = { group = "org.incendo", name = "cloud-minecraft-extras", version.ref = "cloud-minecraft" }
 gremlin-runtime = { group = "xyz.jpenilla", name = "gremlin-runtime", version.ref = "gremlin" }
 bstats-bukkit = { group = "org.bstats", name = "bstats-bukkit", version.ref = "bstats" }
+bstats-sponge = { group = "org.bstats", name = "bstats-sponge", version.ref = "bstats" }
 
 # Storage
 jdbi-core = { group = "org.jdbi", name = "jdbi3-core", version.ref = "jdbi" }
