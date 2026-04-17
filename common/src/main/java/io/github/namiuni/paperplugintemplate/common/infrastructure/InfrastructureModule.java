@@ -48,6 +48,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.translation.Translator;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.cache.caffeine.CaffeineCacheBuilder;
@@ -181,12 +182,14 @@ public final class InfrastructureModule extends AbstractModule {
     @SuppressWarnings("unused")
     private ConfigurationLoader<PrimaryConfiguration> primaryConfigLoader(
             final @DataDirectory Path dataDirectory,
+            final MiniMessage miniMessage,
             final ComponentLogger logger
     ) {
         return new ConfigurationLoader<>(
                 PrimaryConfiguration.class,
                 PrimaryConfiguration.DEFAULT,
                 dataDirectory,
+                miniMessage,
                 logger
         );
     }

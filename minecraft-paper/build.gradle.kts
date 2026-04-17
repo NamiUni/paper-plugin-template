@@ -99,7 +99,7 @@ paperPluginYaml {
         .split(", ")
         .filter { it.isNotEmpty() }
     website = projectMetadata.projectWebsite
-    apiVersion = "1.21.11"
+    apiVersion = "26.1.2"
 
     loader = "$mainPackage.minecraft.paper.PaperLoader"
     main = "$mainPackage.minecraft.paper.PaperPlugin"
@@ -127,7 +127,7 @@ runPaper.folia.registerTask()
 tasks {
     withType(RunServer::class).configureEach {
         systemProperty("log4j.configurationFile", "log4j2.xml")
-        minecraftVersion("1.21.11")
+        minecraftVersion("26.1.2")
         downloadPlugins {
             url("https://ci.lucko.me/job/LuckPerms-Folia/lastSuccessfulBuild/artifact/bukkit/loader/build/libs/LuckPerms-Bukkit-${libs.versions.luckperms.get()}.jar")
             modrinth("miniplaceholders", "4zOT6txC")

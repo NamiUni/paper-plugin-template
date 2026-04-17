@@ -46,6 +46,7 @@ public final class ConfigurationLoader<T extends Record> {
             final Class<T> configClass,
             final T defaultConfig,
             final @DataDirectory Path dataDirectory,
+            final MiniMessage miniMessage,
             final ComponentLogger logger
     ) {
         this.configClass = configClass;
@@ -61,7 +62,7 @@ public final class ConfigurationLoader<T extends Record> {
         final String configHeader = headerAnnotation.value();
 
         final var kyoriSerializer = ConfigurateComponentSerializer.builder()
-                .scalarSerializer(MiniMessage.miniMessage())
+                .scalarSerializer(miniMessage)
                 .build()
                 .serializers();
 
