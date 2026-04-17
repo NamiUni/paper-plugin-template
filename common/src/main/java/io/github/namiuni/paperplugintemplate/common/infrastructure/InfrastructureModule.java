@@ -64,16 +64,23 @@ public final class InfrastructureModule extends AbstractModule {
 
     private final ComponentLogger logger;
     private final Path dataDirectory;
+    private final Path pluginResource;
 
-    public InfrastructureModule(final ComponentLogger logger, final Path dataDirectory) {
+    public InfrastructureModule(
+            final ComponentLogger logger,
+            final Path dataDirectory,
+            final Path pluginResource
+    ) {
         this.logger = logger;
         this.dataDirectory = dataDirectory;
+        this.pluginResource = pluginResource;
     }
 
     @Override
     protected void configure() {
         this.bind(ComponentLogger.class).toInstance(this.logger);
         this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.dataDirectory);
+        this.bind(Path.class).annotatedWith(PluginResource.class).toInstance(this.pluginResource);
         this.bind(MiniMessage.class).toInstance(MINI_MESSAGE);
         this.bind(Gson.class).toInstance(GSON);
 

@@ -56,6 +56,7 @@ adventure-text-logger-slf4j = { group = "net.kyori", name = "adventure-text-logg
 kotonoha-annotations = { group = "io.github.namiuni", name = "kotonoha-annotations", version.ref = "kotonoha" }
 kotonoha-message = { group = "io.github.namiuni", name = "kotonoha-message", version.ref = "kotonoha" }
 kotonoha-message-extra-miniplaceholders = { group = "io.github.namiuni", name = "kotonoha-message-extra-miniplaceholders", version.ref = "kotonoha" }
+kotonoha-resourcebundle-generator-processor = { group = "io.github.namiuni", name = "kotonoha-resourcebundle-generator-processor", version.ref = "kotonoha" }
 cloud-core = { group = "org.incendo", name = "cloud-core", version.ref = "cloud" }
 cloud-paper = { group = "org.incendo", name = "cloud-paper", version.ref = "cloud-minecraft" }
 cloud-minecraft-extras = { group = "org.incendo", name = "cloud-minecraft-extras", version.ref = "cloud-minecraft" }

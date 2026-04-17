@@ -51,7 +51,7 @@ public final class PaperBootstrap implements PluginBootstrap {
                 paperMeta.getVersion()
         );
         this.injector = Guice.createInjector(
-                new CommonModule(metadata, context.getLogger(), context.getDataDirectory()),
+                new CommonModule(metadata, context.getLogger(), context.getDataDirectory(), context.getPluginSource()),
                 new PaperModule(context)
         );
 

@@ -96,7 +96,7 @@ public final class UserSessionHandler {
         event.onlinePlayerUuids().forEach(this::save);
     }
 
-    public CompletableFuture<Void> preload(final UUID uuid, final Runnable disconnect) {
+    private CompletableFuture<Void> preload(final UUID uuid, final Runnable disconnect) {
         if (this.cache.getUser(uuid).isPresent()) {
             this.logger.debug("[{}] userCache hit for {} — skipping repository.", UserSessionHandler.class.getSimpleName(), uuid);
             return CompletableFuture.completedFuture(null);
@@ -121,7 +121,7 @@ public final class UserSessionHandler {
                 });
     }
 
-    public CompletableFuture<Void> save(final UUID uuid) {
+    private CompletableFuture<Void> save(final UUID uuid) {
         return this.cache.getUser(uuid)
                 .map(user -> {
                     final UserRecord record = new UserRecord(user.uuid(), user.name(), Instant.now());

@@ -42,15 +42,18 @@ public final class CommonModule extends AbstractModule {
     private final Metadata metadata;
     private final ComponentLogger logger;
     private final Path dataDirectory;
+    private final Path pluginResource;
 
     public CommonModule(
             final Metadata metadata,
             final ComponentLogger logger,
-            final Path dataDirectory
+            final Path dataDirectory,
+            final Path pluginResource
     ) {
         this.metadata = metadata;
         this.logger = logger;
         this.dataDirectory = dataDirectory;
+        this.pluginResource = pluginResource;
     }
 
     @Override
@@ -62,7 +65,7 @@ public final class CommonModule extends AbstractModule {
         this.bind(UserSessionHandler.class).asEagerSingleton();
         this.bindCommands();
 
-        this.install(new InfrastructureModule(this.logger, this.dataDirectory));
+        this.install(new InfrastructureModule(this.logger, this.dataDirectory, this.pluginResource));
     }
 
     private void bindCommands() {

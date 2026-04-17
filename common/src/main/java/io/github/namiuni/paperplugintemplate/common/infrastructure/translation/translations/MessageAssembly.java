@@ -31,7 +31,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-@ResourceBundle(baseName = "messages")
+@ResourceBundle(baseName = "translations/messages")
 public interface MessageAssembly {
 
     /// Returns the short description of the `/template reload` command.
