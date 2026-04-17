@@ -20,7 +20,7 @@
 package io.github.namiuni.paperplugintemplate.common.user;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import org.jspecify.annotations.NullMarked;

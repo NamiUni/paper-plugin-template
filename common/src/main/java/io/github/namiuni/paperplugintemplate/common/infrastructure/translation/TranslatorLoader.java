@@ -19,21 +19,14 @@
  */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.translation;
 
-import io.github.namiuni.kotonoha.annotations.Key;
-import io.github.namiuni.kotonoha.annotations.Message;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import jakarta.inject.Inject;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -58,7 +51,7 @@ final class TranslatorLoader {
     private final net.kyori.adventure.key.Key translationKey;
 
     @Inject
-    private TranslatorLoader(
+    TranslatorLoader(
             final ComponentLogger logger,
             final MiniMessage miniMessage,
             final @DataDirectory Path dataDirectory,
@@ -66,8 +59,8 @@ final class TranslatorLoader {
     ) {
         this.logger = logger;
         this.miniMessage = miniMessage;
-
         this.translationDir = dataDirectory.resolve("translations");
+
         try {
             Files.createDirectories(this.translationDir);
         } catch (final IOException exception) {
@@ -80,29 +73,64 @@ final class TranslatorLoader {
 
     Translator loadTranslator() {
         this.logger.debug("[{}] Building translation store...", TranslatorLoader.class.getSimpleName());
-        final var store = MiniMessageTranslationStore.create(this.translationKey, this.miniMessage);
+        final MiniMessageTranslationStore store = MiniMessageTranslationStore.create(this.translationKey, this.miniMessage);
         store.defaultLocale(Locale.ROOT);
 
-        final Map<Locale, List<Translation.Message>> index = buildIndex();
+        final Map<Locale, List<Translation.Message>> index = TranslationAnnotationIndex.build();
 
-        // 1. Register ROOT locale
+        this.registerRootLocale(store, index);
+        final Set<Locale> diskLocales = this.loadFromDisk(store);
+        this.fillMissingAndWriteDefaults(store, index, diskLocales);
+
+        this.logger.debug("[{}] Translation store build complete.", TranslatorLoader.class.getSimpleName());
+        return store;
+    }
+
+    private void registerRootLocale(
+            final MiniMessageTranslationStore store,
+            final Map<Locale, List<Translation.Message>> index
+    ) {
         final List<Translation.Message> rootMessages = index.getOrDefault(Locale.ROOT, List.of());
-        if (!rootMessages.isEmpty()) {
-            final Map<String, String> rootMap = new LinkedHashMap<>(rootMessages.size());
-            for (final Translation.Message msg : rootMessages) {
-                rootMap.put(msg.key(), msg.content());
-            }
-            store.registerAll(Locale.ROOT, rootMap);
-            this.logger.debug(
-                    "[{}] Registered {} ROOT-locale messages from annotations.",
-                    TranslatorLoader.class.getSimpleName(), rootMap.size()
-            );
+        if (rootMessages.isEmpty()) {
+            return;
+        }
+        final Map<String, String> rootMap = new java.util.LinkedHashMap<>(rootMessages.size());
+        for (final Translation.Message msg : rootMessages) {
+            rootMap.put(msg.key(), msg.content());
+        }
+        store.registerAll(Locale.ROOT, rootMap);
+        this.logger.debug("[{}] Registered {} ROOT-locale messages.", TranslatorLoader.class.getSimpleName(), rootMap.size());
+    }
+
+    private Set<Locale> loadFromDisk(final MiniMessageTranslationStore store) {
+        final Set<Locale> diskLocales = new HashSet<>();
+        try (Stream<Path> files = Files.list(this.translationDir)) {
+            files.filter(Files::isRegularFile)
+                    .filter(TranslatorLoader::isTranslationFile)
+                    .forEach(file -> {
+                        final Locale locale = parseLocale(file);
+                        store.registerAll(locale, file, false);
+                        diskLocales.add(locale);
+                        this.logger.debug("[{}] Loaded: {} ({})", TranslatorLoader.class.getSimpleName(), file.getFileName(), locale);
+                    });
+        } catch (final IOException exception) {
+            throw new UncheckedIOException(exception);
         }
 
-        // 2. Register operator-provided translation files from disk
-        final Set<Locale> diskLocales = this.loadDiskLocales(store);
+        if (diskLocales.isEmpty()) {
+            this.logger.debug("[{}] No operator-provided translation files found.", TranslatorLoader.class.getSimpleName());
+        } else {
+            this.logger.info("Loaded {} translation file(s) from disk: {}.", diskLocales.size(), diskLocales);
+        }
 
-        // 3. Fill annotation-defined locales absent on disk; write default files
+        return diskLocales;
+    }
+
+    private void fillMissingAndWriteDefaults(
+            final MiniMessageTranslationStore store,
+            final Map<Locale, List<Translation.Message>> index,
+            final Set<Locale> diskLocales
+    ) {
         for (final Map.Entry<Locale, List<Translation.Message>> entry : index.entrySet()) {
             final Locale locale = entry.getKey();
             final List<Translation.Message> messages = entry.getValue();
@@ -114,63 +142,10 @@ final class TranslatorLoader {
             }
 
             if (!diskLocales.contains(locale)) {
-                writeTranslationFile(this.translationDir, new Translation(locale, messages));
-                this.logger.debug(
-                        "[{}] Generated default translation file for locale: {}.",
-                        TranslatorLoader.class.getSimpleName(), locale
-                );
+                DefaultTranslationFileWriter.write(this.translationDir, new Translation(locale, messages));
+                this.logger.debug("[{}] Generated default file for locale: {}.", TranslatorLoader.class.getSimpleName(), locale);
             }
         }
-
-        this.logger.debug("[{}] Translation store build complete.", TranslatorLoader.class.getSimpleName());
-        return store;
-    }
-
-    private static Map<Locale, List<Translation.Message>> buildIndex() {
-        final Map<Locale, List<Translation.Message>> index = new LinkedHashMap<>();
-
-        Arrays.stream(MessageAssembly.class.getMethods())
-                .filter(method -> method.isAnnotationPresent(Key.class))
-                .sorted(Comparator.comparing(method -> method.getAnnotation(Key.class).value()))
-                .forEach(method -> {
-                    final String key = method.getAnnotation(Key.class).value();
-                    for (final Message annotation : method.getAnnotationsByType(Message.class)) {
-                        index.computeIfAbsent(annotation.locale().asLocale(), _ -> new ArrayList<>())
-                                .add(new Translation.Message(key, annotation.content()));
-                    }
-                });
-
-        return index;
-    }
-
-    private Set<Locale> loadDiskLocales(final MiniMessageTranslationStore store) {
-        final var diskLocales = new java.util.HashSet<Locale>();
-        try (Stream<Path> files = Files.list(this.translationDir)) {
-            files.filter(Files::isRegularFile)
-                    .filter(TranslatorLoader::isTranslationFile)
-                    .forEach(file -> {
-                        final Locale locale = parseLocale(file);
-                        store.registerAll(locale, file, false);
-                        diskLocales.add(locale);
-                        this.logger.debug(
-                                "[{}] Loaded translation file: {} (locale: {})",
-                                TranslatorLoader.class.getSimpleName(), file.getFileName(), locale
-                        );
-                    });
-        } catch (final IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
-
-        if (diskLocales.isEmpty()) {
-            this.logger.debug(
-                    "[{}] No operator-provided translation files found in {}.",
-                    TranslatorLoader.class.getSimpleName(), this.translationDir
-            );
-        } else {
-            this.logger.info("Loaded {} translation file(s) from disk: {}.", diskLocales.size(), diskLocales);
-        }
-
-        return diskLocales;
     }
 
     private static boolean isTranslationFile(final Path file) {
@@ -185,24 +160,7 @@ final class TranslatorLoader {
         if (locale == null) {
             throw new IllegalArgumentException("Cannot parse locale from translation file name: " + name);
         }
-        return locale;
-    }
 
-    private static void writeTranslationFile(final Path parentDir, final Translation translation) {
-        final Locale locale = translation.locale() == Locale.ROOT ? Locale.US : translation.locale();
-        if (locale == Locale.ROOT) {
-            return;
-        }
-        final String fileName = FILE_PREFIX + "_" + locale + FILE_SUFFIX;
-        try (BufferedWriter writer = Files.newBufferedWriter(parentDir.resolve(fileName))) {
-            for (final Translation.Message entry : translation.messages()) {
-                writer.write(entry.key());
-                writer.write('=');
-                writer.write(entry.content());
-                writer.newLine();
-            }
-        } catch (final IOException exception) {
-            throw new UncheckedIOException(exception);
-        }
+        return locale;
     }
 }

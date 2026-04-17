@@ -24,7 +24,6 @@ import com.google.inject.Injector;
 import io.github.namiuni.paperplugintemplate.common.CommonLifecycle;
 import io.github.namiuni.paperplugintemplate.common.CommonModule;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.InfrastructureModule;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.bootstrap.PluginBootstrap;
 import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
@@ -52,8 +51,7 @@ public final class PaperBootstrap implements PluginBootstrap {
                 paperMeta.getVersion()
         );
         this.injector = Guice.createInjector(
-                new InfrastructureModule(context.getLogger(), context.getDataDirectory()),
-                new CommonModule(metadata),
+                new CommonModule(metadata, context.getLogger(), context.getDataDirectory()),
                 new PaperModule(context)
         );
 

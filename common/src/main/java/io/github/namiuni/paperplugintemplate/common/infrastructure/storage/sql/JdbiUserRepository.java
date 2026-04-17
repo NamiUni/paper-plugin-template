@@ -17,13 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.sql;
+package io.github.namiuni.paperplugintemplate.common.infrastructure.storage.sql;
 
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.FlywayLogger;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRepository;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,8 +30,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.logging.LogFactory;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.async.JdbiExecutor;
 import org.jspecify.annotations.NullMarked;
@@ -45,11 +42,10 @@ public final class JdbiUserRepository implements UserRepository {
     private final ComponentLogger logger;
 
     @Inject
-    private JdbiUserRepository(
+    JdbiUserRepository(
             final Jdbi jdbi,
             final HikariDataSource dataSource,
-            final Flyway flyway,
-            final FlywayLogger flywayLogger,
+            final DatabaseMigrator migrator,
             final ComponentLogger logger,
             final Metadata metadata
     ) {
@@ -60,14 +56,7 @@ public final class JdbiUserRepository implements UserRepository {
         this.dataSource = dataSource;
         this.logger = logger;
 
-        this.logger.info("Running Flyway repair & migration...");
-        LogFactory.setLogCreator(flywayLogger);
-        try {
-            flyway.repair();
-            flyway.migrate();
-        } finally {
-            LogFactory.setLogCreator(null);
-        }
+        migrator.migrate();
     }
 
     @Override

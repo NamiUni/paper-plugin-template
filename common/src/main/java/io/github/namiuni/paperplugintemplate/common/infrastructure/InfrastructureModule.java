@@ -19,49 +19,48 @@
  */
 package io.github.namiuni.paperplugintemplate.common.infrastructure;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.TypeLiteral;
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import io.github.namiuni.kotonoha.translatable.message.KotonohaMessage;
-import io.github.namiuni.kotonoha.translatable.message.configuration.FormatTypes;
-import io.github.namiuni.kotonoha.translatable.message.policy.argument.TranslationArgumentAdaptationPolicy;
-import io.github.namiuni.kotonoha.translatable.message.policy.argument.tag.TagNameResolver;
-import io.github.namiuni.kotonoha.translatable.message.utility.TranslationArgumentAdapter;
-import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
-import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationLoader;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.StorageDialect;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepository;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRepositoryProvider;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.TranslatorHolder;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
-import jakarta.inject.Provider;
-import jakarta.inject.Singleton;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationModule;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageModule;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.TranslationModule;
+import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.InstantTypeAdapter;
+import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.UUIDTypeAdapter;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.UUID;
+import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.translation.Translator;
-import org.flywaydb.core.Flyway;
-import org.jdbi.v3.cache.caffeine.CaffeineCacheBuilder;
-import org.jdbi.v3.cache.caffeine.CaffeineCachePlugin;
-import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.argument.QualifiedArgumentFactory;
-import org.jdbi.v3.core.statement.SqlStatements;
-import org.jdbi.v3.postgres.PostgresPlugin;
-import org.jdbi.v3.sqlobject.SqlObjectPlugin;
+import net.kyori.adventure.text.minimessage.tag.Tag;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class InfrastructureModule extends AbstractModule {
+
+    // JIS Z 9103 https://ja.wikipedia.org/wiki/JIS%E5%AE%89%E5%85%A8%E8%89%B2
+    private static final TextColor RED = TextColor.color(0xFF4B00);
+    private static final TextColor YELLOW = TextColor.color(0xF2E700);
+    private static final TextColor GREEN = TextColor.color(0x00B06B);
+    private static final TextColor BLUE = TextColor.color(0x1971FF);
+
+    private static final MiniMessage MINI_MESSAGE = MiniMessage.builder()
+            .tags(TagResolver.builder()
+                    .resolver(TagResolver.standard())
+                    .tag("error", Tag.styling(RED))
+                    .tag("warn", Tag.styling(YELLOW))
+                    .tag("info", Tag.styling(GREEN))
+                    .tag("debug", Tag.styling(BLUE))
+                    .build())
+            .build();
+
+    private static final Gson GSON = new GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
+            .registerTypeAdapter(UUID.class, UUIDTypeAdapter.INSTANCE)
+            .create();
 
     private final ComponentLogger logger;
     private final Path dataDirectory;
@@ -71,157 +70,15 @@ public final class InfrastructureModule extends AbstractModule {
         this.dataDirectory = dataDirectory;
     }
 
-    @Provides
-    @Singleton
-    @SuppressWarnings("unused")
-    private Jdbi jdbi(
-            final HikariDataSource dataSource,
-            final StorageDialect dialect
-    ) {
-        final QualifiedArgumentFactory instantArgument = (_, value, _) -> {
-            if (!(value instanceof final Instant instant)) {
-                return Optional.empty();
-            }
-            return Optional.of((position, statement, _) -> statement.setLong(position, instant.toEpochMilli()));
-        };
-
-        final Consumer<SqlStatements> caffeineCache = config -> config.setTemplateCache(
-                new CaffeineCacheBuilder(Caffeine.newBuilder())
-        );
-
-        final Jdbi jdbi = Jdbi.create(dataSource)
-                .installPlugin(new SqlObjectPlugin())
-                .installPlugin(new CaffeineCachePlugin())
-                .registerRowMapper(UserRecord.class, dialect.profileMapper())
-                .registerArgument(dialect.uuidArgumentFactory())
-                .registerArgument(instantArgument)
-                .configure(SqlStatements.class, caffeineCache);
-
-        if (dialect instanceof StorageDialect.PostgreSQL) {
-            jdbi.installPlugin(new PostgresPlugin());
-        }
-
-        return jdbi;
-    }
-
-    @Provides
-    @Singleton
-    @SuppressWarnings("unused")
-    private StorageDialect storageDialect(final Provider<PrimaryConfiguration> primaryConfig) {
-        return switch (primaryConfig.get().storage().type()) {
-            case H2, MYSQL -> new StorageDialect.MySQL();
-            case POSTGRESQL -> new StorageDialect.PostgreSQL();
-            case JSON -> throw new IllegalArgumentException("StorageType.JSON has no SQL dialect");
-        };
-    }
-
-    @Provides
-    @Singleton
-    @SuppressWarnings("unused")
-    private Flyway flyway(
-            final HikariDataSource dataSource,
-            final StorageDialect dialect
-    ) {
-        return Flyway.configure(PluginTemplate.class.getClassLoader())
-                .baselineVersion("0")
-                .baselineOnMigrate(true)
-                .locations(dialect.migrationLocation())
-                .dataSource(dataSource)
-                .validateMigrationNaming(true)
-                .validateOnMigrate(true)
-                .load();
-    }
-
-    @Provides
-    @Singleton
-    @SuppressWarnings("unused")
-    private HikariDataSource dataSource(
-            final Provider<PrimaryConfiguration> primaryConfig,
-            final @DataDirectory Path dataDirectory,
-            final Metadata metadata
-    ) {
-        final PrimaryConfiguration.Storage storage = primaryConfig.get().storage();
-        final PrimaryConfiguration.Storage.Pool pool = storage.pool();
-        final HikariConfig config = new HikariConfig();
-        config.setPoolName(metadata.name());
-        config.setMaximumPoolSize(pool.maximumPoolSize());
-        config.setMinimumIdle(pool.minimumIdle());
-        config.setMaxLifetime(pool.maximumLifetime());
-        config.setKeepaliveTime(pool.keepaliveTime());
-        config.setConnectionTimeout(pool.connectionTimeout());
-        config.setThreadFactory(Thread.ofVirtual().name(metadata.name() + "-Hikari-Pool", 0).factory());
-
-        switch (storage.type()) {
-            case H2 -> {
-                final Path dbFile = dataDirectory.toAbsolutePath().resolve("database");
-                config.setJdbcUrl("jdbc:h2:file:%s;MODE=MySQL;DB_CLOSE_DELAY=-1".formatted(dbFile));
-                config.setDriverClassName("org.h2.Driver");
-            }
-            case MYSQL -> {
-                config.setJdbcUrl("jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
-                        .formatted(storage.host(), storage.port(), storage.database()));
-                config.setUsername(storage.username());
-                config.setPassword(storage.password());
-                config.setDriverClassName("com.mysql.cj.jdbc.Driver");
-            }
-            case POSTGRESQL -> {
-                config.setJdbcUrl("jdbc:postgresql://%s:%d/%s"
-                        .formatted(storage.host(), storage.port(), storage.database()));
-                config.setUsername(storage.username());
-                config.setPassword(storage.password());
-                config.setDriverClassName("org.postgresql.Driver");
-            }
-            default -> throw new IllegalStateException("Unexpected SQL storage type: " + storage.type());
-        }
-
-        return new HikariDataSource(config);
-    }
-
-    @Provides
-    @Singleton
-    @SuppressWarnings("unused")
-    private ConfigurationLoader<PrimaryConfiguration> primaryConfigLoader(
-            final @DataDirectory Path dataDirectory,
-            final MiniMessage miniMessage,
-            final ComponentLogger logger
-    ) {
-        return new ConfigurationLoader<>(
-                PrimaryConfiguration.class,
-                PrimaryConfiguration.DEFAULT,
-                dataDirectory,
-                miniMessage,
-                logger
-        );
-    }
-
-    @Provides
-    @Singleton
-    @SuppressWarnings("unused")
-    private MessageAssembly messageAssembly() {
-        final var argumentPolicy = TranslationArgumentAdaptationPolicy.miniMessage(
-                TranslationArgumentAdapter.standard(),
-                TagNameResolver.annotationOrParameterNameResolver()
-        );
-        final var config = FormatTypes.MINI_MESSAGE.withArgumentPolicy(argumentPolicy);
-        return KotonohaMessage.createProxy(MessageAssembly.class, config);
-    }
-
     @Override
     protected void configure() {
         this.bind(ComponentLogger.class).toInstance(this.logger);
         this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.dataDirectory);
+        this.bind(MiniMessage.class).toInstance(MINI_MESSAGE);
+        this.bind(Gson.class).toInstance(GSON);
 
-        this.bind(PrimaryConfiguration.class)
-                .toProvider(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
-        this.bind(new TypeLiteral<Reloadable<PrimaryConfiguration>>() { })
-                .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
-
-        this.bind(Translator.class).toProvider(new TypeLiteral<TranslatorHolder>() { });
-        this.bind(new TypeLiteral<Reloadable<Translator>>() { })
-                .to(new TypeLiteral<TranslatorHolder>() { });
-
-        this.bind(UserRepository.class)
-                .toProvider(UserRepositoryProvider.class)
-                .asEagerSingleton();
+        this.install(new ConfigurationModule());
+        this.install(new TranslationModule());
+        this.install(new StorageModule());
     }
 }

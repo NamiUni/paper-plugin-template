@@ -21,7 +21,7 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.configuratio
 
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigHeader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigName;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.StorageType;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageType;
 import java.util.concurrent.TimeUnit;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
