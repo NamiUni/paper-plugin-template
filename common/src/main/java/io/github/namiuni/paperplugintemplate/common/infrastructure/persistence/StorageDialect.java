@@ -19,7 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.persistence;
 
-import java.nio.ByteBuffer;
+import io.github.namiuni.paperplugintemplate.common.utilities.UUIDCodec;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -35,18 +35,6 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
     QualifiedArgumentFactory uuidArgumentFactory();
 
     RowMapper<UserRecord> profileMapper();
-
-    private static byte[] uuidToBytes(final UUID uuid) {
-        final ByteBuffer bb = ByteBuffer.allocate(16);
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-        return bb.array();
-    }
-
-    private static UUID uuidFromBytes(final byte[] bytes) {
-        final ByteBuffer bb = ByteBuffer.wrap(bytes);
-        return new UUID(bb.getLong(), bb.getLong());
-    }
 
     @NullMarked
     record MySQL() implements StorageDialect {
@@ -64,7 +52,7 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
                 if (!(value instanceof final UUID uuid)) {
                     return Optional.empty();
                 }
-                final byte[] bytes = uuidToBytes(uuid);
+                final byte[] bytes = UUIDCodec.uuidToBytes(uuid);
                 return Optional.of((pos, stmt, _) -> stmt.setBytes(pos, bytes));
             };
         }
@@ -72,7 +60,7 @@ public sealed interface StorageDialect permits StorageDialect.MySQL, StorageDial
         @Override
         public RowMapper<UserRecord> profileMapper() {
             return (rs, _) -> new UserRecord(
-                    uuidFromBytes(rs.getBytes("uuid")),
+                    UUIDCodec.uuidFromBytes(rs.getBytes("uuid")),
                     rs.getString("name"),
                     Instant.ofEpochMilli(rs.getLong("last_seen"))
             );

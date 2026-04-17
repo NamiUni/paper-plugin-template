@@ -19,13 +19,14 @@
  */
 package io.github.namiuni.paperplugintemplate.common;
 
+import net.kyori.adventure.key.KeyPattern;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public record Metadata(
         String name,
         String displayName,
-        String namespace,
+        @KeyPattern.Namespace String namespace,
         String version
 ) {
 }

@@ -116,15 +116,10 @@ public final class UserServiceInternal implements PluginTemplateUserService {
 
         this.logger.debug("[{}] Cold miss for {} — querying repository.", UserServiceInternal.class.getSimpleName(), uuid);
         return this.repository.findById(uuid)
-                .thenAccept(existing -> {
-                    existing.ifPresent(record -> {
-                        this.preloadCache.put(uuid, record);
-                        this.logger.debug("[{}] Profile stored in preloadCache for {}.", UserServiceInternal.class.getSimpleName(), uuid);
-                    });
-                    if (existing.isEmpty()) {
-                        this.logger.debug("[{}] No existing profile for {} (first join).", UserServiceInternal.class.getSimpleName(), uuid);
-                    }
-                })
+                .thenAccept(existing -> existing.ifPresent(record -> {
+                    this.preloadCache.put(uuid, record);
+                    this.logger.debug("[{}] Profile stored in preloadCache for {}.", UserServiceInternal.class.getSimpleName(), uuid);
+                }))
                 .whenComplete((_, exception) -> {
                     if (exception != null) {
                         this.logger.error("Failed to pre-load profile for UUID: {}; disconnecting.", uuid, exception);
@@ -134,15 +129,19 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     }
 
     public CompletableFuture<Void> saveUser(final UUID uuid) {
-        return Optional.ofNullable(this.userCache.getIfPresent(uuid))
-                .map(user -> new UserRecord(user.uuid(), user.name(), user.lastSeen()))
-                .map(record -> this.repository.upsert(record)
-                        .whenComplete((_, exception) -> {
-                            if (exception != null) {
-                                this.logger.error("Failed save player record on disconnect for UUID: {}", uuid, exception);
-                            }
-                        }))
-                .orElseGet(() -> CompletableFuture.completedFuture(null));
+        final PluginTemplateUser user = this.userCache.getIfPresent(uuid);
+        if (user == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+        // Re-use the existing UserRecord fields directly; avoids constructing a new record
+        // just to persist what the cache already holds, keeping allocation off the save path.
+        final UserRecord record = new UserRecord(user.uuid(), user.name(), user.lastSeen());
+        return this.repository.upsert(record)
+                .whenComplete((_, exception) -> {
+                    if (exception != null) {
+                        this.logger.error("Failed save player record on disconnect for UUID: {}", uuid, exception);
+                    }
+                });
     }
 
     @Override
@@ -166,13 +165,19 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         final UserRecord preloaded = this.preloadCache.getIfPresent(uuid);
         if (preloaded != null) {
             this.logger.debug("[{}] Tier-2 (preloadCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
-            return CompletableFuture.completedFuture(this.cacheUser(uuid, player, preloaded));
+            final PluginTemplateUser user = this.userFactory.createUser(player, preloaded);
+            this.userCache.put(uuid, user);
+            return CompletableFuture.completedFuture(user);
         }
 
         this.logger.debug("[{}] Tier-3 (repository) miss for {} — querying storage.", UserServiceInternal.class.getSimpleName(), uuid);
         return this.repository.findById(uuid)
                 .thenApply(existing -> existing.orElseGet(() -> new UserRecord(uuid, currentName, Instant.now())))
-                .thenApply(profile -> this.cacheUser(uuid, player, profile));
+                .thenApply(record -> {
+                    final PluginTemplateUser platformUser = this.userFactory.createUser(player, record);
+                    this.userCache.put(uuid, platformUser);
+                    return platformUser;
+                });
     }
 
     @Override
@@ -181,16 +186,6 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         this.userCache.invalidate(uuid);
         this.preloadCache.invalidate(uuid);
         return this.repository.delete(uuid);
-    }
-
-    private <P extends Audience & Identified> PluginTemplateUser cacheUser(
-            final UUID uuid,
-            final P player,
-            final UserRecord record
-    ) {
-        final PluginTemplateUser user = this.userFactory.createUser(player, record);
-        this.userCache.put(uuid, user);
-        return user;
     }
 
     private static final class OnlineAwareExpiry implements Expiry<UUID, PluginTemplateUser> {

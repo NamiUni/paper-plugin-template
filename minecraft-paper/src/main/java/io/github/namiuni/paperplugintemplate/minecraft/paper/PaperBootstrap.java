@@ -31,6 +31,7 @@ import io.papermc.paper.plugin.bootstrap.PluginProviderContext;
 import io.papermc.paper.plugin.configuration.PluginMeta;
 import java.util.Objects;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.intellij.lang.annotations.Subst;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -43,10 +44,11 @@ public final class PaperBootstrap implements PluginBootstrap {
     @Override
     public void bootstrap(final BootstrapContext context) {
         final PluginMeta paperMeta = context.getPluginMeta();
+        final @Subst("namespace") String namespace = paperMeta.namespace();
         final Metadata metadata = new Metadata(
                 paperMeta.getName(),
                 paperMeta.getDisplayName(),
-                paperMeta.namespace(),
+                namespace,
                 paperMeta.getVersion()
         );
         this.injector = Guice.createInjector(

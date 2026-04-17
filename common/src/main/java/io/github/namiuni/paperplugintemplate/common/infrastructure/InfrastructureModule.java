@@ -205,10 +205,8 @@ public final class InfrastructureModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        this.bind(ComponentLogger.class)
-                .toInstance(this.logger);
-        this.bind(Path.class).annotatedWith(DataDirectory.class)
-                .toInstance(this.dataDirectory);
+        this.bind(ComponentLogger.class).toInstance(this.logger);
+        this.bind(Path.class).annotatedWith(DataDirectory.class).toInstance(this.dataDirectory);
 
         this.bind(PrimaryConfiguration.class)
                 .toProvider(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });

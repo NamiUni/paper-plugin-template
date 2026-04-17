@@ -22,10 +22,6 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.persistence.UserRecord;
@@ -36,7 +32,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -50,22 +45,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class JsonUserRepository implements UserRepository {
 
-    private static final Gson GSON = new GsonBuilder()
-            .setPrettyPrinting()
-            .registerTypeAdapter(Instant.class, (JsonSerializer<Instant>) (src, _, _) ->
-                    new JsonPrimitive(src.toEpochMilli()))
-            .registerTypeAdapter(Instant.class, (JsonDeserializer<Instant>) (json, _, _) ->
-                    Instant.ofEpochMilli(json.getAsLong()))
-            .registerTypeAdapter(UUID.class, (JsonSerializer<UUID>) (src, _, _) ->
-                    new JsonPrimitive(src.toString()))
-            .registerTypeAdapter(UUID.class, (JsonDeserializer<UUID>) (json, _, _) ->
-                    UUID.fromString(json.getAsString()))
-            .create();
-
     private static final String EXTENSION = ".json";
 
     private final Path storageDir;
     private final ComponentLogger logger;
+    private final Gson gson;
 
     private final Executor ioExecutor;
     private final Cache<UUID, ReentrantReadWriteLock> locks;
@@ -74,10 +58,12 @@ public final class JsonUserRepository implements UserRepository {
     private JsonUserRepository(
             final @DataDirectory Path dataDirectory,
             final ComponentLogger logger,
+            final Gson gson,
             final Metadata metadata
     ) {
         this.storageDir = dataDirectory.resolve("users");
         this.logger = logger;
+        this.gson = gson;
 
         this.ioExecutor = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name(metadata.name() + "-Json-User-Pool", 0).factory()
@@ -112,7 +98,7 @@ public final class JsonUserRepository implements UserRepository {
                     return Optional.empty();
                 }
                 this.logger.debug("[{}] loaded profile for {}: {}", JsonUserRepository.class.getSimpleName(), uuid, json);
-                return Optional.of(GSON.fromJson(json, UserRecord.class));
+                return Optional.of(this.gson.fromJson(json, UserRecord.class));
             } catch (final IOException exception) {
                 throw new UncheckedIOException("Failed to read player file for UUID: " + uuid, exception);
             } finally {
@@ -130,7 +116,7 @@ public final class JsonUserRepository implements UserRepository {
             try {
                 final Path file = this.fileFor(uuid);
                 final Path tmpFile = file.resolveSibling(file.getFileName() + ".tmp");
-                Files.writeString(tmpFile, GSON.toJson(userRecord));
+                Files.writeString(tmpFile, this.gson.toJson(userRecord));
                 Files.move(tmpFile, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
                 this.logger.debug("[{}] wrote profile for {} ({})", JsonUserRepository.class.getSimpleName(), uuid, userRecord);
             } catch (final IOException exception) {

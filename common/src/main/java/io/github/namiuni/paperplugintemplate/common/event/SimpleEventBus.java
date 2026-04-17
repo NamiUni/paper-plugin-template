@@ -22,10 +22,8 @@ package io.github.namiuni.paperplugintemplate.common.event;
 import io.github.namiuni.paperplugintemplate.common.event.events.Event;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
@@ -33,7 +31,8 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class SimpleEventBus implements EventBus {
 
-    private final Map<Class<?>, List<EventSubscriber<?>>> subscribers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Class<?>, EventSubscriber<?>[]> subscribers = new ConcurrentHashMap<>();
+
     private final ComponentLogger logger;
 
     @Inject
@@ -46,7 +45,21 @@ public final class SimpleEventBus implements EventBus {
             final Class<E> eventType,
             final EventSubscriber<? super E> subscriber
     ) {
-        this.subscribers.computeIfAbsent(eventType, _ -> new CopyOnWriteArrayList<>()).add(subscriber);
+        this.subscribers.compute(eventType, (_, current) -> {
+            if (current == null) {
+                return new EventSubscriber<?>[]{subscriber};
+            }
+
+            for (final EventSubscriber<?> existing : current) {
+                if (existing == subscriber) {
+                    return current;
+                }
+            }
+
+            final EventSubscriber<?>[] updated = Arrays.copyOf(current, current.length + 1);
+            updated[current.length] = subscriber;
+            return updated;
+        });
     }
 
     @Override
@@ -54,21 +67,43 @@ public final class SimpleEventBus implements EventBus {
             final Class<E> eventType,
             final EventSubscriber<? super E> subscriber
     ) {
-        java.util.Optional.ofNullable(this.subscribers.get(eventType))
-                .ifPresent(list -> list.remove(subscriber));
+        this.subscribers.computeIfPresent(eventType, (_, current) -> {
+            int idx = -1;
+            for (int i = 0; i < current.length; i++) {
+                if (current[i] == subscriber) {
+                    idx = i;
+                    break;
+                }
+            }
+
+            if (idx < 0) {
+                return current;
+            }
+
+            if (current.length == 1) {
+                return null;
+            }
+
+            final EventSubscriber<?>[] updated = new EventSubscriber<?>[current.length - 1];
+            System.arraycopy(current, 0, updated, 0, idx);
+            System.arraycopy(current, idx + 1, updated, idx, current.length - idx - 1);
+            return updated;
+        });
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <E extends Event> void publish(final E event) {
-        final List<EventSubscriber<?>> list = this.subscribers.get(event.getClass());
-        if (list == null || list.isEmpty()) {
+
+        @SuppressWarnings("unchecked") final var snapshot =
+                (EventSubscriber<? super E>[]) this.subscribers.get(event.getClass());
+
+        if (snapshot == null) {
             return;
         }
 
-        list.forEach(subscriber -> {
+        for (final EventSubscriber<? super E> subscriber : snapshot) {
             try {
-                ((EventSubscriber<E>) subscriber).on(event);
+                subscriber.on(event);
             } catch (final Exception exception) {
                 this.logger.error(
                         "Unhandled exception in subscriber for event {}",
@@ -76,6 +111,6 @@ public final class SimpleEventBus implements EventBus {
                         exception
                 );
             }
-        });
+        }
     }
 }
