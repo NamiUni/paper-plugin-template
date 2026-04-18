@@ -7,6 +7,7 @@ run-task = "3.0.2"
 gremlin = "0.0.9"
 indra-licenser-spotless = "4.0.0"
 maven-publish = "0.36.0"
+minotaur = "2.+"
 
 # Java
 jspecify = "1.0.0"
@@ -41,6 +42,7 @@ shadow = { group = "com.gradleup.shadow", name = "shadow-gradle-plugin", version
 indra-licenser-spotless = { group = "net.kyori", name = "indra-licenser-spotless", version.ref = "indra-licenser-spotless" }
 gremlin-gradle = { group = "xyz.jpenilla", name = "gremlin-gradle", version.ref = "gremlin" }
 run-task = { group = "xyz.jpenilla", name = "run-task" , version.ref = "run-task" }
+minotaur = { group = "com.modrinth.minotaur", name = "Minotaur", version.ref = "minotaur" }
 
 jspecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify" }
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
@@ -89,3 +91,4 @@ testing = [
 
 [plugins]
 resource-factory = { id = "xyz.jpenilla.resource-factory-paper-convention", version.ref = "resource-factory" }
+minotaur = { id = "com.modrinth.minotaur", version.ref = "minotaur" }
