@@ -5,6 +5,7 @@ import xyz.jpenilla.runpaper.task.RunServer
 plugins {
     id("paper-plugin-template.base")
     id("paper-plugin-template.platform")
+    id("paper-plugin-template.modrinth")
     id("xyz.jpenilla.run-paper")
     alias(libs.plugins.resource.factory)
 }
@@ -120,6 +121,14 @@ paperPluginYaml {
     dependencies {
         server("MiniPlaceholders", Load.BEFORE, false)
     }
+}
+
+modrinth {
+    loaders = providers.gradleProperty("modrinthLoaders")
+        .map { it.split(",").map(String::trim).filter(String::isNotEmpty) }
+        .orElse(listOf("paper", "folia"))
+
+    uploadFile.set(tasks.shadowJar)
 }
 
 runPaper.folia.registerTask()
