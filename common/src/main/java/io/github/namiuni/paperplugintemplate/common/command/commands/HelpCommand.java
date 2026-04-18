@@ -60,7 +60,7 @@ public final class HelpCommand implements CommandFactory {
     private final Metadata metadata;
 
     @Inject
-    private HelpCommand(
+    HelpCommand(
             final CommandManager<CommandSource> manager,
             final MessageAssembly messages,
             final Metadata metadata

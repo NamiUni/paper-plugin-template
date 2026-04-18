@@ -42,7 +42,7 @@ public final class PaperPlugin extends JavaPlugin {
     private final Provider<PrimaryConfiguration> primaryConfig;
 
     @Inject
-    private PaperPlugin(
+    PaperPlugin(
             final CommonLifecycle commonLifecycle,
             final Set<Listener> listeners,
             final Provider<PrimaryConfiguration> primaryConfig

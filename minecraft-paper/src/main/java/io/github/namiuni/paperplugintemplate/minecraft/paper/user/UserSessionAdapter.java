@@ -45,7 +45,7 @@ public final class UserSessionAdapter implements Listener {
     private final EventBus eventBus;
 
     @Inject
-    private UserSessionAdapter(final EventBus eventBus) {
+    UserSessionAdapter(final EventBus eventBus) {
         this.eventBus = eventBus;
     }
 

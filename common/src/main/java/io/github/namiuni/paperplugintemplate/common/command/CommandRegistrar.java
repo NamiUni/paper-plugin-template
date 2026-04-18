@@ -34,7 +34,7 @@ public final class CommandRegistrar {
     private final ComponentLogger logger;
 
     @Inject
-    private CommandRegistrar(
+    CommandRegistrar(
             final CommandManager<CommandSource> commandManager,
             final Set<CommandFactory> commandFactories,
             final ComponentLogger logger

@@ -48,7 +48,7 @@ public final class UserSessionHandler {
     private final ComponentLogger logger;
 
     @Inject
-    private UserSessionHandler(
+    UserSessionHandler(
             final UserCache cache,
             final UserRepository repository,
             final PluginTemplateUserService userService,

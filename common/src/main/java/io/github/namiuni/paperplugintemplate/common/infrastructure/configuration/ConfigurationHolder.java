@@ -36,7 +36,7 @@ public final class ConfigurationHolder<T extends Record> implements Provider<T>,
     private final ComponentLogger logger;
 
     @Inject
-    private ConfigurationHolder(
+    ConfigurationHolder(
             final ConfigurationLoader<T> configLoader,
             final ComponentLogger logger
     ) {

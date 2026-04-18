@@ -28,6 +28,8 @@ import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.json.JsonUserRepository;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.sql.JdbiUserRepository;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
@@ -47,17 +49,24 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class StorageModule extends AbstractModule {
 
-    @Override
-    protected void configure() {
-        this.bind(UserRepository.class)
-                .toProvider(UserRepositoryProvider.class)
-                .asEagerSingleton();
+    @Provides
+    @Singleton
+    @SuppressWarnings("unused")
+    UserRepository userRepository(
+            final Provider<PrimaryConfiguration> config,
+            final Provider<JsonUserRepository> json,
+            final Provider<JdbiUserRepository> jdbi
+    ) {
+        return switch (config.get().storage().type()) {
+            case JSON -> json.get();
+            case H2, MYSQL, POSTGRESQL -> jdbi.get();
+        };
     }
 
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    private HikariDataSource dataSource(
+    HikariDataSource dataSource(
             final Provider<PrimaryConfiguration> primaryConfig,
             final @DataDirectory Path dataDirectory,
             final Metadata metadata
@@ -102,7 +111,7 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    private StorageDialect storageDialect(final Provider<PrimaryConfiguration> primaryConfig) {
+    StorageDialect storageDialect(final Provider<PrimaryConfiguration> primaryConfig) {
         return switch (primaryConfig.get().storage().type()) {
             case H2, MYSQL -> new StorageDialect.MySQL();
             case POSTGRESQL -> new StorageDialect.PostgreSQL();
@@ -113,7 +122,7 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    private Jdbi jdbi(final HikariDataSource dataSource, final StorageDialect dialect) {
+    Jdbi jdbi(final HikariDataSource dataSource, final StorageDialect dialect) {
         final QualifiedArgumentFactory instantArgument = (_, value, _) -> {
             if (!(value instanceof final Instant instant)) {
                 return Optional.empty();
@@ -142,7 +151,7 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    private Flyway flyway(final HikariDataSource dataSource, final StorageDialect dialect) {
+    Flyway flyway(final HikariDataSource dataSource, final StorageDialect dialect) {
         return Flyway.configure(PluginTemplate.class.getClassLoader())
                 .baselineVersion("0")
                 .baselineOnMigrate(true)

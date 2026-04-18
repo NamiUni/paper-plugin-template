@@ -38,6 +38,9 @@ public final class TranslationModule extends AbstractModule {
 
     @Override
     protected void configure() {
+        this.bind(TranslatorHolder.class)
+                .asEagerSingleton();
+
         this.bind(Translator.class).toProvider(new TypeLiteral<TranslatorHolder>() { });
         this.bind(new TypeLiteral<Reloadable<Translator>>() { })
                 .to(new TypeLiteral<TranslatorHolder>() { });
@@ -46,7 +49,7 @@ public final class TranslationModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    private MessageAssembly messageAssembly() {
+    MessageAssembly messageAssembly() {
         final var argumentPolicy = TranslationArgumentAdaptationPolicy.miniMessage(
                 TranslationArgumentAdapter.standard(),
                 TagNameResolver.annotationOrParameterNameResolver()

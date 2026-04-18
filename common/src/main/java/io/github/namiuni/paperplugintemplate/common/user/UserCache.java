@@ -44,7 +44,7 @@ public final class UserCache {
     private final Cache<UUID, PluginTemplateUser> userCache;
 
     @Inject
-    private UserCache(final Provider<PrimaryConfiguration> primaryConfig) {
+    UserCache(final Provider<PrimaryConfiguration> primaryConfig) {
         final PrimaryConfiguration.Storage.Cache settings = primaryConfig.get().storage().userCache();
 
         this.preloadCache = Caffeine.newBuilder()

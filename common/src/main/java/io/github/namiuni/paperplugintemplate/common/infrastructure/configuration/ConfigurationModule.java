@@ -36,6 +36,9 @@ public final class ConfigurationModule extends AbstractModule {
 
     @Override
     protected void configure() {
+        this.bind(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { })
+                .asEagerSingleton();
+
         this.bind(PrimaryConfiguration.class)
                 .toProvider(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
         this.bind(new TypeLiteral<Reloadable<PrimaryConfiguration>>() { })
@@ -45,7 +48,7 @@ public final class ConfigurationModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    private ConfigurationLoader<PrimaryConfiguration> primaryConfigLoader(
+    ConfigurationLoader<PrimaryConfiguration> primaryConfigLoader(
             final @DataDirectory Path dataDirectory,
             final MiniMessage miniMessage,
             final ComponentLogger logger

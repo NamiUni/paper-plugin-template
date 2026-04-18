@@ -52,7 +52,7 @@ final class PaperModule extends AbstractModule {
 
     @Provides
     @Singleton
-    private CommandManager<CommandSource> commandManager(final PluginTemplateUserService userService) {
+    CommandManager<CommandSource> commandManager(final PluginTemplateUserService userService) {
         final SenderMapper<CommandSourceStack, CommandSource> senderMapper = SenderMapper.create(
                 paperSource -> new PaperCommandSource(paperSource, userService),
                 pluginSource -> ((PaperCommandSource) pluginSource).paperSource()

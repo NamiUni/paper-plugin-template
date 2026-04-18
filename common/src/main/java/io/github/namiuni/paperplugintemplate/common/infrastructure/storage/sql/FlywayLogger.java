@@ -31,7 +31,7 @@ public final class FlywayLogger implements LogCreator {
     private final ComponentLogger logger;
 
     @Inject
-    private FlywayLogger(final ComponentLogger logger) {
+    FlywayLogger(final ComponentLogger logger) {
         this.logger = logger;
     }
 

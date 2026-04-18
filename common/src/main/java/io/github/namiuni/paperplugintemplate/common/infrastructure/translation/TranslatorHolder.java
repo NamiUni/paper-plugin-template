@@ -38,7 +38,7 @@ public final class TranslatorHolder implements Provider<Translator>, Reloadable<
     private final ComponentLogger logger;
 
     @Inject
-    private TranslatorHolder(
+    TranslatorHolder(
             final TranslatorLoader translatorLoader,
             final ComponentLogger logger
     ) {

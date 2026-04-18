@@ -49,7 +49,7 @@ public final class ReloadCommand implements CommandFactory {
     private final ComponentLogger logger;
 
     @Inject
-    private ReloadCommand(
+    ReloadCommand(
             final Reloadable<PrimaryConfiguration> configHolder,
             final Reloadable<Translator> translatorHolder,
             final MessageAssembly messages,

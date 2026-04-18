@@ -35,7 +35,7 @@ public final class DatabaseMigrator {
     private final ComponentLogger logger;
 
     @Inject
-    private DatabaseMigrator(
+    DatabaseMigrator(
             final Flyway flyway,
             final FlywayLogger flywayLogger,
             final ComponentLogger logger

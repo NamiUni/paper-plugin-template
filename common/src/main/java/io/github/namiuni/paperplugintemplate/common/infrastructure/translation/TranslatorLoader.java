@@ -61,7 +61,7 @@ final class TranslatorLoader {
     private final Key translationKey;
 
     @Inject
-    private TranslatorLoader(
+    TranslatorLoader(
             final ComponentLogger logger,
             final MiniMessage miniMessage,
             final @DataDirectory Path dataDirectory,

@@ -38,7 +38,7 @@ public final class CommonLifecycle {
     private final ComponentLogger logger;
 
     @Inject
-    private CommonLifecycle(
+    CommonLifecycle(
             final UserRepository userRepository,
             final CommandRegistrar commandRegistrar,
             final PluginTemplate plugin,

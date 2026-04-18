@@ -32,7 +32,7 @@ import org.jspecify.annotations.NullMarked;
 public final class PaperUserFactory implements UserFactory {
 
     @Inject
-    private PaperUserFactory() {
+    PaperUserFactory() {
     }
 
     @Override

@@ -42,7 +42,7 @@ public final class ConfigurationLoader<T extends Record> {
 
     private final org.spongepowered.configurate.loader.ConfigurationLoader<CommentedConfigurationNode> configLoader;
 
-    public ConfigurationLoader(
+    ConfigurationLoader(
             final Class<T> configClass,
             final T defaultConfig,
             final @DataDirectory Path dataDirectory,

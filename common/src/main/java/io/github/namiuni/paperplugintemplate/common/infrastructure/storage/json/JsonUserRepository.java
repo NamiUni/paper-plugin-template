@@ -55,7 +55,7 @@ public final class JsonUserRepository implements UserRepository {
     private final Cache<UUID, ReentrantReadWriteLock> locks;
 
     @Inject
-    private JsonUserRepository(
+    JsonUserRepository(
             final @DataDirectory Path dataDirectory,
             final ComponentLogger logger,
             final Gson gson,

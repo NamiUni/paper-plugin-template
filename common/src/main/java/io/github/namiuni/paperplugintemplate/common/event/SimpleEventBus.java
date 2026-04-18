@@ -36,7 +36,7 @@ public final class SimpleEventBus implements EventBus {
     private final ComponentLogger logger;
 
     @Inject
-    private SimpleEventBus(final ComponentLogger logger) {
+    SimpleEventBus(final ComponentLogger logger) {
         this.logger = logger;
     }
 
