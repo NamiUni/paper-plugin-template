@@ -21,6 +21,7 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,7 +40,7 @@ import org.jdbi.v3.core.statement.StatementContext;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.mockito.ArgumentCaptor;
 
 @NullMarked
 class StorageDialectTest {
@@ -95,27 +96,24 @@ class StorageDialectTest {
             final PreparedStatement stmt = mock(PreparedStatement.class);
 
             factory.build(null, TEST_UUID, CONFIG)
-                .orElseThrow()
-                .apply(1, stmt, STMT_CTX);
+                    .orElseThrow()
+                    .apply(1, stmt, STMT_CTX);
 
             verify(stmt).setBytes(1, UUIDCodec.uuidToBytes(TEST_UUID));
         }
 
         @Test
         void uuidArgumentPreservesUUIDBytesRoundtrip() throws SQLException {
-            final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
-            final byte[][] captured = new byte[1][];
             final PreparedStatement stmt = mock(PreparedStatement.class);
-            Mockito.doAnswer(inv -> {
-                captured[0] = inv.getArgument(1);
-                return null;
-            }).when(stmt).setBytes(1, UUIDCodec.uuidToBytes(TEST_UUID));
+            final ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
 
-            factory.build(null, TEST_UUID, CONFIG)
-                .orElseThrow()
-                .apply(1, stmt, STMT_CTX);
+            this.dialect.uuidArgumentFactory()
+                    .build(null, TEST_UUID, CONFIG)
+                    .orElseThrow()
+                    .apply(1, stmt, STMT_CTX);
 
-            assertEquals(TEST_UUID, UUIDCodec.uuidFromBytes(UUIDCodec.uuidToBytes(TEST_UUID)));
+            verify(stmt).setBytes(eq(1), captor.capture());
+            assertEquals(TEST_UUID, UUIDCodec.uuidFromBytes(captor.getValue()));
         }
 
         // ── profileMapper ────────────────────────────────────────────────────
@@ -199,8 +197,8 @@ class StorageDialectTest {
             final PreparedStatement stmt = mock(PreparedStatement.class);
 
             factory.build(null, TEST_UUID, CONFIG)
-                .orElseThrow()
-                .apply(1, stmt, STMT_CTX);
+                    .orElseThrow()
+                    .apply(1, stmt, STMT_CTX);
 
             verify(stmt).setObject(1, TEST_UUID);
         }

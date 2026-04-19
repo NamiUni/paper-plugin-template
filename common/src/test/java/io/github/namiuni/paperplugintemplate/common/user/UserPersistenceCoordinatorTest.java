@@ -19,9 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
-import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -29,6 +29,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRepository;
@@ -138,6 +139,7 @@ class UserPersistenceCoordinatorTest {
         final CompletableFuture<Optional<UserRecord>> failedFuture = new CompletableFuture<>();
         failedFuture.completeExceptionally(new RuntimeException("db-down"));
         when(this.repository.findById(UUID_A)).thenReturn(failedFuture);
+
         assertThrows(Exception.class, () -> this.coordinator.preload(UUID_A, () -> called.set(true)).join());
 
         assertTrue(called.get());

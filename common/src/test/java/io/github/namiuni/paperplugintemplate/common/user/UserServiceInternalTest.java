@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.common.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -157,7 +158,6 @@ class UserServiceInternalTest {
 
         this.service.loadUser(PLAYER_A).join();
 
-        // Factory must be called with a brand-new record using the player's current identity
         verify(this.userFactory).createUser(same(PLAYER_A), any(UserRecord.class));
     }
 
@@ -215,11 +215,5 @@ class UserServiceInternalTest {
         }
 
         verify(this.cache).invalidate(UUID_A);
-    }
-
-    // ── helper — Mockito argThat shorthand ────────────────────────────────────
-
-    private static UserRecord argThat(final java.util.function.Predicate<UserRecord> predicate) {
-        return org.mockito.ArgumentMatchers.argThat(predicate::test);
     }
 }

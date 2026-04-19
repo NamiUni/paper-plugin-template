@@ -2,7 +2,7 @@
  * PaperPluginTemplate
  *
  * Copyright (c) 2026. Namiu (うにたろう)
- *                     Contributors []
+ * Contributors []
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,6 @@ import org.incendo.cloud.Command;
 import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.component.CommandComponent;
 import org.jspecify.annotations.NullMarked;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -61,12 +60,6 @@ class CommandRegistrarTest {
         when(command.rootComponent()).thenReturn(root);
         when(root.name()).thenReturn(rootName);
         return command;
-    }
-
-    @BeforeEach
-    @SuppressWarnings("unchecked")
-    void setUp() {
-        when(this.rawManager.command((Command<CommandSource>) any())).thenReturn(this.rawManager);
     }
 
     // ── registerCommands: factory delegation ──────────────────────────────────
