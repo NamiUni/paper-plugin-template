@@ -39,7 +39,6 @@ dependencies {
     // Storage
     runtimeDownload(libs.jdbi.core) { isTransitive = false }
     runtimeDownload(libs.jdbi.postgres) { isTransitive = false }
-    runtimeDownload(libs.jdbi.sqlobject) { isTransitive = false }
     runtimeDownload(libs.jdbi.caffeine.cache) { isTransitive = false }
     runtimeDownload(libs.hikari) { isTransitive = false }
 

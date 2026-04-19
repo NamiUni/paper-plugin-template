@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.storage.json;
+package io.github.namiuni.paperplugintemplate.common.user.json;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.mock;
 
 import com.google.gson.GsonBuilder;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.InstantTypeAdapter;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.UUIDTypeAdapter;
 import java.nio.file.Files;
@@ -61,40 +61,30 @@ class JsonUserRepositoryTest {
     @BeforeEach
     void setUp() {
         final var gson = new GsonBuilder()
-            .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
-            .registerTypeAdapter(UUID.class, UUIDTypeAdapter.INSTANCE)
-            .create();
+                .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
+                .registerTypeAdapter(UUID.class, UUIDTypeAdapter.INSTANCE)
+                .create();
         this.repository = new JsonUserRepository(this.tempDir, mock(ComponentLogger.class), gson, METADATA);
     }
 
-    // ── findById ──────────────────────────────────────────────────────────────
-
     @Test
     void findByIdReturnsEmptyWhenNoFileExists() {
-        final Optional<UserRecord> result = this.repository.findById(UUID_A).join();
-
-        assertTrue(result.isEmpty());
+        assertTrue(this.repository.findById(UUID_A).join().isEmpty());
     }
 
     @Test
     void findByIdReturnsRecordAfterUpsert() {
         this.repository.upsert(RECORD_A).join();
 
-        final Optional<UserRecord> result = this.repository.findById(UUID_A).join();
-
-        assertEquals(RECORD_A, result.orElseThrow());
+        assertEquals(RECORD_A, this.repository.findById(UUID_A).join().orElseThrow());
     }
 
     @Test
     void findByIdDoesNotReturnRecordFromDifferentUUID() {
         this.repository.upsert(RECORD_A).join();
 
-        final Optional<UserRecord> result = this.repository.findById(UUID_B).join();
-
-        assertTrue(result.isEmpty());
+        assertTrue(this.repository.findById(UUID_B).join().isEmpty());
     }
-
-    // ── upsert ────────────────────────────────────────────────────────────────
 
     @Test
     void upsertCreatesFileOnDisk() {
@@ -133,13 +123,11 @@ class JsonUserRepositoryTest {
 
         final Path usersDir = this.tempDir.resolve("users");
         final boolean tmpExists = usersDir.toFile().listFiles() != null
-            && Arrays.stream(Objects.requireNonNull(usersDir.toFile().listFiles()))
+                && Arrays.stream(Objects.requireNonNull(usersDir.toFile().listFiles()))
                 .anyMatch(f -> f.getName().endsWith(".tmp"));
 
         assertFalse(tmpExists);
     }
-
-    // ── delete ────────────────────────────────────────────────────────────────
 
     @Test
     void deleteRemovesFileFromDisk() {
@@ -151,7 +139,6 @@ class JsonUserRepositoryTest {
 
     @Test
     void deleteOnNonExistentUUIDIsNoOp() {
-        // Should not throw
         this.repository.delete(UUID_A).join();
     }
 
@@ -167,8 +154,6 @@ class JsonUserRepositoryTest {
         assertEquals(recordB, this.repository.findById(UUID_B).join().orElseThrow());
     }
 
-    // ── concurrent access ─────────────────────────────────────────────────────
-
     @Test
     void concurrentUpsertsSameUUIDProduceConsistentFinalState() {
         final int threadCount = 20;
@@ -176,13 +161,12 @@ class JsonUserRepositoryTest {
 
         for (int i = 0; i < threadCount; i++) {
             futures.add(this.repository.upsert(
-                new UserRecord(UUID_A, "Alice-" + i, Instant.ofEpochMilli(i))
+                    new UserRecord(UUID_A, "Alice-" + i, Instant.ofEpochMilli(i))
             ));
         }
 
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
 
-        // File must exist and be parseable; no torn write
         final Optional<UserRecord> result = this.repository.findById(UUID_A).join();
         assertTrue(result.isPresent());
         assertTrue(result.get().name().startsWith("Alice-"));
@@ -203,8 +187,8 @@ class JsonUserRepositoryTest {
         CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
 
         uuids.forEach(uuid ->
-            assertTrue(this.repository.findById(uuid).join().isPresent(),
-                "Expected record to exist for UUID: " + uuid)
+                assertTrue(this.repository.findById(uuid).join().isPresent(),
+                        "Expected record to exist for UUID: " + uuid)
         );
     }
 }

@@ -19,17 +19,12 @@
  */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
 
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+import org.jdbi.v3.core.Jdbi;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public interface UserRepository extends AutoCloseable {
+@FunctionalInterface
+public interface JdbiConfigurer {
 
-    CompletableFuture<Optional<UserRecord>> findById(UUID uuid);
-
-    CompletableFuture<Void> upsert(UserRecord userRecord);
-
-    CompletableFuture<Void> delete(UUID uuid);
+    void configure(Jdbi jdbi, StorageDialect dialect);
 }

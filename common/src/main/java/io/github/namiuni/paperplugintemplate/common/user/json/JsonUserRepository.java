@@ -17,15 +17,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.storage.json;
+package io.github.namiuni.paperplugintemplate.common.user.json;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.Gson;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRepository;
+import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.UserRepository;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.io.UncheckedIOException;

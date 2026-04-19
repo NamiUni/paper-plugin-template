@@ -17,26 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
+package io.github.namiuni.paperplugintemplate.common.user;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
-import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
-import jakarta.inject.Inject;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.identity.Identified;
-import org.bukkit.entity.Player;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public final class PaperUserFactory implements UserFactory {
+public interface UserRepository extends AutoCloseable {
 
-    @Inject
-    PaperUserFactory() {
-    }
+    CompletableFuture<Optional<UserRecord>> findById(UUID uuid);
 
-    @Override
-    public <P extends Audience & Identified> PluginTemplateUser createUser(final P player, final UserRecord userRecord) {
-        return new PaperUser((Player) player, userRecord);
-    }
+    CompletableFuture<Void> upsert(UserRecord userRecord);
+
+    CompletableFuture<Void> delete(UUID uuid);
 }

@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageType;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
 import jakarta.inject.Provider;
 import java.time.Instant;
 import java.util.UUID;
@@ -50,8 +49,6 @@ class UserCacheTest {
         this.cache = new UserCache(configProvider);
     }
 
-    // ── getUser ──────────────────────────────────────────────────────────────
-
     @Test
     void getUserReturnsEmptyWhenNothingCached() {
         assertTrue(this.cache.getUser(UUID_A).isEmpty());
@@ -60,7 +57,6 @@ class UserCacheTest {
     @Test
     void getUserReturnsCachedUser() {
         final PluginTemplateUser user = onlineUser(UUID_A, "Alice");
-
         this.cache.cacheUser(UUID_A, user);
 
         assertEquals(user, this.cache.getUser(UUID_A).orElseThrow());
@@ -68,14 +64,10 @@ class UserCacheTest {
 
     @Test
     void getUserDoesNotReturnUserFromDifferentUUID() {
-        final PluginTemplateUser user = onlineUser(UUID_A, "Alice");
-
-        this.cache.cacheUser(UUID_A, user);
+        this.cache.cacheUser(UUID_A, onlineUser(UUID_A, "Alice"));
 
         assertTrue(this.cache.getUser(UUID_B).isEmpty());
     }
-
-    // ── getPreloaded ─────────────────────────────────────────────────────────
 
     @Test
     void getPreloadedReturnsEmptyWhenNothingCached() {
@@ -85,7 +77,6 @@ class UserCacheTest {
     @Test
     void getPreloadedReturnsCachedRecord() {
         final UserRecord record = new UserRecord(UUID_A, "Alice", Instant.EPOCH);
-
         this.cache.cachePreloaded(UUID_A, record);
 
         assertEquals(record, this.cache.getPreloaded(UUID_A).orElseThrow());
@@ -97,8 +88,6 @@ class UserCacheTest {
 
         assertTrue(this.cache.getPreloaded(UUID_B).isEmpty());
     }
-
-    // ── invalidate ────────────────────────────────────────────────────────────
 
     @Test
     void invalidateRemovesCachedUser() {
@@ -131,7 +120,6 @@ class UserCacheTest {
 
     @Test
     void invalidateOnUncachedUUIDIsNoOp() {
-        // Should not throw
         this.cache.invalidate(UUID_A);
     }
 
@@ -146,8 +134,6 @@ class UserCacheTest {
         assertEquals(user, this.cache.getUser(UUID_A).orElseThrow());
         assertEquals(record, this.cache.getPreloaded(UUID_A).orElseThrow());
     }
-
-    // ── helpers ───────────────────────────────────────────────────────────────
 
     private static PluginTemplateUser onlineUser(final UUID uuid, final String name) {
         final PluginTemplateUser user = mock(PluginTemplateUser.class);

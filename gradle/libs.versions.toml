@@ -69,7 +69,6 @@ bstats-bukkit = { group = "org.bstats", name = "bstats-bukkit", version.ref = "b
 # Storage
 jdbi-core = { group = "org.jdbi", name = "jdbi3-core", version.ref = "jdbi" }
 jdbi-postgres = { group = "org.jdbi", name = "jdbi3-postgres", version.ref = "jdbi" }
-jdbi-sqlobject = { group = "org.jdbi", name = "jdbi3-sqlobject", version.ref = "jdbi" }
 jdbi-caffeine-cache = { group = "org.jdbi", name = "jdbi3-caffeine-cache", version.ref = "jdbi" }
 hikari = { group = "com.zaxxer", name = "HikariCP", version.ref = "hikari" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }

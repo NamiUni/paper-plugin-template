@@ -32,6 +32,7 @@ import io.github.namiuni.paperplugintemplate.common.event.SimpleEventBus;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.InfrastructureModule;
 import io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal;
 import io.github.namiuni.paperplugintemplate.common.user.UserSessionHandler;
+import io.github.namiuni.paperplugintemplate.common.user.UserStorageModule;
 import java.nio.file.Path;
 import java.time.Clock;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -68,6 +69,7 @@ public final class CommonModule extends AbstractModule {
         this.bindCommands();
 
         this.install(new InfrastructureModule(this.logger, this.dataDirectory, this.pluginResource));
+        this.install(new UserStorageModule());
     }
 
     private void bindCommands() {

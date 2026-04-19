@@ -22,7 +22,6 @@ package io.github.namiuni.paperplugintemplate.common.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
@@ -32,8 +31,6 @@ import static org.mockito.Mockito.when;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.TestPlayer;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRepository;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -69,8 +66,6 @@ class UserServiceInternalTest {
         this.service = new UserServiceInternal(this.cache, this.repository, this.userFactory, this.logger);
     }
 
-    // ── getUser ───────────────────────────────────────────────────────────────
-
     @Test
     void getUserDelegatesToCache() {
         final PluginTemplateUser user = mock(PluginTemplateUser.class);
@@ -86,21 +81,15 @@ class UserServiceInternalTest {
         assertTrue(this.service.getUser(UUID_A).isEmpty());
     }
 
-    // ── loadUser: tier-1 userCache hit ────────────────────────────────────────
-
     @Test
     void loadUserReturnsCachedUserWithoutHittingRepository() {
         final PluginTemplateUser cached = mock(PluginTemplateUser.class);
         when(this.cache.getUser(UUID_A)).thenReturn(Optional.of(cached));
 
-        final PluginTemplateUser result = this.service.loadUser(PLAYER_A).join();
-
-        assertEquals(cached, result);
+        assertEquals(cached, this.service.loadUser(PLAYER_A).join());
         verify(this.repository, never()).findById(any());
         verify(this.userFactory, never()).createUser(any(), any());
     }
-
-    // ── loadUser: tier-2 preloadCache hit ─────────────────────────────────────
 
     @Test
     void loadUserUsesPreloadedRecordWithoutHittingRepository() {
@@ -111,9 +100,7 @@ class UserServiceInternalTest {
         when(this.cache.getPreloaded(UUID_A)).thenReturn(Optional.of(preloaded));
         when(this.userFactory.createUser(same(PLAYER_A), eq(preloaded))).thenReturn(createdUser);
 
-        final PluginTemplateUser result = this.service.loadUser(PLAYER_A).join();
-
-        assertEquals(createdUser, result);
+        assertEquals(createdUser, this.service.loadUser(PLAYER_A).join());
         verify(this.repository, never()).findById(any());
     }
 
@@ -131,8 +118,6 @@ class UserServiceInternalTest {
         verify(this.cache).cacheUser(UUID_A, createdUser);
     }
 
-    // ── loadUser: tier-3 repository miss ──────────────────────────────────────
-
     @Test
     void loadUserQueriesRepositoryOnTotalCacheMiss() {
         final UserRecord dbRecord = new UserRecord(UUID_A, "Alice", Instant.EPOCH);
@@ -143,9 +128,7 @@ class UserServiceInternalTest {
         when(this.repository.findById(UUID_A)).thenReturn(CompletableFuture.completedFuture(Optional.of(dbRecord)));
         when(this.userFactory.createUser(same(PLAYER_A), eq(dbRecord))).thenReturn(createdUser);
 
-        final PluginTemplateUser result = this.service.loadUser(PLAYER_A).join();
-
-        assertEquals(createdUser, result);
+        assertEquals(createdUser, this.service.loadUser(PLAYER_A).join());
         verify(this.repository).findById(UUID_A);
     }
 
@@ -190,8 +173,6 @@ class UserServiceInternalTest {
         verify(this.cache).cacheUser(UUID_A, createdUser);
     }
 
-    // ── deleteUser ────────────────────────────────────────────────────────────
-
     @Test
     void deleteUserInvalidatesCacheBeforeRepositoryDelete() {
         when(this.repository.delete(UUID_A)).thenReturn(CompletableFuture.completedFuture(null));
@@ -211,9 +192,13 @@ class UserServiceInternalTest {
         try {
             this.service.deleteUser(UUID_A).join();
         } catch (final Exception _) {
-            // expected — repository threw
+            // expected
         }
 
         verify(this.cache).invalidate(UUID_A);
+    }
+
+    private static UserRecord argThat(final java.util.function.Predicate<UserRecord> predicate) {
+        return org.mockito.ArgumentMatchers.argThat(predicate::test);
     }
 }

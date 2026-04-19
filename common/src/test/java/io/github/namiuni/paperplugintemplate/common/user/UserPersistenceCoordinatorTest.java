@@ -19,9 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -31,8 +31,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -70,8 +68,6 @@ class UserPersistenceCoordinatorTest {
         final Clock fixedClock = Clock.fixed(FIXED_NOW, ZoneOffset.UTC);
         this.coordinator = new UserPersistenceCoordinator(this.cache, this.repository, fixedClock, this.logger);
     }
-
-    // ── preload ───────────────────────────────────────────────────────────────
 
     @Test
     void preloadSkipsRepositoryWhenUserAlreadyInUserCache() {
@@ -139,7 +135,6 @@ class UserPersistenceCoordinatorTest {
         final CompletableFuture<Optional<UserRecord>> failedFuture = new CompletableFuture<>();
         failedFuture.completeExceptionally(new RuntimeException("db-down"));
         when(this.repository.findById(UUID_A)).thenReturn(failedFuture);
-
         assertThrows(Exception.class, () -> this.coordinator.preload(UUID_A, () -> called.set(true)).join());
 
         assertTrue(called.get());
@@ -156,8 +151,6 @@ class UserPersistenceCoordinatorTest {
 
         assertFalse(disconnected.get());
     }
-
-    // ── save ─────────────────────────────────────────────────────────────────
 
     @Test
     void saveDoesNothingWhenUserNotInCache() {

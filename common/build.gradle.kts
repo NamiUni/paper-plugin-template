@@ -36,7 +36,6 @@ dependencies {
     // Storage
     compileOnlyApi(libs.jdbi.core)
     compileOnlyApi(libs.jdbi.postgres)
-    compileOnlyApi(libs.jdbi.sqlobject)
     compileOnlyApi(libs.jdbi.caffeine.cache)
     compileOnlyApi(libs.hikari)
     compileOnlyApi(libs.flyway.core)
@@ -53,7 +52,6 @@ dependencies {
     testImplementation(libs.guice.testlib)
     testImplementation(libs.cloud.core)
     testImplementation(libs.jdbi.core)
-    testImplementation(libs.jdbi.sqlobject)
     testImplementation(libs.jdbi.caffeine.cache)
     testImplementation(libs.jdbi.testing)
     testImplementation(libs.h2)
