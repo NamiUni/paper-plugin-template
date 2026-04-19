@@ -19,8 +19,6 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRepository;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import java.time.Clock;

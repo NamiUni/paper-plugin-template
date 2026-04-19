@@ -1,40 +1,21 @@
-/*
- * PaperPluginTemplate
- *
- * Copyright (c) 2026. Namiu (うにたろう)
- *                     Contributors []
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.multibindings.Multibinder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.json.JsonUserRepository;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.sql.JdbiUserRepository;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.flywaydb.core.Flyway;
 import org.jdbi.v3.cache.caffeine.CaffeineCacheBuilder;
@@ -48,20 +29,6 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class StorageModule extends AbstractModule {
-
-    @Provides
-    @Singleton
-    @SuppressWarnings("unused")
-    UserRepository userRepository(
-            final Provider<PrimaryConfiguration> config,
-            final Provider<JsonUserRepository> json,
-            final Provider<JdbiUserRepository> jdbi
-    ) {
-        return switch (config.get().storage().type()) {
-            case JSON -> json.get();
-            case H2, MYSQL, POSTGRESQL -> jdbi.get();
-        };
-    }
 
     @Provides
     @Singleton
@@ -122,7 +89,11 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    Jdbi jdbi(final HikariDataSource dataSource, final StorageDialect dialect) {
+    Jdbi jdbi(
+            final HikariDataSource dataSource,
+            final StorageDialect dialect,
+            final Set<JdbiConfigurer> configurers
+    ) {
         final QualifiedArgumentFactory instantArgument = (_, value, _) -> {
             if (!(value instanceof final Instant instant)) {
                 return Optional.empty();
@@ -136,7 +107,6 @@ public final class StorageModule extends AbstractModule {
         final Jdbi jdbi = Jdbi.create(dataSource)
                 .installPlugin(new SqlObjectPlugin())
                 .installPlugin(new CaffeineCachePlugin())
-                .registerRowMapper(UserRecord.class, dialect.profileMapper())
                 .registerArgument(dialect.uuidArgumentFactory())
                 .registerArgument(instantArgument)
                 .configure(SqlStatements.class, caffeineCache);
@@ -144,6 +114,8 @@ public final class StorageModule extends AbstractModule {
         if (dialect instanceof StorageDialect.PostgreSQL) {
             jdbi.installPlugin(new PostgresPlugin());
         }
+        
+        configurers.forEach(configurer -> configurer.configure(jdbi, dialect));
 
         return jdbi;
     }
@@ -160,5 +132,10 @@ public final class StorageModule extends AbstractModule {
                 .validateMigrationNaming(true)
                 .validateOnMigrate(true)
                 .load();
+    }
+
+    @Override
+    protected void configure() {
+        Multibinder.newSetBinder(this.binder(), JdbiConfigurer.class);
     }
 }

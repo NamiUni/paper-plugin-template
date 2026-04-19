@@ -17,19 +17,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
+package io.github.namiuni.paperplugintemplate.common.user;
 
-import java.util.Optional;
+import java.time.Instant;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public interface UserRepository extends AutoCloseable {
-
-    CompletableFuture<Optional<UserRecord>> findById(UUID uuid);
-
-    CompletableFuture<Void> upsert(UserRecord userRecord);
-
-    CompletableFuture<Void> delete(UUID uuid);
+public record UserRecord(
+        UUID uuid,
+        String name,
+        Instant lastSeen
+) {
 }

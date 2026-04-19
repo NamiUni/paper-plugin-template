@@ -20,8 +20,8 @@
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
+import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
 import jakarta.inject.Inject;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
