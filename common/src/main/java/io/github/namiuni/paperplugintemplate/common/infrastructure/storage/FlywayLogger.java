@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.storage.sql;
+package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
 
 import jakarta.inject.Inject;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;

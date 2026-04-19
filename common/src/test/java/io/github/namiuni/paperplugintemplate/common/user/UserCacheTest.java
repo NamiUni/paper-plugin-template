@@ -1,22 +1,3 @@
-/*
- * PaperPluginTemplate
- *
- * Copyright (c) 2026. Namiu (うにたろう)
- *                     Contributors []
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
 package io.github.namiuni.paperplugintemplate.common.user;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,7 +8,6 @@ import static org.mockito.Mockito.when;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageType;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
 import jakarta.inject.Provider;
 import java.time.Instant;
 import java.util.UUID;
@@ -50,8 +30,6 @@ class UserCacheTest {
         this.cache = new UserCache(configProvider);
     }
 
-    // ── getUser ──────────────────────────────────────────────────────────────
-
     @Test
     void getUserReturnsEmptyWhenNothingCached() {
         assertTrue(this.cache.getUser(UUID_A).isEmpty());
@@ -60,7 +38,6 @@ class UserCacheTest {
     @Test
     void getUserReturnsCachedUser() {
         final PluginTemplateUser user = onlineUser(UUID_A, "Alice");
-
         this.cache.cacheUser(UUID_A, user);
 
         assertEquals(user, this.cache.getUser(UUID_A).orElseThrow());
@@ -68,14 +45,10 @@ class UserCacheTest {
 
     @Test
     void getUserDoesNotReturnUserFromDifferentUUID() {
-        final PluginTemplateUser user = onlineUser(UUID_A, "Alice");
-
-        this.cache.cacheUser(UUID_A, user);
+        this.cache.cacheUser(UUID_A, onlineUser(UUID_A, "Alice"));
 
         assertTrue(this.cache.getUser(UUID_B).isEmpty());
     }
-
-    // ── getPreloaded ─────────────────────────────────────────────────────────
 
     @Test
     void getPreloadedReturnsEmptyWhenNothingCached() {
@@ -85,7 +58,6 @@ class UserCacheTest {
     @Test
     void getPreloadedReturnsCachedRecord() {
         final UserRecord record = new UserRecord(UUID_A, "Alice", Instant.EPOCH);
-
         this.cache.cachePreloaded(UUID_A, record);
 
         assertEquals(record, this.cache.getPreloaded(UUID_A).orElseThrow());
@@ -97,8 +69,6 @@ class UserCacheTest {
 
         assertTrue(this.cache.getPreloaded(UUID_B).isEmpty());
     }
-
-    // ── invalidate ────────────────────────────────────────────────────────────
 
     @Test
     void invalidateRemovesCachedUser() {
@@ -131,7 +101,6 @@ class UserCacheTest {
 
     @Test
     void invalidateOnUncachedUUIDIsNoOp() {
-        // Should not throw
         this.cache.invalidate(UUID_A);
     }
 
@@ -146,8 +115,6 @@ class UserCacheTest {
         assertEquals(user, this.cache.getUser(UUID_A).orElseThrow());
         assertEquals(record, this.cache.getPreloaded(UUID_A).orElseThrow());
     }
-
-    // ── helpers ───────────────────────────────────────────────────────────────
 
     private static PluginTemplateUser onlineUser(final UUID uuid, final String name) {
         final PluginTemplateUser user = mock(PluginTemplateUser.class);

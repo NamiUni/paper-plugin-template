@@ -1,27 +1,12 @@
-/*
- * PaperPluginTemplate
- *
- * Copyright (c) 2026. Namiu (うにたろう)
- *                     Contributors []
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.storage.sql;
+package io.github.namiuni.paperplugintemplate.common.user.sql;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageDialect;
+import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.utilities.UUIDCodec;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.sqlobject.SqlObject;
 import org.jdbi.v3.sqlobject.customizer.Bind;
 import org.jdbi.v3.sqlobject.customizer.BindMethods;
@@ -51,9 +36,23 @@ public interface UserDao extends SqlObject {
             try {
                 this.insert(userRecord);
             } catch (final Exception _) {
-                // Concurrent insert raced us; the row now exists — retry update.
                 this.update(userRecord);
             }
         }
+    }
+
+    static RowMapper<UserRecord> rowMapper(final StorageDialect dialect) {
+        return switch (dialect) {
+            case StorageDialect.MySQL() -> (rs, _) -> new UserRecord(
+                    UUIDCodec.uuidFromBytes(rs.getBytes("uuid")),
+                    rs.getString("name"),
+                    Instant.ofEpochMilli(rs.getLong("last_seen"))
+            );
+            case StorageDialect.PostgreSQL() -> (rs, _) -> new UserRecord(
+                    rs.getObject("uuid", UUID.class),
+                    rs.getString("name"),
+                    Instant.ofEpochMilli(rs.getLong("last_seen"))
+            );
+        };
     }
 }

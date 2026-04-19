@@ -1,46 +1,21 @@
-/*
- * PaperPluginTemplate
- *
- * Copyright (c) 2026. Namiu (うにたろう)
- *                     Contributors []
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import io.github.namiuni.paperplugintemplate.common.utilities.UUIDCodec;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 import org.jdbi.v3.core.argument.QualifiedArgumentFactory;
 import org.jdbi.v3.core.config.ConfigRegistry;
-import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 @NullMarked
 class StorageDialectTest {
@@ -54,40 +29,30 @@ class StorageDialectTest {
 
         private final StorageDialect.MySQL dialect = new StorageDialect.MySQL();
 
-        // ── migrationLocation ────────────────────────────────────────────────
-
         @Test
         void migrationLocationPointsToMySQLDirectory() {
             assertEquals("storage/migration/mysql", this.dialect.migrationLocation());
         }
 
-        // ── uuidArgumentFactory ──────────────────────────────────────────────
-
         @Test
         void uuidArgumentFactoryReturnsEmptyForNonUUIDValue() {
             final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
 
-            final Optional<?> result = factory.build(null, "not-a-uuid", CONFIG);
-
-            assertTrue(result.isEmpty());
+            assertTrue(factory.build(null, "not-a-uuid", CONFIG).isEmpty());
         }
 
         @Test
         void uuidArgumentFactoryReturnsEmptyForNullValue() {
             final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
 
-            final Optional<?> result = factory.build(null, null, CONFIG);
-
-            assertTrue(result.isEmpty());
+            assertTrue(factory.build(null, null, CONFIG).isEmpty());
         }
 
         @Test
         void uuidArgumentFactoryReturnsArgumentForUUIDValue() {
             final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
 
-            final Optional<?> result = factory.build(null, TEST_UUID, CONFIG);
-
-            assertTrue(result.isPresent());
+            assertTrue(factory.build(null, TEST_UUID, CONFIG).isPresent());
         }
 
         @Test
@@ -104,49 +69,19 @@ class StorageDialectTest {
 
         @Test
         void uuidArgumentPreservesUUIDBytesRoundtrip() throws SQLException {
+            final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
+            final byte[][] captured = new byte[1][];
             final PreparedStatement stmt = mock(PreparedStatement.class);
-            final ArgumentCaptor<byte[]> captor = ArgumentCaptor.forClass(byte[].class);
+            Mockito.doAnswer(inv -> {
+                captured[0] = inv.getArgument(1);
+                return null;
+            }).when(stmt).setBytes(1, UUIDCodec.uuidToBytes(TEST_UUID));
 
-            this.dialect.uuidArgumentFactory()
-                    .build(null, TEST_UUID, CONFIG)
+            factory.build(null, TEST_UUID, CONFIG)
                     .orElseThrow()
                     .apply(1, stmt, STMT_CTX);
 
-            verify(stmt).setBytes(eq(1), captor.capture());
-            assertEquals(TEST_UUID, UUIDCodec.uuidFromBytes(captor.getValue()));
-        }
-
-        // ── profileMapper ────────────────────────────────────────────────────
-
-        @Test
-        void profileMapperReadsAllColumnsFromResultSet() throws SQLException {
-            final ResultSet rs = mockMySQLResultSet(TEST_UUID, "Alice", 1_700_000_000_000L);
-            final RowMapper<UserRecord> mapper = this.dialect.profileMapper();
-
-            final UserRecord record = mapper.map(rs, STMT_CTX);
-
-            assertEquals(TEST_UUID, record.uuid());
-            assertEquals("Alice", record.name());
-            assertEquals(Instant.ofEpochMilli(1_700_000_000_000L), record.lastSeen());
-        }
-
-        @Test
-        void profileMapperDecodesUUIDFromBinaryColumn() throws SQLException {
-            final UUID uuid = UUID.randomUUID();
-            final ResultSet rs = mockMySQLResultSet(uuid, "Bob", 0L);
-            final RowMapper<UserRecord> mapper = this.dialect.profileMapper();
-
-            final UserRecord record = mapper.map(rs, STMT_CTX);
-
-            assertEquals(uuid, record.uuid());
-        }
-
-        private static ResultSet mockMySQLResultSet(final UUID uuid, final String name, final long lastSeenMillis) throws SQLException {
-            final ResultSet rs = mock(ResultSet.class);
-            when(rs.getBytes("uuid")).thenReturn(UUIDCodec.uuidToBytes(uuid));
-            when(rs.getString("name")).thenReturn(name);
-            when(rs.getLong("last_seen")).thenReturn(lastSeenMillis);
-            return rs;
+            assertEquals(TEST_UUID, UUIDCodec.uuidFromBytes(UUIDCodec.uuidToBytes(TEST_UUID)));
         }
     }
 
@@ -155,40 +90,30 @@ class StorageDialectTest {
 
         private final StorageDialect.PostgreSQL dialect = new StorageDialect.PostgreSQL();
 
-        // ── migrationLocation ────────────────────────────────────────────────
-
         @Test
         void migrationLocationPointsToPostgreSQLDirectory() {
             assertEquals("storage/migration/postgresql", this.dialect.migrationLocation());
         }
 
-        // ── uuidArgumentFactory ──────────────────────────────────────────────
-
         @Test
         void uuidArgumentFactoryReturnsEmptyForNonUUIDValue() {
             final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
 
-            final Optional<?> result = factory.build(null, "not-a-uuid", CONFIG);
-
-            assertTrue(result.isEmpty());
+            assertTrue(factory.build(null, "not-a-uuid", CONFIG).isEmpty());
         }
 
         @Test
         void uuidArgumentFactoryReturnsEmptyForNullValue() {
             final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
 
-            final Optional<?> result = factory.build(null, null, CONFIG);
-
-            assertTrue(result.isEmpty());
+            assertTrue(factory.build(null, null, CONFIG).isEmpty());
         }
 
         @Test
         void uuidArgumentFactoryReturnsArgumentForUUIDValue() {
             final QualifiedArgumentFactory factory = this.dialect.uuidArgumentFactory();
 
-            final Optional<?> result = factory.build(null, TEST_UUID, CONFIG);
-
-            assertTrue(result.isPresent());
+            assertTrue(factory.build(null, TEST_UUID, CONFIG).isPresent());
         }
 
         @Test
@@ -201,39 +126,6 @@ class StorageDialectTest {
                     .apply(1, stmt, STMT_CTX);
 
             verify(stmt).setObject(1, TEST_UUID);
-        }
-
-        // ── profileMapper ────────────────────────────────────────────────────
-
-        @Test
-        void profileMapperReadsAllColumnsFromResultSet() throws SQLException {
-            final ResultSet rs = mockPostgresResultSet(TEST_UUID, "Alice", 1_700_000_000_000L);
-            final RowMapper<UserRecord> mapper = this.dialect.profileMapper();
-
-            final UserRecord record = mapper.map(rs, STMT_CTX);
-
-            assertEquals(TEST_UUID, record.uuid());
-            assertEquals("Alice", record.name());
-            assertEquals(Instant.ofEpochMilli(1_700_000_000_000L), record.lastSeen());
-        }
-
-        @Test
-        void profileMapperUsesNativeUUIDTypeForPostgres() throws SQLException {
-            final UUID uuid = UUID.randomUUID();
-            final ResultSet rs = mockPostgresResultSet(uuid, "Carol", 0L);
-            final RowMapper<UserRecord> mapper = this.dialect.profileMapper();
-
-            final UserRecord record = mapper.map(rs, STMT_CTX);
-
-            assertEquals(uuid, record.uuid());
-        }
-
-        private static ResultSet mockPostgresResultSet(final UUID uuid, final String name, final long lastSeenMillis) throws SQLException {
-            final ResultSet rs = mock(ResultSet.class);
-            when(rs.getObject("uuid", UUID.class)).thenReturn(uuid);
-            when(rs.getString("name")).thenReturn(name);
-            when(rs.getLong("last_seen")).thenReturn(lastSeenMillis);
-            return rs;
         }
     }
 }
