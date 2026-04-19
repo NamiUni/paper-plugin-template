@@ -26,9 +26,11 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import java.util.UUID;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
+@NullMarked
 class UUIDTypeAdapterTest {
 
     private static final UUIDTypeAdapter ADAPTER = UUIDTypeAdapter.INSTANCE;

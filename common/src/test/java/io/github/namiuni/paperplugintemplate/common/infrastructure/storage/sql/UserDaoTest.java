@@ -33,10 +33,12 @@ import org.jdbi.v3.core.argument.QualifiedArgumentFactory;
 import org.jdbi.v3.core.mapper.RowMappers;
 import org.jdbi.v3.sqlobject.SqlObjectPlugin;
 import org.jdbi.v3.testing.junit5.JdbiExtension;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+@NullMarked
 class UserDaoTest {
 
     private static final StorageDialect.MySQL DIALECT = new StorageDialect.MySQL();

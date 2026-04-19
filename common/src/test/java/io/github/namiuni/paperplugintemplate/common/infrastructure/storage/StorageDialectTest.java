@@ -36,10 +36,12 @@ import org.jdbi.v3.core.argument.QualifiedArgumentFactory;
 import org.jdbi.v3.core.config.ConfigRegistry;
 import org.jdbi.v3.core.mapper.RowMapper;
 import org.jdbi.v3.core.statement.StatementContext;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+@NullMarked
 class StorageDialectTest {
 
     private static final UUID TEST_UUID = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");

@@ -25,8 +25,10 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import java.time.Instant;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 
+@NullMarked
 class InstantTypeAdapterTest {
 
     private static final InstantTypeAdapter ADAPTER = InstantTypeAdapter.INSTANCE;

@@ -40,10 +40,12 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+@NullMarked
 class JsonUserRepositoryTest {
 
     private static final UUID UUID_A = UUID.fromString("00000000-0000-0000-0000-000000000001");

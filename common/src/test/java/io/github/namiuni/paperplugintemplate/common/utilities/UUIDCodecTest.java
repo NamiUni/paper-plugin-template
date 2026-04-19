@@ -24,9 +24,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.UUID;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 
+@NullMarked
 class UUIDCodecTest {
 
     @Test

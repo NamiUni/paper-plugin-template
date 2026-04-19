@@ -32,9 +32,11 @@ import jakarta.inject.Provider;
 import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@NullMarked
 class UserCacheTest {
 
     private static final UUID UUID_A = UUID.fromString("00000000-0000-0000-0000-000000000001");
