@@ -20,69 +20,39 @@ dependencies {
     runtimeDownload(libs.guice)
 
     // Config
-    runtimeDownload(libs.configurate.hocon) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.adventure.serializer.configurate) {
-        isTransitive = false
-    }
+    runtimeDownload(libs.configurate.hocon) { isTransitive = false }
+    runtimeDownload(libs.adventure.serializer.configurate) { isTransitive = false }
 
     // Cache
-    runtimeDownload(libs.caffeine) {
-        isTransitive = false
-    }
+    runtimeDownload(libs.caffeine) { isTransitive = false }
 
     // i18n
-    runtimeDownload(libs.kotonoha.annotations) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.kotonoha.message) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders) {
-        isTransitive = false
-    }
+    runtimeDownload(libs.kotonoha.annotations) { isTransitive = false }
+    runtimeDownload(libs.kotonoha.message) { isTransitive = false }
+    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders) { isTransitive = false }
 
     // Command
     compileOnly(libs.cloud.paper)
     runtimeDownload(libs.cloud.paper)
-    runtimeDownload(libs.cloud.minecraft.extras) {
-        isTransitive = false
-    }
+    runtimeDownload(libs.cloud.minecraft.extras) { isTransitive = false }
 
     // Storage
-    runtimeDownload(libs.jdbi.core) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.jdbi.postgres) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.jdbi.sqlobject) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.jdbi.caffeine.cache) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.hikari) {
-        isTransitive = false
-    }
+    runtimeDownload(libs.jdbi.core) { isTransitive = false }
+    runtimeDownload(libs.jdbi.postgres) { isTransitive = false }
+    runtimeDownload(libs.jdbi.sqlobject) { isTransitive = false }
+    runtimeDownload(libs.jdbi.caffeine.cache) { isTransitive = false }
+    runtimeDownload(libs.hikari) { isTransitive = false }
 
     // Flyway
     runtimeDownload(libs.flyway.core) {
         exclude("com.fasterxml.jackson.core", "jackson-core")
         exclude("tools.jackson", "jackson-bom")
     }
-    runtimeDownload(libs.flyway.mysql) {
-        isTransitive = false
-    }
-    runtimeDownload(libs.flyway.postgresql) {
-        isTransitive = false
-    }
+    runtimeDownload(libs.flyway.mysql) { isTransitive = false }
+    runtimeDownload(libs.flyway.postgresql) { isTransitive = false }
 
     // JDBC Drivers
-    runtimeDownload(libs.postgresql) {
-        isTransitive = false
-    }
+    runtimeDownload(libs.postgresql) { isTransitive = false }
     runtimeDownload(libs.h2)
     runtimeDownload(libs.mysql.connector)
 

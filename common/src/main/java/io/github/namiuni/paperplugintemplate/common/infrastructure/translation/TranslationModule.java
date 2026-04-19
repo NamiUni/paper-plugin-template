@@ -21,6 +21,7 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.translation;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import io.github.namiuni.kotonoha.translatable.message.KotonohaMessage;
 import io.github.namiuni.kotonoha.translatable.message.configuration.FormatTypes;
@@ -38,6 +39,10 @@ public final class TranslationModule extends AbstractModule {
 
     @Override
     protected void configure() {
+        this.bind(GlobalTranslatorRegistry.class)
+                .to(AdventureGlobalTranslatorRegistry.class)
+                .in(Scopes.SINGLETON);
+
         this.bind(TranslatorHolder.class)
                 .asEagerSingleton();
 

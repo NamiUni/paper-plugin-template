@@ -15,5 +15,9 @@ configurations.testImplementation {
 
 tasks.test {
     useJUnitPlatform()
-    jvmArgs("-Xshare:off")
+    jvmArgs(
+        "-Xshare:off",
+        "-javaagent:${configurations.testRuntimeClasspath.get().find { it.name.contains("mockito-core") }}",
+        "-XX:+EnableDynamicAgentLoading"
+    )
 }

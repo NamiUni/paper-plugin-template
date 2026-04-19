@@ -25,14 +25,9 @@ import io.github.namiuni.paperplugintemplate.common.event.events.PlayerConnectEv
 import io.github.namiuni.paperplugintemplate.common.event.events.PlayerDisconnectEvent;
 import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnectEvent;
 import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRecord;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.UserRepository;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.time.Instant;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
@@ -41,23 +36,20 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class UserSessionHandler {
 
-    private final UserCache cache;
-    private final UserRepository repository;
+    private final UserPersistenceCoordinator persistenceCoordinator;
     private final PluginTemplateUserService userService;
     private final MessageAssembly messages;
     private final ComponentLogger logger;
 
     @Inject
     UserSessionHandler(
-            final UserCache cache,
-            final UserRepository repository,
+            final UserPersistenceCoordinator persistenceCoordinator,
             final PluginTemplateUserService userService,
             final MessageAssembly messages,
             final ComponentLogger logger,
             final EventBus eventBus
     ) {
-        this.cache = cache;
-        this.repository = repository;
+        this.persistenceCoordinator = persistenceCoordinator;
         this.userService = userService;
         this.messages = messages;
         this.logger = logger;
@@ -69,7 +61,7 @@ public final class UserSessionHandler {
     }
 
     private void onPreConnect(final PlayerPreConnectEvent event) {
-        this.preload(
+        this.persistenceCoordinator.preload(
                 event.uuid(),
                 () -> event.disconnector().disconnect(this.messages.joinFailureProfile(event.audience()))
         );
@@ -89,49 +81,10 @@ public final class UserSessionHandler {
     }
 
     private void onDisconnect(final PlayerDisconnectEvent event) {
-        this.save(event.uuid());
+        this.persistenceCoordinator.save(event.uuid());
     }
 
     private void onWorldCheckpoint(final WorldCheckPointEvent event) {
-        event.onlinePlayerUuids().forEach(this::save);
-    }
-
-    private CompletableFuture<Void> preload(final UUID uuid, final Runnable disconnect) {
-        if (this.cache.getUser(uuid).isPresent()) {
-            this.logger.debug("[{}] userCache hit for {} — skipping repository.", UserSessionHandler.class.getSimpleName(), uuid);
-            return CompletableFuture.completedFuture(null);
-        }
-
-        if (this.cache.getPreloaded(uuid).isPresent()) {
-            this.logger.debug("[{}] preloadCache hit for {}.", UserSessionHandler.class.getSimpleName(), uuid);
-            return CompletableFuture.completedFuture(null);
-        }
-
-        this.logger.debug("[{}] Cold miss for {} — querying repository.", UserSessionHandler.class.getSimpleName(), uuid);
-        return this.repository.findById(uuid)
-                .thenAccept(existing -> existing.ifPresent(record -> {
-                    this.cache.cachePreloaded(uuid, record);
-                    this.logger.debug("[{}] Profile stored in preloadCache for {}.", UserSessionHandler.class.getSimpleName(), uuid);
-                }))
-                .whenComplete((_, exception) -> {
-                    if (exception != null) {
-                        this.logger.error("Failed to pre-load profile for UUID: {}; disconnecting.", uuid, exception);
-                        disconnect.run();
-                    }
-                });
-    }
-
-    private CompletableFuture<Void> save(final UUID uuid) {
-        return this.cache.getUser(uuid)
-                .map(user -> {
-                    final UserRecord record = new UserRecord(user.uuid(), user.name(), Instant.now());
-                    return this.repository.upsert(record)
-                            .whenComplete((_, exception) -> {
-                                if (exception != null) {
-                                    this.logger.error("Failed to save player record for UUID: {}", uuid, exception);
-                                }
-                            });
-                })
-                .orElseGet(() -> CompletableFuture.completedFuture(null));
+        event.onlinePlayerUuids().forEach(this.persistenceCoordinator::save);
     }
 }

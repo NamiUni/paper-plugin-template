@@ -25,7 +25,6 @@ import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicReference;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import net.kyori.adventure.translation.GlobalTranslator;
 import net.kyori.adventure.translation.Translator;
 import org.jspecify.annotations.NullMarked;
 
@@ -34,20 +33,23 @@ import org.jspecify.annotations.NullMarked;
 public final class TranslatorHolder implements Provider<Translator>, Reloadable<Translator> {
 
     private final TranslatorLoader translatorLoader;
+    private final GlobalTranslatorRegistry globalRegistry;
     private final AtomicReference<Translator> translator;
     private final ComponentLogger logger;
 
     @Inject
     TranslatorHolder(
             final TranslatorLoader translatorLoader,
+            final GlobalTranslatorRegistry globalRegistry,
             final ComponentLogger logger
     ) {
         this.translatorLoader = translatorLoader;
+        this.globalRegistry = globalRegistry;
         this.logger = logger;
 
         this.logger.info("Loading translations...");
         final Translator initial = translatorLoader.loadTranslator();
-        GlobalTranslator.translator().addSource(initial);
+        globalRegistry.addSource(initial);
         this.translator = new AtomicReference<>(initial);
         this.logger.info("Translations loaded.");
     }
@@ -56,9 +58,9 @@ public final class TranslatorHolder implements Provider<Translator>, Reloadable<
     public Translator reload() {
         return this.translator.updateAndGet(current -> {
             this.logger.info("Reloading translations...");
-            GlobalTranslator.translator().removeSource(current);
+            this.globalRegistry.removeSource(current);
             final Translator fresh = this.translatorLoader.loadTranslator();
-            GlobalTranslator.translator().addSource(fresh);
+            this.globalRegistry.addSource(fresh);
             this.logger.info("Translation reload complete.");
             return fresh;
         });

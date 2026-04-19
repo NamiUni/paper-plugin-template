@@ -34,6 +34,7 @@ flyway = "12.4.0"
 
 # Test
 junit = "6.1.0-SNAPSHOT"
+mockito = "5.23.0"
 
 [libraries]
 # Tool
@@ -82,11 +83,17 @@ flyway-postgresql = { group = "org.flywaydb", name = "flyway-database-postgresql
 junit-api = { group = "org.junit.jupiter", name = "junit-jupiter-api", version.ref = "junit" }
 junit-engine = { group = "org.junit.jupiter", name = "junit-jupiter-engine", version.ref = "junit" }
 junit-platform = { group = "org.junit.platform", name = "junit-platform-launcher" }
+mockito-core = { group = "org.mockito", name = "mockito-core", version.ref = "mockito" }
+mockito-junit-jupiter = { group = "org.mockito", name = "mockito-junit-jupiter", version.ref = "mockito" }
+guice-testlib = { group = "com.google.inject.extensions", name = "guice-testlib", version.ref = "guice" }
+jdbi-testing = { group = "org.jdbi", name = "jdbi3-testing", version.ref = "jdbi" }
 
 [bundles]
 testing = [
     "junit-api",
-    "junit-engine"
+    "junit-engine",
+    "mockito-core",
+    "mockito-junit-jupiter",
 ]
 
 [plugins]
