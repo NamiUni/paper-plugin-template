@@ -1,5 +1,6 @@
 plugins {
     id("paper-plugin-template.base")
+    id("paper-plugin-template.testing")
 }
 
 dependencies {
@@ -39,4 +40,18 @@ dependencies {
     compileOnlyApi(libs.jdbi.caffeine.cache)
     compileOnlyApi(libs.hikari)
     compileOnlyApi(libs.flyway.core)
+
+    // Testing
+    testImplementation(libs.adventure.api)
+    testImplementation(libs.adventure.text.minimessage)
+    testImplementation(libs.adventure.text.logger.slf4j)
+    testImplementation(libs.caffeine)
+    testImplementation(libs.gson)
+    testImplementation(libs.guice)
+    testImplementation(libs.guice.testlib)
+    testImplementation(libs.jdbi.core)
+    testImplementation(libs.jdbi.sqlobject)
+    testImplementation(libs.jdbi.caffeine.cache)
+    testImplementation(libs.jdbi.testing)
+    testImplementation(libs.h2)
 }

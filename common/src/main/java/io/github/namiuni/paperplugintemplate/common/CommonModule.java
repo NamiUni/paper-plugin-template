@@ -33,6 +33,7 @@ import io.github.namiuni.paperplugintemplate.common.infrastructure.Infrastructur
 import io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal;
 import io.github.namiuni.paperplugintemplate.common.user.UserSessionHandler;
 import java.nio.file.Path;
+import java.time.Clock;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
@@ -59,6 +60,7 @@ public final class CommonModule extends AbstractModule {
     @Override
     protected void configure() {
         this.bind(Metadata.class).toInstance(this.metadata);
+        this.bind(Clock.class).toInstance(Clock.systemUTC());
         this.bind(EventBus.class).to(SimpleEventBus.class).in(Scopes.SINGLETON);
         this.bind(PluginTemplateUserService.class).to(UserServiceInternal.class).in(Scopes.SINGLETON);
         this.bind(PluginTemplate.class).to(PluginTemplateImpl.class).in(Scopes.SINGLETON);
