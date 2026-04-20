@@ -37,7 +37,6 @@ import org.jspecify.annotations.NullMarked;
 public final class UserCache {
 
     private static final long NEVER_EXPIRE_NANOS = Long.MAX_VALUE;
-    private static final long PRELOAD_EXPIRE_SECONDS = 30L;
 
     private final Cache<UUID, UserRecord> preloadCache;
     private final Cache<UUID, PluginTemplateUser> userCache;
@@ -47,7 +46,7 @@ public final class UserCache {
         final PrimaryConfiguration.Storage.Cache settings = primaryConfig.get().storage().userCache();
 
         this.preloadCache = Caffeine.newBuilder()
-                .expireAfterWrite(PRELOAD_EXPIRE_SECONDS, TimeUnit.SECONDS)
+                .expireAfterWrite(settings.preloadExpireSeconds(), TimeUnit.SECONDS)
                 .build();
 
         this.userCache = Caffeine.newBuilder()
