@@ -45,7 +45,7 @@ class UserCacheTest {
 
     @BeforeEach
     void setUp() {
-        final Provider<PrimaryConfiguration> configProvider = () -> buildConfig(100L, TimeUnit.MINUTES.toNanos(15L));
+        final Provider<PrimaryConfiguration> configProvider = () -> buildConfig(100L, TimeUnit.MINUTES.toNanos(15L), 30L);
         this.cache = new UserCache(configProvider);
     }
 
@@ -143,12 +143,17 @@ class UserCacheTest {
         return user;
     }
 
-    private static PrimaryConfiguration buildConfig(final long maxSize, final long expireAfterOfflineNanos) {
-        final var cacheSettings = new PrimaryConfiguration.Storage.Cache(maxSize, expireAfterOfflineNanos);
+    private static PrimaryConfiguration buildConfig(
+            final long maxSize,
+            final long expireAfterOfflineNanos,
+            final long preloadExpireSeconds
+    ) {
+        final var cacheSettings = new PrimaryConfiguration.Storage.Cache(maxSize, expireAfterOfflineNanos, preloadExpireSeconds);
         final var poolSettings = new PrimaryConfiguration.Storage.Pool(8, 8, 1_800_000L, 0L, 1_800_000L);
         final var storage = new PrimaryConfiguration.Storage(
                 StorageType.H2, "localhost", 3306, "test", "root", "", poolSettings, cacheSettings
         );
-        return new PrimaryConfiguration(storage);
+        final var help = new PrimaryConfiguration.UI.Help("#2D7D9A", "#49E1E8", "#E3008C", "#FFFFFF", "#7D7D7D");
+        return new PrimaryConfiguration(storage, new PrimaryConfiguration.UI(help));
     }
 }

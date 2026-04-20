@@ -32,12 +32,15 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 @ConfigName("config.conf")
 @ConfigHeader("""
         Main configuration
-        
+
         Restart the server after changing storage settings.
         """)
 public record PrimaryConfiguration(
         @Comment("Storage backend configuration.")
-        Storage storage
+        Storage storage,
+
+        @Comment("User interface and display configuration.")
+        UI ui
 ) {
 
     public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration(
@@ -57,7 +60,17 @@ public record PrimaryConfiguration(
                     ),
                     new Storage.Cache(
                             100L,
-                            TimeUnit.MINUTES.toNanos(15L)
+                            TimeUnit.MINUTES.toNanos(15L),
+                            30L
+                    )
+            ),
+            new UI(
+                    new UI.Help(
+                            "#2D7D9A",
+                            "#49E1E8",
+                            "#E3008C",
+                            "#FFFFFF",
+                            "#7D7D7D"
                     )
             )
     );
@@ -137,7 +150,43 @@ public record PrimaryConfiguration(
                         Duration in nanoseconds before an offline player's cache entry expires
                         after their last access. Does not affect online players.
                         """)
-                long expireAfterOffline
+                long expireAfterOffline,
+
+                @Comment("""
+                        Duration in seconds before a pre-login profile entry expires.
+                        This cache bridges the gap between the async pre-connect phase
+                        and the synchronous join phase. Increase if players are frequently
+                        disconnected due to slow storage on high-latency servers.
+                        """)
+                long preloadExpireSeconds
+        ) {
+        }
+    }
+
+    @ConfigSerializable
+    public record UI(
+
+            @Comment("Colors used in the /help command output.")
+            Help help
+    ) {
+
+        @ConfigSerializable
+        public record Help(
+
+                @Comment("Primary color for section headers and command names. Hex format: #RRGGBB")
+                String primaryColor,
+
+                @Comment("Highlight color for clickable elements and key terms. Hex format: #RRGGBB")
+                String highlightColor,
+
+                @Comment("Alternative highlight used for parameter hints and secondary emphasis. Hex format: #RRGGBB")
+                String altHighlightColor,
+
+                @Comment("Default body text color. Hex format: #RRGGBB")
+                String textColor,
+
+                @Comment("Accent color for decorative separators and less-prominent elements. Hex format: #RRGGBB")
+                String accentColor
         ) {
         }
     }

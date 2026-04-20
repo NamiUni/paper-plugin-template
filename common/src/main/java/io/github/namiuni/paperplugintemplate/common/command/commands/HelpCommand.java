@@ -21,10 +21,13 @@ package io.github.namiuni.paperplugintemplate.common.command.commands;
 
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import net.kyori.adventure.pointer.Pointered;
 import net.kyori.adventure.text.Component;
@@ -48,59 +51,73 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class HelpCommand implements CommandFactory {
 
-    private static final TextColor PRIMARY = TextColor.color(0x2D7D9A);
-    private static final TextColor HIGHLIGHT = TextColor.color(0x49E1E8);
-    private static final TextColor ALT_HIGHLIGHT = TextColor.color(0xE3008C);
-    private static final TextColor TEXT = TextColor.color(0xFFFFFF);
-    private static final TextColor ACCENT = TextColor.color(0x7D7D7D);
-
     private final CommandManager<CommandSource> manager;
     private final MessageAssembly messages;
-    private final MinecraftHelp<CommandSource> minecraftHelp;
+    private final Provider<PrimaryConfiguration> primaryConfig;
     private final Metadata metadata;
 
     @Inject
     HelpCommand(
             final CommandManager<CommandSource> manager,
             final MessageAssembly messages,
+            final Provider<PrimaryConfiguration> primaryConfig,
             final Metadata metadata
     ) {
         this.manager = manager;
         this.messages = messages;
+        this.primaryConfig = primaryConfig;
         this.metadata = metadata;
+    }
 
-        this.minecraftHelp = MinecraftHelp.<CommandSource>builder()
-                .commandManager(manager)
+    @Override
+    public Command<CommandSource> createCommand() {
+        final MinecraftHelp<CommandSource> minecraftHelp = this.buildHelp();
+        return this.manager.commandBuilder(this.metadata.namespace())
+                .literal("help")
+                .permission(PluginPermissions.COMMAND_HELP)
+                .commandDescription(this.description())
+                .optional(
+                        "query",
+                        StringParser.greedyStringParser(),
+                        DefaultValue.constant(""),
+                        new SuggestionProvider()
+                )
+                .handler(context -> this.executes(context, minecraftHelp))
+                .build();
+    }
+
+    private MinecraftHelp<CommandSource> buildHelp() {
+        final PrimaryConfiguration.UI.Help colors = this.primaryConfig.get().ui().help();
+        return MinecraftHelp.<CommandSource>builder()
+                .commandManager(this.manager)
                 .audienceProvider(CommandSource::sender)
-                .commandPrefix("/%s help".formatted(metadata.namespace()))
-                .colors(MinecraftHelp.helpColors(PRIMARY, HIGHLIGHT, ALT_HIGHLIGHT, TEXT, ACCENT))
+                .commandPrefix("/%s help".formatted(this.metadata.namespace()))
+                .colors(MinecraftHelp.helpColors(
+                        parseColor(colors.primaryColor()),
+                        parseColor(colors.highlightColor()),
+                        parseColor(colors.altHighlightColor()),
+                        parseColor(colors.textColor()),
+                        parseColor(colors.accentColor())
+                ))
                 .messageProvider(new MessageProvider())
                 .headerFooterLength(53)
                 .build();
     }
 
-    @Override
-    public Command<CommandSource> createCommand() {
-        return this.manager.commandBuilder(this.metadata.namespace())
-                .literal("help")
-                .permission(PluginPermissions.COMMAND_HELP)
-                .commandDescription(this.description())
-                .optional("query",
-                        StringParser.greedyStringParser(),
-                        DefaultValue.constant(""),
-                        new SuggestionProvider()
-                )
-                .handler(this::executes)
-                .build();
-    }
-
-    private void executes(final CommandContext<CommandSource> context) {
+    private void executes(final CommandContext<CommandSource> context, final MinecraftHelp<CommandSource> help) {
         final String query = context.getOrDefault("query", "");
-        this.minecraftHelp.queryCommands(query, context.sender());
+        help.queryCommands(query, context.sender());
     }
 
     private CommandDescription description() {
         return CommandDescription.commandDescription(RichDescription.of(this.messages.commandHelpDescription()));
+    }
+
+    private static TextColor parseColor(final String hex) {
+        return Objects.requireNonNull(
+                TextColor.fromHexString(hex),
+                "Invalid hex color in help configuration: '%s'. Expected format: #RRGGBB".formatted(hex)
+        );
     }
 
     private final class SuggestionProvider implements BlockingSuggestionProvider<CommandSource> {
