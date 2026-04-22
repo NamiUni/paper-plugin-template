@@ -28,7 +28,7 @@ bstats = "3.2.1"
 jdbi = "3.52.1"
 hikari = "7.0.2"
 h2 = "2.4.240"
-mysql-connector = "9.6.0"
+mysql-connector = "9.7.0"
 postgresql = "42.7.10"
 flyway = "12.4.0"
 
