@@ -12,7 +12,7 @@ minotaur = "2.+"
 # Java
 jspecify = "1.0.0"
 caffeine = "3.2.3"
-gson = "2.13.2"
+gson = "2.14.0"
 guice = "7.0.0"
 paper-api = "26.1.2.build.+"
 luckperms = "5.5.29"
