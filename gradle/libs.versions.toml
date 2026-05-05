@@ -11,7 +11,7 @@ minotaur = "2.+"
 
 # Java
 jspecify = "1.0.0"
-caffeine = "3.2.3"
+caffeine = "3.2.4"
 gson = "2.13.2"
 guice = "7.0.0"
 paper-api = "26.1.2.build.+"
