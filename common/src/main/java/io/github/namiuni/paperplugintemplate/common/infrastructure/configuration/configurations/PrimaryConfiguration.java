@@ -43,7 +43,10 @@ public record PrimaryConfiguration(
         StorageConfiguration storage,
 
         @Comment("Command configuration.")
-        CommandConfiguration command
+        CommandConfiguration command,
+
+        @Comment("User data configuration.")
+        UserConfiguration user
 ) {
 
     public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration(
@@ -60,11 +63,6 @@ public record PrimaryConfiguration(
                             TimeUnit.MINUTES.toMillis(30L),
                             TimeUnit.MINUTES.toMillis(0L),
                             TimeUnit.MINUTES.toMillis(30L)
-                    ),
-                    new StorageConfiguration.Cache(
-                            100L,
-                            TimeUnit.MINUTES.toNanos(15L),
-                            30L
                     )
             ),
             new CommandConfiguration(
@@ -106,6 +104,7 @@ public record PrimaryConfiguration(
                                     )
                             )
                     )
-            )
+            ),
+            UserConfiguration.DEFAULT
     );
 }

@@ -33,10 +33,7 @@ public record StorageConfiguration(
         String password,
 
         @Comment("HikariCP connection pool settings.")
-        Pool pool,
-
-        @Comment("In-memory player-profile cache settings.")
-        Cache userCache
+        Pool pool
 ) {
 
     @ConfigSerializable
@@ -68,28 +65,6 @@ public record StorageConfiguration(
 
             @Comment("Maximum milliseconds a caller waits for a connection before an exception is thrown.")
             long connectionTimeout
-    ) {
-    }
-
-    @ConfigSerializable
-    public record Cache(
-
-            @Comment("Maximum number of player entries held in the in-memory cache.")
-            long maximumSize,
-
-            @Comment("""
-                    Duration in nanoseconds before an offline player's cache entry expires
-                    after their last access. Does not affect online players.
-                    """)
-            long expireAfterOffline,
-
-            @Comment("""
-                    Duration in seconds before a pre-login profile entry expires.
-                    This cache bridges the gap between the async pre-connect phase
-                    and the synchronous join phase. Increase if players are frequently
-                    disconnected due to slow storage on high-latency servers.
-                    """)
-            long preloadExpireSeconds
     ) {
     }
 }

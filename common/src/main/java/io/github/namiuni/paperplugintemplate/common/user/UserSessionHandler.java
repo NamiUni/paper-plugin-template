@@ -25,8 +25,9 @@ import io.github.namiuni.paperplugintemplate.common.event.events.PlayerConnectEv
 import io.github.namiuni.paperplugintemplate.common.event.events.PlayerDisconnectEvent;
 import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnectEvent;
 import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -38,20 +39,20 @@ public final class UserSessionHandler {
 
     private final UserPersistenceCoordinator persistenceCoordinator;
     private final PluginTemplateUserService userService;
-    private final MessageAssembly messages;
+    private final Provider<PrimaryConfiguration> primaryConfig;
     private final ComponentLogger logger;
 
     @Inject
     UserSessionHandler(
             final UserPersistenceCoordinator persistenceCoordinator,
             final PluginTemplateUserService userService,
-            final MessageAssembly messages,
+            final Provider<PrimaryConfiguration> primaryConfig,
             final ComponentLogger logger,
             final EventBus eventBus
     ) {
         this.persistenceCoordinator = persistenceCoordinator;
         this.userService = userService;
-        this.messages = messages;
+        this.primaryConfig = primaryConfig;
         this.logger = logger;
 
         eventBus.subscribe(PlayerPreConnectEvent.class, this::onPreConnect);
@@ -63,7 +64,7 @@ public final class UserSessionHandler {
     private void onPreConnect(final PlayerPreConnectEvent event) {
         this.persistenceCoordinator.preload(
                 event.uuid(),
-                () -> event.disconnector().disconnect(this.messages.joinFailureProfile(event.audience()))
+                () -> event.disconnector().disconnect(this.primaryConfig.get().user().messages().joinFailureLoadProfile())
         );
     }
 

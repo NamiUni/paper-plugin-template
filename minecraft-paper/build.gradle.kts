@@ -26,11 +26,6 @@ dependencies {
     // Cache
     runtimeDownload(libs.caffeine) { isTransitive = false }
 
-    // i18n
-    runtimeDownload(libs.kotonoha.annotations) { isTransitive = false }
-    runtimeDownload(libs.kotonoha.message) { isTransitive = false }
-    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders) { isTransitive = false }
-
     // Command
     compileOnly(libs.cloud.paper)
     runtimeDownload(libs.cloud.paper)
