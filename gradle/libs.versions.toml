@@ -18,6 +18,7 @@ paper-api = "26.1.2.build.+"
 luckperms = "5.5.43"
 mini-placeholders = "3.2.0"
 configurate = "4.2.0"
+creative = "1.7.3"
 adventure = "4.26.1"
 cloud = "2.0.0"
 cloud-minecraft = "2.0.0-SNAPSHOT"
@@ -51,6 +52,9 @@ guice = { group = "com.google.inject", name = "guice", version.ref = "guice" }
 paper-api = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper-api" }
 mini-placeholders = { group = "io.github.miniplaceholders", name = "miniplaceholders-api", version.ref = "mini-placeholders" }
 configurate-hocon = { group = "org.spongepowered", name = "configurate-hocon", version.ref = "configurate" }
+creative-api = { group = "team.unnamed", name = "creative-api", version.ref = "creative"}
+creative-serializer-minecraft = { group = "team.unnamed", name = "creative-serializer-minecraft", version.ref = "creative"}
+creative-server = { group = "team.unnamed", name = "creative-server", version.ref = "creative"}
 adventure-serializer-configurate = { group = "net.kyori", name = "adventure-serializer-configurate4", version.ref = "adventure" }
 adventure-api = { group = "net.kyori", name = "adventure-api", version.ref = "adventure" }
 adventure-text-minimessage = { group = "net.kyori", name = "adventure-text-minimessage", version.ref = "adventure" }
