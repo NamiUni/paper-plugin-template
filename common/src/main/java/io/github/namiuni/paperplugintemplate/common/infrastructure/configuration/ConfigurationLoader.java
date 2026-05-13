@@ -22,7 +22,11 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.configuratio
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigHeader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigName;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackInfoSerializer;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackRequestSerializer;
 import java.nio.file.Path;
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
 import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -73,6 +77,8 @@ public final class ConfigurationLoader<T extends Record> {
                         .header(configHeader)
                         .serializers(builder -> builder
                                 .registerAll(kyoriSerializer)
+                                .register(ResourcePackInfo.class, ResourcePackInfoSerializer.INSTANCE)
+                                .register(ResourcePackRequest.class, ResourcePackRequestSerializer.INSTANCE)
                         )
                 )
                 .path(configPath)

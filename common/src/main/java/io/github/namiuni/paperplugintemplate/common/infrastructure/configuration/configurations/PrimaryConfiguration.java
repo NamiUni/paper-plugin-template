@@ -46,7 +46,10 @@ public record PrimaryConfiguration(
         CommandConfiguration command,
 
         @Comment("User data configuration.")
-        UserConfiguration user
+        UserConfiguration user,
+
+        @Comment("Resourcepack configuration.")
+        ResourcePackConfiguration resourcePack
 ) {
 
     public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration(
@@ -105,6 +108,7 @@ public record PrimaryConfiguration(
                             )
                     )
             ),
-            UserConfiguration.DEFAULT
+            UserConfiguration.DEFAULT,
+            ResourcePackConfiguration.DEFAULT
     );
 }

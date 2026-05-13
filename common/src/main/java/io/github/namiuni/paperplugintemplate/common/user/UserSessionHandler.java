@@ -26,6 +26,7 @@ import io.github.namiuni.paperplugintemplate.common.event.events.PlayerDisconnec
 import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnectEvent;
 import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.ResourcePackConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -78,6 +79,10 @@ public final class UserSessionHandler {
                                 exception
                         );
                     }
+                })
+                .thenRun(() -> {
+                    final ResourcePackConfiguration packConfig = this.primaryConfig.get().resourcePack();
+                    event.player().sendResourcePacks(packConfig.resourcePackRequest());
                 });
     }
 

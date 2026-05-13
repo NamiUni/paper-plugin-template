@@ -42,8 +42,11 @@ public record UserConfiguration(
             ),
             new Messages(
                     Component.translatable(
-                            "template.join.failure.profile",
-                            "Failed to load your profile. Please try reconnecting."
+                            "disconnect.loginFailedInfo",
+                            Component.translatable(
+                                    "disconnect.loginFailedInfo.user_profile_could_not_be_loaded",
+                                    "Failed to load your profile."
+                            )
                     )
             )
     );
