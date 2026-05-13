@@ -25,12 +25,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.CommandConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.StorageConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageType;
 import jakarta.inject.Provider;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -148,12 +153,52 @@ class UserCacheTest {
             final long expireAfterOfflineNanos,
             final long preloadExpireSeconds
     ) {
-        final var cacheSettings = new PrimaryConfiguration.Storage.Cache(maxSize, expireAfterOfflineNanos, preloadExpireSeconds);
-        final var poolSettings = new PrimaryConfiguration.Storage.Pool(8, 8, 1_800_000L, 0L, 1_800_000L);
-        final var storage = new PrimaryConfiguration.Storage(
+        final var cacheSettings = new StorageConfiguration.Cache(maxSize, expireAfterOfflineNanos, preloadExpireSeconds);
+        final var poolSettings = new StorageConfiguration.Pool(8, 8, 1_800_000L, 0L, 1_800_000L);
+        final var storage = new StorageConfiguration(
                 StorageType.H2, "localhost", 3306, "test", "root", "", poolSettings, cacheSettings
         );
-        final var help = new PrimaryConfiguration.UI.Help("#2D7D9A", "#49E1E8", "#E3008C", "#FFFFFF", "#7D7D7D");
-        return new PrimaryConfiguration(storage, new PrimaryConfiguration.UI(help));
+
+        final var command = new CommandConfiguration(
+                new CommandConfiguration.Admin(
+                        Component.translatable("commands.template.description", ""), // TODO
+                        List.of("template", "papertemplate", "plugintemplate"),
+                        new CommandConfiguration.Admin.Reload(
+                                Component.translatable("commands.template.reload.description", "Reloads plugin configuration."),
+                                List.of(),
+                                Map.ofEntries(
+                                        Map.entry("success", Component.translatable("commands.template.reload.success", "Configuration reloaded successfully.")),
+                                        Map.entry("failure", Component.translatable("commands.template.reload.failure", "Failed to reload configuration. See the console for details."))
+                                )
+                        ),
+                        new CommandConfiguration.Admin.Help(
+                                Component.translatable("commands.template.help.description", "Displays help for plugin commands."),
+                                List.of(),
+                                Map.ofEntries(
+                                        Map.entry("arguments", Component.translatable("commands.template.help.arguments", "Arguments")),
+                                        Map.entry("available_commands", Component.translatable("commands.template.help.available_commands", "Available Commands")),
+                                        Map.entry("click_for_next_page", Component.translatable("commands.template.help.click_for_next_page", "Click for next page")),
+                                        Map.entry("click_for_previous_page", Component.translatable("commands.template.help.click_for_previous_page", "Click for previous page")),
+                                        Map.entry("click_to_show_help", Component.translatable("commands.template.help.click_to_show_help", "Click to show help for this command")),
+                                        Map.entry("command", Component.translatable("commands.template.help.command", "Command")),
+                                        Map.entry("description", Component.translatable("commands.template.help.description", "Description")),
+                                        Map.entry("help", Component.translatable("commands.template.help.help", "Help")),
+                                        Map.entry("no_description", Component.translatable("commands.template.help.no_description", "No Description")),
+                                        Map.entry("no_results_for_query", Component.translatable("commands.template.help.no_results_for_query", "No results for query")),
+                                        Map.entry("optional", Component.translatable("commands.template.help.optional", "Optional")),
+                                        Map.entry("page_out_of_range", Component.translatable("commands.template.help.page_out_of_range", "Error: Page <page> is not in range. Must be in range [1, <max_pages>]")),
+                                        Map.entry("showing_results_for_query", Component.translatable("commands.template.help.showing_results_for_query", "Showing search results for query"))
+                                ),
+                                new CommandConfiguration.Admin.Help.Colors(
+                                        "#2D7D9A",
+                                        "#49E1E8",
+                                        "#E3008C",
+                                        "#FFFFFF",
+                                        "#7D7D7D"
+                                )
+                        )
+                )
+        );
+        return new PrimaryConfiguration(storage, command);
     }
 }

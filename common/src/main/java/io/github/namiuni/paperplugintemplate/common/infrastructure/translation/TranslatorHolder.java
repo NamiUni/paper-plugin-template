@@ -49,18 +49,15 @@ public final class TranslatorHolder implements Provider<Translator>, Reloadable<
 
         this.logger.info("Loading translations...");
         final Translator initial = translatorLoader.loadTranslator();
-        globalRegistry.addSource(initial);
         this.translator = new AtomicReference<>(initial);
         this.logger.info("Translations loaded.");
     }
 
     @Override
     public Translator reload() {
-        return this.translator.updateAndGet(current -> {
+        return this.translator.updateAndGet(_ -> {
             this.logger.info("Reloading translations...");
-            this.globalRegistry.removeSource(current);
             final Translator fresh = this.translatorLoader.loadTranslator();
-            this.globalRegistry.addSource(fresh);
             this.logger.info("Translation reload complete.");
             return fresh;
         });

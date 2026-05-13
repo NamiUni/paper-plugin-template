@@ -88,7 +88,7 @@ paperPluginYaml {
     }
 
     dependencies {
-        server("MiniPlaceholders", Load.BEFORE, false)
+        bootstrap("MiniPlaceholders", Load.BEFORE, false)
     }
 }
 

@@ -24,8 +24,7 @@ import org.incendo.cloud.Command;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-@FunctionalInterface
-public interface CommandFactory {
+public sealed interface CommandFactory permits HelpCommand, ReloadCommand {
 
     Command<CommandSource> createCommand();
 }

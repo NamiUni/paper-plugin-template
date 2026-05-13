@@ -21,6 +21,8 @@ package io.github.namiuni.paperplugintemplate.common.user;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.google.inject.Scopes;
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.user.json.JsonUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.sql.JdbiUserRepository;
@@ -43,5 +45,10 @@ public final class UserStorageModule extends AbstractModule {
             case JSON -> json.get();
             case H2, MYSQL, POSTGRESQL -> jdbi.get();
         };
+    }
+
+    @Override
+    protected void configure() {
+        this.bind(PluginTemplateUserService.class).to(UserServiceInternal.class).in(Scopes.SINGLETON);
     }
 }

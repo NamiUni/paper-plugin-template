@@ -24,6 +24,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.StorageConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -43,7 +44,7 @@ public final class UserCache {
 
     @Inject
     UserCache(final Provider<PrimaryConfiguration> primaryConfig) {
-        final PrimaryConfiguration.Storage.Cache settings = primaryConfig.get().storage().userCache();
+        final StorageConfiguration.Cache settings = primaryConfig.get().storage().userCache();
 
         this.preloadCache = Caffeine.newBuilder()
                 .expireAfterWrite(settings.preloadExpireSeconds(), TimeUnit.SECONDS)
