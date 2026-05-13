@@ -21,11 +21,6 @@ dependencies {
     compileOnlyApi(libs.configurate.hocon)
     compileOnlyApi(libs.adventure.serializer.configurate)
 
-    // Resource pack
-    compileOnlyApi(libs.creative.api)
-    compileOnlyApi(libs.creative.serializer.minecraft)
-    compileOnlyApi(libs.creative.server)
-
     // Cache
     compileOnlyApi(libs.caffeine)
 

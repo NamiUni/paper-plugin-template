@@ -23,11 +23,6 @@ dependencies {
     runtimeDownload(libs.configurate.hocon) { isTransitive = false }
     runtimeDownload(libs.adventure.serializer.configurate) { isTransitive = false }
 
-    // Resource pack
-    runtimeDownload(libs.creative.api)
-    runtimeDownload(libs.creative.serializer.minecraft)
-    runtimeDownload(libs.creative.server)
-
     // Cache
     runtimeDownload(libs.caffeine) { isTransitive = false }
 
