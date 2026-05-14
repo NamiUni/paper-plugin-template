@@ -21,45 +21,37 @@ package io.github.namiuni.paperplugintemplate.common.command.commands;
 
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.UncheckedConfigurateException;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.translations.MessageAssembly;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
 import jakarta.inject.Inject;
-import java.io.UncheckedIOException;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import net.kyori.adventure.translation.Translator;
 import org.incendo.cloud.Command;
 import org.incendo.cloud.CommandManager;
 import org.incendo.cloud.context.CommandContext;
-import org.incendo.cloud.description.CommandDescription;
+import org.incendo.cloud.meta.CommandMeta;
 import org.incendo.cloud.minecraft.extras.RichDescription;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public final class ReloadCommand implements CommandFactory {
 
-    private final Reloadable<PrimaryConfiguration> configHolder;
-    private final Reloadable<Translator> translatorHolder;
-    private final MessageAssembly messages;
+    private final ConfigurationHolder<PrimaryConfiguration> primaryConfig;
     private final CommandManager<CommandSource> manager;
     private final Metadata metadata;
     private final ComponentLogger logger;
 
     @Inject
     ReloadCommand(
-            final Reloadable<PrimaryConfiguration> configHolder,
-            final Reloadable<Translator> translatorHolder,
-            final MessageAssembly messages,
+            final ConfigurationHolder<PrimaryConfiguration> primaryConfig,
             final CommandManager<CommandSource> manager,
             final Metadata metadata,
             final ComponentLogger logger
     ) {
-        this.configHolder = configHolder;
-        this.translatorHolder = translatorHolder;
-        this.messages = messages;
+        this.primaryConfig = primaryConfig;
         this.manager = manager;
         this.metadata = metadata;
         this.logger = logger;
@@ -67,35 +59,29 @@ public final class ReloadCommand implements CommandFactory {
 
     @Override
     public Command<CommandSource> createCommand() {
-        return this.manager.commandBuilder(this.metadata.namespace())
-                .literal("reload")
+        return this.manager.commandBuilder(
+                        this.metadata.namespace(),
+                        this.primaryConfig.get().command().admin().aliases(),
+                        RichDescription.of(this.primaryConfig.get().command().admin().description()),
+                        CommandMeta.empty()
+                )
+                .literal("reload", this.primaryConfig.get().command().admin().reload().aliases().toArray(String[]::new))
                 .permission(PluginPermissions.COMMAND_RELOAD)
-                .commandDescription(this.description())
+                .commandDescription(RichDescription.richDescription(this.primaryConfig.get().command().admin().reload().description()))
                 .handler(this::executes)
                 .build();
     }
 
     private void executes(final CommandContext<CommandSource> context) {
         final Audience sender = context.sender().sender();
+        this.logger.debug(sender.getOrDefault(Identity.NAME, "nai"));
 
         try {
-            this.configHolder.reload();
-            sender.sendMessage(this.messages.configurationReloadSuccess(sender));
+            this.primaryConfig.reload();
+            sender.sendMessage(this.primaryConfig.get().command().admin().reload().messages().get("success"));
         } catch (final UncheckedConfigurateException exception) {
             this.logger.error("Failed to reload configuration", exception);
-            sender.sendMessage(this.messages.configurationReloadFailure(sender));
+            sender.sendMessage(this.primaryConfig.get().command().admin().reload().messages().get("failure"));
         }
-
-        try {
-            this.translatorHolder.reload();
-            sender.sendMessage(this.messages.translationReloadSuccess(sender));
-        } catch (final UncheckedIOException exception) {
-            this.logger.error("Failed to reload translations", exception);
-            sender.sendMessage(this.messages.translationReloadFailure(sender));
-        }
-    }
-
-    private CommandDescription description() {
-        return CommandDescription.commandDescription(RichDescription.of(this.messages.commandReloadDescription()));
     }
 }

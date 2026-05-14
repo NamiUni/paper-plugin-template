@@ -29,6 +29,7 @@ import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.StorageConfiguration;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
@@ -56,8 +57,8 @@ public final class StorageModule extends AbstractModule {
             final @DataDirectory Path dataDirectory,
             final Metadata metadata
     ) {
-        final PrimaryConfiguration.Storage storage = primaryConfig.get().storage();
-        final PrimaryConfiguration.Storage.Pool pool = storage.pool();
+        final StorageConfiguration storage = primaryConfig.get().storage();
+        final StorageConfiguration.Pool pool = storage.pool();
         final HikariConfig config = new HikariConfig();
         config.setPoolName(metadata.name());
         config.setMaximumPoolSize(pool.maximumPoolSize());

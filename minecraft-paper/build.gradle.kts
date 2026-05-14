@@ -10,7 +10,15 @@ plugins {
     alias(libs.plugins.resource.factory)
 }
 
+val resourcePackHash by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+    description = "Resolves the SHA-1 hash file produced by the resource-pack subproject."
+}
+
 dependencies {
+    resourcePackHash(project(path = ":paper-plugin-template-resource-pack", configuration = "packHashElements"))
+
     implementation(project(":paper-plugin-template-common"))
 
     // Paper API
@@ -25,11 +33,6 @@ dependencies {
 
     // Cache
     runtimeDownload(libs.caffeine) { isTransitive = false }
-
-    // i18n
-    runtimeDownload(libs.kotonoha.annotations) { isTransitive = false }
-    runtimeDownload(libs.kotonoha.message) { isTransitive = false }
-    runtimeDownload(libs.kotonoha.message.extra.miniplaceholders) { isTransitive = false }
 
     // Command
     compileOnly(libs.cloud.paper)
@@ -88,7 +91,7 @@ paperPluginYaml {
     }
 
     dependencies {
-        server("MiniPlaceholders", Load.BEFORE, false)
+        bootstrap("MiniPlaceholders", Load.BEFORE, false)
     }
 }
 
@@ -110,6 +113,12 @@ tasks {
             url("https://ci.lucko.me/job/LuckPerms-Folia/lastSuccessfulBuild/artifact/bukkit/loader/build/libs/LuckPerms-Bukkit-${libs.versions.luckperms.get()}.jar")
             modrinth("miniplaceholders", "4zOT6txC")
             hangar("PlaceholderAPI", "2.12.2")
+        }
+    }
+
+    named<ProcessResources>("processResources") {
+        from(resourcePackHash) {
+            rename { "resource-pack.sha1" }
         }
     }
 }

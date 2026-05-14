@@ -1,0 +1,12 @@
+{
+  "pack": {
+    "pack_format": 15,
+    "min_format": 15,
+    "max_format": 87,
+    "supported_formats": [15, 87],
+    "description": {
+      "translate": "resourcepack.paperplugintemplate.description",
+      "fallback": "PaperPluginTemplate Resource Pack"
+    }
+  }
+}

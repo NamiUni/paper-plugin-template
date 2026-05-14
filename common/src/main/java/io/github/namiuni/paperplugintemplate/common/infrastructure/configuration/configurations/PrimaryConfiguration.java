@@ -22,7 +22,10 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.configuratio
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigHeader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigName;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageType;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
@@ -31,163 +34,81 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 @ConfigSerializable
 @ConfigName("config.conf")
 @ConfigHeader("""
-        Main configuration
+        Main configuration.
 
         Restart the server after changing storage settings.
         """)
 public record PrimaryConfiguration(
         @Comment("Storage backend configuration.")
-        Storage storage,
+        StorageConfiguration storage,
 
-        @Comment("User interface and display configuration.")
-        UI ui
+        @Comment("Command configuration.")
+        CommandConfiguration command,
+
+        @Comment("User data configuration.")
+        UserConfiguration user,
+
+        @Comment("Resource pack configuration.")
+        ResourcePackConfiguration resourcePack
 ) {
 
     public static final PrimaryConfiguration DEFAULT = new PrimaryConfiguration(
-            new Storage(
+            new StorageConfiguration(
                     StorageType.H2,
                     "localhost",
                     3306,
                     "paper_plugin_template", // TODO: change the database name
                     "server",
                     "",
-                    new Storage.Pool(
+                    new StorageConfiguration.Pool(
                             8,
                             8,
                             TimeUnit.MINUTES.toMillis(30L),
                             TimeUnit.MINUTES.toMillis(0L),
                             TimeUnit.MINUTES.toMillis(30L)
-                    ),
-                    new Storage.Cache(
-                            100L,
-                            TimeUnit.MINUTES.toNanos(15L),
-                            30L
                     )
             ),
-            new UI(
-                    new UI.Help(
-                            "#2D7D9A",
-                            "#49E1E8",
-                            "#E3008C",
-                            "#FFFFFF",
-                            "#7D7D7D"
+            new CommandConfiguration(
+                    new CommandConfiguration.Admin(
+                            Component.translatable("commands.template.description", ""), // TODO
+                            List.of("template", "papertemplate", "plugintemplate"),
+                            new CommandConfiguration.Admin.Reload(
+                                    Component.translatable("commands.template.reload.description", "Reloads plugin configuration."),
+                                    List.of(),
+                                    Map.ofEntries(
+                                            Map.entry("success", Component.translatable("commands.template.reload.success", "Configuration reloaded successfully.")),
+                                            Map.entry("failure", Component.translatable("commands.template.reload.failure", "Failed to reload configuration. See the console for details."))
+                                    )
+                            ),
+                            new CommandConfiguration.Admin.Help(
+                                    Component.translatable("commands.template.help.description", "Displays help for plugin commands."),
+                                    List.of(),
+                                    Map.ofEntries(
+                                            Map.entry("arguments", Component.translatable("commands.template.help.arguments", "Arguments")),
+                                            Map.entry("available_commands", Component.translatable("commands.template.help.available_commands", "Available Commands")),
+                                            Map.entry("click_for_next_page", Component.translatable("commands.template.help.click_for_next_page", "Click for next page")),
+                                            Map.entry("click_for_previous_page", Component.translatable("commands.template.help.click_for_previous_page", "Click for previous page")),
+                                            Map.entry("click_to_show_help", Component.translatable("commands.template.help.click_to_show_help", "Click to show help for this command")),
+                                            Map.entry("command", Component.translatable("commands.template.help.command", "Command")),
+                                            Map.entry("description", Component.translatable("commands.template.help.description", "Description")),
+                                            Map.entry("help", Component.translatable("commands.template.help.help", "Help")),
+                                            Map.entry("no_description", Component.translatable("commands.template.help.no_description", "No Description")),
+                                            Map.entry("no_results_for_query", Component.translatable("commands.template.help.no_results_for_query", "No results for query")),
+                                            Map.entry("optional", Component.translatable("commands.template.help.optional", "Optional")),
+                                            Map.entry("page_out_of_range", Component.translatable("commands.template.help.page_out_of_range", "Error: Page <page> is not in range. Must be in range [1, <max_pages>]")),
+                                            Map.entry("showing_results_for_query", Component.translatable("commands.template.help.showing_results_for_query", "Showing search results for query"))
+                                    ),
+                                    new CommandConfiguration.Admin.Help.Colors(
+                                            "#2D7D9A",
+                                            "#49E1E8",
+                                            "#E3008C",
+                                            "#FFFFFF",
+                                            "#7D7D7D"
+                                    )
+                            )
                     )
-            )
+            ),
+            UserConfiguration.DEFAULT,
+            ResourcePackConfiguration.DEFAULT
     );
-
-    @ConfigSerializable
-    public record Storage(
-            @Comment("""
-                    Storage type. Available options: H2, MYSQL, POSTGRESQL, JSON
-                    H2         - Embedded SQL database. No external server required.
-                    MYSQL      - External MySQL/MariaDB server.
-                    POSTGRESQL - External PostgreSQL server.
-                    JSON       - Flat JSON files. Human-readable, not suitable for high load.
-                    """)
-            StorageType type,
-
-            @Comment("Database host. Only used for MYSQL and POSTGRESQL.")
-            String host,
-
-            @Comment("Database port. Only used for MYSQL and POSTGRESQL.")
-            int port,
-
-            @Comment("Database name. Used for H2 (file name), MYSQL, and POSTGRESQL.")
-            String database,
-
-            @Comment("Database username. Only used for MYSQL and POSTGRESQL.")
-            String username,
-
-            @Comment("Database password. Only used for MYSQL and POSTGRESQL.")
-            String password,
-
-            @Comment("HikariCP connection pool settings.")
-            Pool pool,
-
-            @Comment("In-memory player-profile cache settings.")
-            Cache userCache
-    ) {
-
-        @ConfigSerializable
-        public record Pool(
-
-                @Comment("""
-                        Maximum number of connections the pool will maintain.
-                        Set equal to minimumIdle for a fixed-size pool.
-                        """)
-                int maximumPoolSize,
-
-                @Comment("""
-                        Minimum number of idle connections maintained in the pool.
-                        HikariCP recommends setting this equal to maximumPoolSize.
-                        """)
-                int minimumIdle,
-
-                @Comment("""
-                        Maximum lifetime of a connection in the pool (milliseconds).
-                        Must be shorter than the database's wait_timeout value.
-                        """)
-                long maximumLifetime,
-
-                @Comment("""
-                        Interval between keepalive queries on idle connections (milliseconds).
-                        Set to 0 to disable keepalive.
-                        """)
-                long keepaliveTime,
-
-                @Comment("Maximum milliseconds a caller waits for a connection before an exception is thrown.")
-                long connectionTimeout
-        ) {
-        }
-
-        @ConfigSerializable
-        public record Cache(
-
-                @Comment("Maximum number of player entries held in the in-memory cache.")
-                long maximumSize,
-
-                @Comment("""
-                        Duration in nanoseconds before an offline player's cache entry expires
-                        after their last access. Does not affect online players.
-                        """)
-                long expireAfterOffline,
-
-                @Comment("""
-                        Duration in seconds before a pre-login profile entry expires.
-                        This cache bridges the gap between the async pre-connect phase
-                        and the synchronous join phase. Increase if players are frequently
-                        disconnected due to slow storage on high-latency servers.
-                        """)
-                long preloadExpireSeconds
-        ) {
-        }
-    }
-
-    @ConfigSerializable
-    public record UI(
-
-            @Comment("Colors used in the /help command output.")
-            Help help
-    ) {
-
-        @ConfigSerializable
-        public record Help(
-
-                @Comment("Primary color for section headers and command names. Hex format: #RRGGBB")
-                String primaryColor,
-
-                @Comment("Highlight color for clickable elements and key terms. Hex format: #RRGGBB")
-                String highlightColor,
-
-                @Comment("Alternative highlight used for parameter hints and secondary emphasis. Hex format: #RRGGBB")
-                String altHighlightColor,
-
-                @Comment("Default body text color. Hex format: #RRGGBB")
-                String textColor,
-
-                @Comment("Accent color for decorative separators and less-prominent elements. Hex format: #RRGGBB")
-                String accentColor
-        ) {
-        }
-    }
 }

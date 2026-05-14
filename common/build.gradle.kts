@@ -24,11 +24,6 @@ dependencies {
     // Cache
     compileOnlyApi(libs.caffeine)
 
-    // i18n
-    compileOnlyApi(libs.kotonoha.message)
-    compileOnlyApi(libs.kotonoha.message.extra.miniplaceholders)
-    annotationProcessor(libs.kotonoha.resourcebundle.generator.processor)
-
     // Commands
     compileOnlyApi(libs.cloud.core)
     compileOnlyApi(libs.cloud.minecraft.extras)

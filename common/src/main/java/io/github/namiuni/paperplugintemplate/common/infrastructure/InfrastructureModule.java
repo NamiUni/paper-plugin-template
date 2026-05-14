@@ -24,7 +24,6 @@ import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationModule;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageModule;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.translation.TranslationModule;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.InstantTypeAdapter;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.UUIDTypeAdapter;
 import java.nio.file.Path;
@@ -85,7 +84,6 @@ public final class InfrastructureModule extends AbstractModule {
         this.bind(Gson.class).toInstance(GSON);
 
         this.install(new ConfigurationModule());
-        this.install(new TranslationModule());
         this.install(new StorageModule());
     }
 }
