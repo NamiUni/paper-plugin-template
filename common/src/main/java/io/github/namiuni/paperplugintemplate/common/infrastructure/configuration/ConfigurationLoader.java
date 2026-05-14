@@ -22,19 +22,14 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.configuratio
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigHeader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigName;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackInfoSerializer;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackRequestSerializer;
 import java.nio.file.Path;
-import net.kyori.adventure.resource.ResourcePackInfo;
-import net.kyori.adventure.resource.ResourcePackRequest;
-import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.hocon.HoconConfigurationLoader;
+import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 
 @NullMarked
 public final class ConfigurationLoader<T extends Record> {
@@ -46,11 +41,11 @@ public final class ConfigurationLoader<T extends Record> {
 
     private final org.spongepowered.configurate.loader.ConfigurationLoader<CommentedConfigurationNode> configLoader;
 
-    ConfigurationLoader(
+    public ConfigurationLoader(
             final Class<T> configClass,
             final T defaultConfig,
             final @DataDirectory Path dataDirectory,
-            final MiniMessage miniMessage,
+            final TypeSerializerCollection typeSerializers,
             final ComponentLogger logger
     ) {
         this.configClass = configClass;
@@ -65,21 +60,12 @@ public final class ConfigurationLoader<T extends Record> {
         final ConfigHeader headerAnnotation = configClass.getAnnotation(ConfigHeader.class);
         final String configHeader = headerAnnotation.value();
 
-        final var kyoriSerializer = ConfigurateComponentSerializer.builder()
-                .scalarSerializer(miniMessage)
-                .build()
-                .serializers();
-
         this.configLoader = HoconConfigurationLoader.builder()
                 .prettyPrinting(true)
                 .defaultOptions(options -> options
                         .shouldCopyDefaults(true)
                         .header(configHeader)
-                        .serializers(builder -> builder
-                                .registerAll(kyoriSerializer)
-                                .register(ResourcePackInfo.class, ResourcePackInfoSerializer.INSTANCE)
-                                .register(ResourcePackRequest.class, ResourcePackRequestSerializer.INSTANCE)
-                        )
+                        .serializers(builder -> builder.registerAll(typeSerializers))
                 )
                 .path(configPath)
                 .build();

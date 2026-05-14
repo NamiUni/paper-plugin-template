@@ -17,7 +17,7 @@
   "commands.template.help.ui.optional": "Optional",
   "commands.template.help.ui.page_out_of_range": "Error: Page %s is not in range. Must be in range [1, %s]",
   "commands.template.help.ui.showing_results_for_query": "Showing search results for query",
-  "resourcepack.paperplugintemplate.question": "Please download the resource pack!",
   "resourcepack.paperplugintemplate.description" : "PaperPluginTemplate",
+  "connect.resourcepack.paperplugintemplate": "Please download the resource pack!",
   "disconnect.loginFailedInfo.user_profile_could_not_be_loaded": "Failed to load your profile."
 }

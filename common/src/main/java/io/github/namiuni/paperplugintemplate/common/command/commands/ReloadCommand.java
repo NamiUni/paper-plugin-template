@@ -20,12 +20,14 @@
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
 import io.github.namiuni.paperplugintemplate.common.Metadata;
+import io.github.namiuni.paperplugintemplate.common.command.CommandConfiguration;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.UncheckedConfigurateException;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
 import jakarta.inject.Inject;
+import jakarta.inject.Provider;
+import java.util.Set;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -39,19 +41,22 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class ReloadCommand implements CommandFactory {
 
-    private final ConfigurationHolder<PrimaryConfiguration> primaryConfig;
+    private final Provider<CommandConfiguration> config;
+    private final Set<Reloadable<?>> reloadable;
     private final CommandManager<CommandSource> manager;
     private final Metadata metadata;
     private final ComponentLogger logger;
 
     @Inject
     ReloadCommand(
-            final ConfigurationHolder<PrimaryConfiguration> primaryConfig,
+            final Provider<CommandConfiguration> config,
+            final Set<Reloadable<?>> reloadable,
             final CommandManager<CommandSource> manager,
             final Metadata metadata,
             final ComponentLogger logger
     ) {
-        this.primaryConfig = primaryConfig;
+        this.config = config;
+        this.reloadable = reloadable;
         this.manager = manager;
         this.metadata = metadata;
         this.logger = logger;
@@ -61,13 +66,13 @@ public final class ReloadCommand implements CommandFactory {
     public Command<CommandSource> createCommand() {
         return this.manager.commandBuilder(
                         this.metadata.namespace(),
-                        this.primaryConfig.get().command().admin().aliases(),
-                        RichDescription.of(this.primaryConfig.get().command().admin().description()),
+                        this.config.get().admin().aliases(),
+                        RichDescription.of(this.config.get().admin().description()),
                         CommandMeta.empty()
                 )
-                .literal("reload", this.primaryConfig.get().command().admin().reload().aliases().toArray(String[]::new))
+                .literal("reload", this.config.get().admin().reload().aliases().toArray(String[]::new))
                 .permission(PluginPermissions.COMMAND_RELOAD)
-                .commandDescription(RichDescription.richDescription(this.primaryConfig.get().command().admin().reload().description()))
+                .commandDescription(RichDescription.richDescription(this.config.get().admin().reload().description()))
                 .handler(this::executes)
                 .build();
     }
@@ -77,11 +82,11 @@ public final class ReloadCommand implements CommandFactory {
         this.logger.debug(sender.getOrDefault(Identity.NAME, "nai"));
 
         try {
-            this.primaryConfig.reload();
-            sender.sendMessage(this.primaryConfig.get().command().admin().reload().messages().get("success"));
+            this.reloadable.forEach(Reloadable::reload);
+            sender.sendMessage(this.config.get().admin().reload().messages().get("success"));
         } catch (final UncheckedConfigurateException exception) {
             this.logger.error("Failed to reload configuration", exception);
-            sender.sendMessage(this.primaryConfig.get().command().admin().reload().messages().get("failure"));
+            sender.sendMessage(this.config.get().admin().reload().messages().get("failure"));
         }
     }
 }

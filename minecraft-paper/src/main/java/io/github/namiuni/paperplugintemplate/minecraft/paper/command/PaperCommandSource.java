@@ -48,7 +48,7 @@ public final class PaperCommandSource implements CommandSource {
     @Override
     public Audience sender() {
         if (this.source.getSender() instanceof final Player player) {
-            return this.userService.getUser(player.getUniqueId()).orElseThrow();
+            return this.userService.onlineUser(player.getUniqueId()).orElseThrow();
         }
         return this.source.getSender();
     }
@@ -56,7 +56,7 @@ public final class PaperCommandSource implements CommandSource {
     @Override
     public @Nullable Audience executor() {
         if (this.source.getExecutor() instanceof final Player player) {
-            return this.userService.getUser(player.getUniqueId()).orElseThrow();
+            return this.userService.onlineUser(player.getUniqueId()).orElseThrow();
         }
         return this.source.getExecutor();
     }

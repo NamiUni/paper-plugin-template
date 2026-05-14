@@ -25,8 +25,6 @@ import io.github.namiuni.paperplugintemplate.common.event.events.PlayerConnectEv
 import io.github.namiuni.paperplugintemplate.common.event.events.PlayerDisconnectEvent;
 import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnectEvent;
 import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.ResourcePackConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
@@ -40,20 +38,20 @@ public final class UserSessionHandler {
 
     private final UserPersistenceCoordinator persistenceCoordinator;
     private final PluginTemplateUserService userService;
-    private final Provider<PrimaryConfiguration> primaryConfig;
+    private final Provider<UserConfiguration> userConfig;
     private final ComponentLogger logger;
 
     @Inject
     UserSessionHandler(
             final UserPersistenceCoordinator persistenceCoordinator,
             final PluginTemplateUserService userService,
-            final Provider<PrimaryConfiguration> primaryConfig,
+            final Provider<UserConfiguration> userConfig,
             final ComponentLogger logger,
             final EventBus eventBus
     ) {
         this.persistenceCoordinator = persistenceCoordinator;
         this.userService = userService;
-        this.primaryConfig = primaryConfig;
+        this.userConfig = userConfig;
         this.logger = logger;
 
         eventBus.subscribe(PlayerPreConnectEvent.class, this::onPreConnect);
@@ -65,7 +63,7 @@ public final class UserSessionHandler {
     private void onPreConnect(final PlayerPreConnectEvent event) {
         this.persistenceCoordinator.preload(
                 event.uuid(),
-                () -> event.disconnector().disconnect(this.primaryConfig.get().user().messages().joinFailureLoadProfile())
+                () -> event.disconnector().disconnect(this.userConfig.get().messages().joinFailureLoadProfile())
         );
     }
 
@@ -80,9 +78,9 @@ public final class UserSessionHandler {
                         );
                     }
                 })
-                .thenRun(() -> {
-                    final ResourcePackConfiguration packConfig = this.primaryConfig.get().resourcePack();
-                    event.player().sendResourcePacks(packConfig.request());
+                .thenAccept(user -> {
+                    final UserConfiguration.ResourcePack packConfig = this.userConfig.get().resourcePack();
+                    user.sendResourcePacks(packConfig.request());
                 });
     }
 

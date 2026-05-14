@@ -20,9 +20,8 @@
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
 import io.github.namiuni.paperplugintemplate.common.Metadata;
+import io.github.namiuni.paperplugintemplate.common.command.CommandConfiguration;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.CommandConfiguration;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
@@ -52,17 +51,17 @@ import org.jspecify.annotations.NullMarked;
 public final class HelpCommand implements CommandFactory {
 
     private final CommandManager<CommandSource> manager;
-    private final Provider<PrimaryConfiguration> primaryConfig;
+    private final Provider<CommandConfiguration> config;
     private final Metadata metadata;
 
     @Inject
     HelpCommand(
             final CommandManager<CommandSource> manager,
-            final Provider<PrimaryConfiguration> primaryConfig,
+            final Provider<CommandConfiguration> config,
             final Metadata metadata
     ) {
         this.manager = manager;
-        this.primaryConfig = primaryConfig;
+        this.config = config;
         this.metadata = metadata;
     }
 
@@ -71,13 +70,13 @@ public final class HelpCommand implements CommandFactory {
         final MinecraftHelp<CommandSource> minecraftHelp = this.buildHelp();
         return this.manager.commandBuilder(
                         this.metadata.namespace(),
-                        this.primaryConfig.get().command().admin().aliases(),
-                        RichDescription.of(this.primaryConfig.get().command().admin().description()),
+                        this.config.get().admin().aliases(),
+                        RichDescription.of(this.config.get().admin().description()),
                         CommandMeta.empty()
                 )
-                .literal("help", this.primaryConfig.get().command().admin().help().aliases().toArray(String[]::new))
+                .literal("help", this.config.get().admin().help().aliases().toArray(String[]::new))
                 .permission(PluginPermissions.COMMAND_HELP)
-                .commandDescription(RichDescription.richDescription(this.primaryConfig.get().command().admin().help().description()))
+                .commandDescription(RichDescription.richDescription(this.config.get().admin().help().description()))
                 .optional(
                         "query",
                         StringParser.greedyStringParser(),
@@ -89,7 +88,7 @@ public final class HelpCommand implements CommandFactory {
     }
 
     private MinecraftHelp<CommandSource> buildHelp() {
-        final CommandConfiguration.Admin.Help.Colors colors = this.primaryConfig.get().command().admin().help().colors();
+        final CommandConfiguration.Admin.Help.Colors colors = this.config.get().admin().help().colors();
         return MinecraftHelp.<CommandSource>builder()
                 .commandManager(this.manager)
                 .audienceProvider(CommandSource::sender)
@@ -143,7 +142,7 @@ public final class HelpCommand implements CommandFactory {
                             .toArray(TagResolver[]::new)
             );
 
-            final Component component = HelpCommand.this.primaryConfig.get().command().admin().help().messages().get(key);
+            final Component component = HelpCommand.this.config.get().admin().help().messages().get(key);
             return component instanceof final TranslatableComponent translatable
                     ? translatable.arguments(Argument.tagResolver(placeholders))
                     : component;

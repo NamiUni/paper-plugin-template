@@ -108,6 +108,7 @@ runPaper.folia.registerTask()
 tasks {
     withType(RunServer::class).configureEach {
         systemProperty("log4j.configurationFile", "log4j2.xml")
+        jvmArgs("--sun-misc-unsafe-memory-access=allow")
         minecraftVersion("26.1.2")
         downloadPlugins {
             url("https://ci.lucko.me/job/LuckPerms-Folia/lastSuccessfulBuild/artifact/bukkit/loader/build/libs/LuckPerms-Bukkit-${libs.versions.luckperms.get()}.jar")

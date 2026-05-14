@@ -51,9 +51,7 @@ public final class ResourcePackInfoSerializer implements TypeSerializer<Resource
         final ResourcePackInfo.Builder builder = ResourcePackInfo.resourcePackInfo();
 
         builder.uri(Objects.requireNonNull(uri));
-        if (hash != null) {
-            builder.hash(hash);
-        }
+        builder.hash(Objects.requireNonNull(hash));
         if (id != null) {
             builder.id(id);
         }

@@ -17,15 +17,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations;
+package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageType;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigHeader;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigName;
+import java.util.concurrent.TimeUnit;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
 
 @NullMarked
 @ConfigSerializable
+@ConfigName("storage.conf")
+@ConfigHeader("")
 public record StorageConfiguration(
         @Comment("""
                 Storage type. Available options: H2, MYSQL, POSTGRESQL, JSON
@@ -54,6 +58,22 @@ public record StorageConfiguration(
         @Comment("HikariCP connection pool settings.")
         Pool pool
 ) {
+
+    public static final StorageConfiguration DEFAULT = new StorageConfiguration(
+            StorageType.H2,
+            "localhost",
+            3306,
+            "paper_plugin_template", // TODO: change the database name
+            "server",
+            "",
+            new StorageConfiguration.Pool(
+                    8,
+                    8,
+                    TimeUnit.MINUTES.toMillis(30L),
+                    TimeUnit.MINUTES.toMillis(0L),
+                    TimeUnit.MINUTES.toMillis(30L)
+            )
+    );
 
     @ConfigSerializable
     public record Pool(
