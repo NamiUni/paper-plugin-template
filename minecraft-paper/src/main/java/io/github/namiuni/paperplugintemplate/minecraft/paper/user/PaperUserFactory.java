@@ -23,9 +23,6 @@ import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
 import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
 import jakarta.inject.Inject;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.identity.Identified;
-import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -36,7 +33,7 @@ public final class PaperUserFactory implements UserFactory {
     }
 
     @Override
-    public <P extends Audience & Identified> PluginTemplateUser createUser(final P player, final UserRecord userRecord) {
-        return new PaperUser((Player) player, userRecord);
+    public PluginTemplateUser createUser(final UserRecord userRecord) {
+        return new PaperUser(userRecord);
     }
 }

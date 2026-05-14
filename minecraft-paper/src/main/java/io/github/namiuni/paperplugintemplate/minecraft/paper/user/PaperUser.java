@@ -23,54 +23,75 @@ import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record PaperUser(Player player, UserRecord userRecord) implements PluginTemplateUser, ForwardingAudience.Single {
+public record PaperUser(UserRecord userRecord) implements PluginTemplateUser, ForwardingAudience.Single {
+
+    public Optional<Player> player() {
+        return Optional.ofNullable(Bukkit.getPlayer(this.userRecord.uuid()));
+    }
 
     @Override
     public UUID uuid() {
-        return this.player.getUniqueId();
+        return this.userRecord.uuid();
     }
 
     @Override
     public String name() {
-        return this.player.getName();
+        return this.player()
+                .map(Player::getName)
+                .orElse(this.userRecord.name());
     }
 
     @Override
     public Component displayName() {
-        return this.player.displayName();
+        return this.player()
+                .map(Player::displayName)
+                .orElse(Component.text(this.name()));
     }
 
     @Override
     public Locale locale() {
-        return this.player.locale();
+        return this.player()
+                .map(Player::locale)
+                .orElse(Locale.US);
     }
 
     @Override
     public Instant lastSeen() {
-        return Instant.ofEpochMilli(this.player.getLastSeen());
+        return this.player()
+                .map(Player::getLastSeen)
+                .map(Instant::ofEpochMilli)
+                .orElse(this.userRecord.lastSeen());
     }
 
     @Override
     public boolean isOnline() {
-        return this.player.isOnline();
+        return this.player()
+                .map(Player::isOnline)
+                .orElse(false);
     }
 
     @Override
     public Audience audience() {
-        return this.player;
+        return this.player()
+                .map(Audience.class::cast)
+                .orElse(Audience.empty());
     }
 
     @Override
     public Identity identity() {
-        return this.player.identity();
+        return this.player()
+                .map(Player::identity)
+                .orElse(Identity.identity(this.uuid()));
     }
 }

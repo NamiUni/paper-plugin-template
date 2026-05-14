@@ -31,9 +31,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -65,8 +63,7 @@ class UserPersistenceCoordinatorTest {
 
     @BeforeEach
     void setUp() {
-        final Clock fixedClock = Clock.fixed(FIXED_NOW, ZoneOffset.UTC);
-        this.coordinator = new UserPersistenceCoordinator(this.cache, this.repository, fixedClock, this.logger);
+        this.coordinator = new UserPersistenceCoordinator(this.cache, this.repository, this.logger);
     }
 
     @Test
