@@ -23,14 +23,15 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.multibindings.Multibinder;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
+import io.github.namiuni.paperplugintemplate.common.command.CommandModule;
 import io.github.namiuni.paperplugintemplate.common.command.commands.CommandFactory;
 import io.github.namiuni.paperplugintemplate.common.command.commands.HelpCommand;
 import io.github.namiuni.paperplugintemplate.common.command.commands.ReloadCommand;
 import io.github.namiuni.paperplugintemplate.common.event.EventBus;
 import io.github.namiuni.paperplugintemplate.common.event.SimpleEventBus;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.InfrastructureModule;
+import io.github.namiuni.paperplugintemplate.common.user.UserModule;
 import io.github.namiuni.paperplugintemplate.common.user.UserSessionHandler;
-import io.github.namiuni.paperplugintemplate.common.user.UserStorageModule;
 import java.nio.file.Path;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
@@ -64,7 +65,8 @@ public final class CommonModule extends AbstractModule {
         this.bindCommands();
 
         this.install(new InfrastructureModule(this.logger, this.dataDirectory, this.pluginResource));
-        this.install(new UserStorageModule());
+        this.install(new UserModule());
+        this.install(new CommandModule());
     }
 
     private void bindCommands() {

@@ -20,7 +20,7 @@
 package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
 import io.github.namiuni.paperplugintemplate.common.CommonLifecycle;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.util.Set;
@@ -39,17 +39,17 @@ public final class PaperPlugin extends JavaPlugin {
 
     private final CommonLifecycle commonLifecycle;
     private final Set<Listener> listeners;
-    private final Provider<PrimaryConfiguration> primaryConfig;
+    private final Provider<StorageConfiguration> storageConfig;
 
     @Inject
     PaperPlugin(
             final CommonLifecycle commonLifecycle,
             final Set<Listener> listeners,
-            final Provider<PrimaryConfiguration> primaryConfig
+            final Provider<StorageConfiguration> storageConfig
     ) {
         this.commonLifecycle = commonLifecycle;
         this.listeners = listeners;
-        this.primaryConfig = primaryConfig;
+        this.storageConfig = storageConfig;
     }
 
     @Override
@@ -59,7 +59,7 @@ public final class PaperPlugin extends JavaPlugin {
         final Metrics metrics = new Metrics(this, BSTATS_PLUGIN_ID);
         final CustomChart chart = new SimplePie(
                 "user_storage_type",
-                () -> this.primaryConfig.get().storage().type().name()
+                () -> this.storageConfig.get().type().name()
         );
         metrics.addCustomChart(chart);
         this.commonLifecycle.enable();

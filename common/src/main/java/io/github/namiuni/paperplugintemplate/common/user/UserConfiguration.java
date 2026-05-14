@@ -17,9 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations;
+package io.github.namiuni.paperplugintemplate.common.user;
 
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigHeader;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigName;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
 import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -27,11 +35,18 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 
 @NullMarked
 @ConfigSerializable
+@ConfigName("user.conf")
+@ConfigHeader("")
 public record UserConfiguration(
+
         @Comment("In-memory player-profile cache settings.")
         Cache cache,
+
         @Comment("Messages sent to players during user lifecycle events.")
-        Messages messages
+        Messages messages,
+
+        @Comment("")
+        ResourcePack resourcePack
 ) {
 
     public static final UserConfiguration DEFAULT = new UserConfiguration(
@@ -48,8 +63,26 @@ public record UserConfiguration(
                                     "Failed to load your profile."
                             )
                     )
+            ),
+            new ResourcePack(
+                    true,
+                    ResourcePackRequest.resourcePackRequest()
+                            .packs(ResourcePackInfo.resourcePackInfo()
+                                    .uri(URI.create("https://github.com/NamiUni/paper-plugin-template/releases/download/1.0.0/PaperPluginTemplate.zip"))
+                                    .hash(loadBuildHash())
+                                    .build()
+                            )
+                            .replace(false)
+                            .required(false)
+                            .prompt(Component.translatable(
+                                            "connect.resourcepack.paperplugintemplate",
+                                            "Please download the resource pack!"
+                                    )
+                            )
+                            .build()
             )
     );
+    private static final String BUILD_HASH_RESOURCE = "/resource-pack.sha1";
 
     @ConfigSerializable
     public record Cache(
@@ -72,10 +105,33 @@ public record UserConfiguration(
     }
 
     @ConfigSerializable
+    public record ResourcePack(
+
+            @Comment("Whether to send the resource pack to players on join.")
+            boolean send,
+
+            @Comment("")
+            ResourcePackRequest request
+    ) {
+    }
+
+    @ConfigSerializable
     public record Messages(
 
             @Comment("Sent when a player's profile cannot be loaded during the pre-connect phase.")
             Component joinFailureLoadProfile
     ) {
+    }
+
+    private static String loadBuildHash() {
+        try (var in = ResourcePack.class.getResourceAsStream(BUILD_HASH_RESOURCE)) {
+            return in != null ? readString(in) : "";
+        } catch (final IOException _) {
+            return "";
+        }
+    }
+
+    private static String readString(final InputStream in) throws IOException {
+        return new String(in.readAllBytes(), StandardCharsets.UTF_8).strip();
     }
 }

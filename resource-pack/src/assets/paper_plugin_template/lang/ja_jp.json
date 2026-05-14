@@ -17,7 +17,7 @@
   "commands.template.help.ui.optional": "オプション",
   "commands.template.help.ui.page_out_of_range": "エラー: ページ %1$s は範囲外です。[1, %2$s] の範囲内でなければなりません。",
   "commands.template.help.ui.showing_results_for_query": "クエリの検索結果を表示",
-  "resourcepack.paperplugintemplate.question": "リソースパックをダウンロードしてね！",
   "resourcepack.paperplugintemplate.description" : "PaperPluginTemplate",
+  "connect.resourcepack.paperplugintemplate": "リソースパックをダウンロードしてね！",
   "disconnect.loginFailedInfo.user_profile_could_not_be_loaded": "プロフィールの読み込みに失敗しました。"
 }

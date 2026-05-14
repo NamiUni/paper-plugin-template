@@ -21,44 +21,32 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.configuratio
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.TypeLiteral;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackInfoSerializer;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackRequestSerializer;
 import jakarta.inject.Singleton;
-import java.nio.file.Path;
-import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
+import net.kyori.adventure.resource.ResourcePackInfo;
+import net.kyori.adventure.resource.ResourcePackRequest;
+import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.jspecify.annotations.NullMarked;
+import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 
 @NullMarked
 public final class ConfigurationModule extends AbstractModule {
 
-    @Override
-    protected void configure() {
-        this.bind(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { })
-                .asEagerSingleton();
-
-        this.bind(PrimaryConfiguration.class)
-                .toProvider(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
-        this.bind(new TypeLiteral<Reloadable<PrimaryConfiguration>>() { })
-                .to(new TypeLiteral<ConfigurationHolder<PrimaryConfiguration>>() { });
-    }
-
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    ConfigurationLoader<PrimaryConfiguration> primaryConfigLoader(
-            final @DataDirectory Path dataDirectory,
-            final MiniMessage miniMessage,
-            final ComponentLogger logger
-    ) {
-        return new ConfigurationLoader<>(
-                PrimaryConfiguration.class,
-                PrimaryConfiguration.DEFAULT,
-                dataDirectory,
-                miniMessage,
-                logger
-        );
+    TypeSerializerCollection typeSerializers(final MiniMessage miniMessage) {
+        final TypeSerializerCollection kyori = ConfigurateComponentSerializer.builder()
+                .scalarSerializer(miniMessage)
+                .build()
+                .serializers();
+
+        return TypeSerializerCollection.builder()
+                .registerAll(kyori)
+                .register(ResourcePackInfo.class, ResourcePackInfoSerializer.INSTANCE)
+                .register(ResourcePackRequest.class, ResourcePackRequestSerializer.INSTANCE)
+                .build();
     }
 }

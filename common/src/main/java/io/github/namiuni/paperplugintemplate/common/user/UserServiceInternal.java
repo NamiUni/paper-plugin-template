@@ -53,7 +53,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     }
 
     @Override
-    public Optional<PluginTemplateUser> getUser(final UUID uuid) {
+    public Optional<PluginTemplateUser> onlineUser(final UUID uuid) {
         return this.cache.getUser(uuid);
     }
 

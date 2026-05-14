@@ -29,7 +29,7 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface PluginTemplateUserService {
 
-    Optional<PluginTemplateUser> getUser(UUID uuid);
+    Optional<PluginTemplateUser> onlineUser(UUID uuid);
 
     CompletableFuture<PluginTemplateUser> loadUser(UUID uuid);
 
