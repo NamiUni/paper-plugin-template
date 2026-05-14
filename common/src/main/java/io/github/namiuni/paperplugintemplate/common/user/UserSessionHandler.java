@@ -70,7 +70,7 @@ public final class UserSessionHandler {
     }
 
     private void onConnect(final PlayerConnectEvent<?> event) {
-        this.userService.loadUser(event.player())
+        this.userService.loadUser(event.player().get(Identity.UUID).orElseThrow())
                 .whenComplete((_, exception) -> {
                     if (exception != null) {
                         this.logger.error(

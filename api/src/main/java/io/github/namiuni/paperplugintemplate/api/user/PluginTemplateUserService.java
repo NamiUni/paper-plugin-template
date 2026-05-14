@@ -22,8 +22,6 @@ package io.github.namiuni.paperplugintemplate.api.user;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.identity.Identified;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -33,7 +31,7 @@ public interface PluginTemplateUserService {
 
     Optional<PluginTemplateUser> getUser(UUID uuid);
 
-    <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(P player);
+    CompletableFuture<PluginTemplateUser> loadUser(UUID uuid);
 
     CompletableFuture<Void> deleteUser(UUID uuid);
 }

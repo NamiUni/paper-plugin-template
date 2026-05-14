@@ -27,9 +27,6 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.identity.Identified;
-import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 
@@ -61,12 +58,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     }
 
     @Override
-    public <P extends Audience & Identified> CompletableFuture<PluginTemplateUser> loadUser(final P player) {
-        final UUID uuid = player.get(Identity.UUID)
-                .orElseThrow(() -> new IllegalArgumentException("Player is missing UUID identity: " + player.getClass().getName()));
-        final String currentName = player.get(Identity.NAME)
-                .orElseThrow(() -> new IllegalArgumentException("Player is missing NAME identity: " + player.getClass().getName()));
-
+    public CompletableFuture<PluginTemplateUser> loadUser(final UUID uuid) {
         final Optional<PluginTemplateUser> cached = this.cache.getUser(uuid);
         if (cached.isPresent()) {
             this.logger.debug("[{}] Tier-1 (userCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
@@ -76,16 +68,16 @@ public final class UserServiceInternal implements PluginTemplateUserService {
         final Optional<UserRecord> preloaded = this.cache.getPreloaded(uuid);
         if (preloaded.isPresent()) {
             this.logger.debug("[{}] Tier-2 (preloadCache) hit for {}.", UserServiceInternal.class.getSimpleName(), uuid);
-            final PluginTemplateUser user = this.userFactory.createUser(player, preloaded.get());
+            final PluginTemplateUser user = this.userFactory.createUser(preloaded.get());
             this.cache.cacheUser(uuid, user);
             return CompletableFuture.completedFuture(user);
         }
 
         this.logger.debug("[{}] Tier-3 (repository) miss for {} — querying storage.", UserServiceInternal.class.getSimpleName(), uuid);
         return this.repository.findById(uuid)
-                .thenApply(existing -> existing.orElseGet(() -> new UserRecord(uuid, currentName, Instant.now())))
+                .thenApply(existing -> existing.orElseGet(() -> new UserRecord(uuid, "Unknown Player", Instant.now())))
                 .thenApply(record -> {
-                    final PluginTemplateUser user = this.userFactory.createUser(player, record);
+                    final PluginTemplateUser user = this.userFactory.createUser(record);
                     this.cache.cacheUser(uuid, user);
                     return user;
                 });

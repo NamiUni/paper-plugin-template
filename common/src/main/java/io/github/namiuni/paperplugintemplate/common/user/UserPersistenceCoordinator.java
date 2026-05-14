@@ -21,8 +21,6 @@ package io.github.namiuni.paperplugintemplate.common.user;
 
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import java.time.Clock;
-import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -34,19 +32,16 @@ public final class UserPersistenceCoordinator {
 
     private final UserCache cache;
     private final UserRepository repository;
-    private final Clock clock;
     private final ComponentLogger logger;
 
     @Inject
     UserPersistenceCoordinator(
             final UserCache cache,
             final UserRepository repository,
-            final Clock clock,
             final ComponentLogger logger
     ) {
         this.cache = cache;
         this.repository = repository;
-        this.clock = clock;
         this.logger = logger;
     }
 
@@ -78,7 +73,7 @@ public final class UserPersistenceCoordinator {
     public CompletableFuture<Void> save(final UUID uuid) {
         return this.cache.getUser(uuid)
                 .map(user -> {
-                    final UserRecord record = new UserRecord(user.uuid(), user.name(), Instant.now(this.clock));
+                    final UserRecord record = new UserRecord(user.uuid(), user.name(), user.lastSeen());
                     return this.repository.upsert(record)
                             .whenComplete((_, exception) -> {
                                 if (exception != null) {
