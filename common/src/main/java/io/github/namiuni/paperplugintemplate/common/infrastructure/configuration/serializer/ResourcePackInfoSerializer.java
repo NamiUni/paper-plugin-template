@@ -1,3 +1,22 @@
+/*
+ * PaperPluginTemplate
+ *
+ * Copyright (c) 2026. Namiu (うにたろう)
+ *                     Contributors []
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer;
 
 import java.lang.reflect.Type;
@@ -27,13 +46,19 @@ public final class ResourcePackInfoSerializer implements TypeSerializer<Resource
     public ResourcePackInfo deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
         final URI uri = node.node(URI).get(URI.class);
         final String hash = node.node(HASH).getString();
-        final UUID id = node.node(ID).get(UUID.class);
+        final UUID id = node.node(ID).get(UUID.class, UUID.randomUUID());
 
-        return ResourcePackInfo.resourcePackInfo()
-                .uri(Objects.requireNonNull(uri))
-                .hash(Objects.requireNonNull(hash))
-                .id(Objects.requireNonNull(id))
-                .build();
+        final ResourcePackInfo.Builder builder = ResourcePackInfo.resourcePackInfo();
+
+        builder.uri(Objects.requireNonNull(uri));
+        if (hash != null) {
+            builder.hash(hash);
+        }
+        if (id != null) {
+            builder.id(id);
+        }
+
+        return builder.build();
     }
 
     @Override

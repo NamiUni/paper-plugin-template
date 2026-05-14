@@ -48,7 +48,7 @@ public record PrimaryConfiguration(
         @Comment("User data configuration.")
         UserConfiguration user,
 
-        @Comment("Resourcepack configuration.")
+        @Comment("Resource pack configuration.")
         ResourcePackConfiguration resourcePack
 ) {
 

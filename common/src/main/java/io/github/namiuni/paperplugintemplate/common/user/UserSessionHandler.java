@@ -82,7 +82,7 @@ public final class UserSessionHandler {
                 })
                 .thenRun(() -> {
                     final ResourcePackConfiguration packConfig = this.primaryConfig.get().resourcePack();
-                    event.player().sendResourcePacks(packConfig.resourcePackRequest());
+                    event.player().sendResourcePacks(packConfig.request());
                 });
     }
 

@@ -1,0 +1,23 @@
+{
+  "commands.template.description": "",
+  "commands.template.reload.description": "プラグインの設定を再読み込みします。",
+  "commands.template.reload.success": "設定の再読み込みに成功しました。",
+  "commands.template.reload.failure": "設定の再読み込みに失敗しました。詳細はコンソールを確認してください。",
+  "commands.template.help.description": "プラグインコマンドのヘルプを表示します。",
+  "commands.template.help.ui.arguments": "引数",
+  "commands.template.help.ui.available_commands": "利用可能なコマンド",
+  "commands.template.help.ui.click_for_next_page": "クリックして次のページへ",
+  "commands.template.help.ui.click_for_previous_page": "クリックして前のページへ",
+  "commands.template.help.ui.click_to_show_help": "クリックしてこのコマンドのヘルプを表示",
+  "commands.template.help.ui.command": "コマンド",
+  "commands.template.help.ui.description": "説明",
+  "commands.template.help.ui.help": "ヘルプ",
+  "commands.template.help.ui.no_description": "説明なし",
+  "commands.template.help.ui.no_results_for_query": "クエリの結果はありません",
+  "commands.template.help.ui.optional": "オプション",
+  "commands.template.help.ui.page_out_of_range": "エラー: ページ %1$s は範囲外です。[1, %2$s] の範囲内でなければなりません。",
+  "commands.template.help.ui.showing_results_for_query": "クエリの検索結果を表示",
+  "resourcepack.paperplugintemplate.question": "リソースパックをダウンロードしてね！",
+  "resourcepack.paperplugintemplate.description" : "PaperPluginTemplate",
+  "disconnect.loginFailedInfo.user_profile_could_not_be_loaded": "プロフィールの読み込みに失敗しました。"
+}

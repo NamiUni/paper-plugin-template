@@ -16,7 +16,8 @@ pluginManagement {
 sequenceOf(
     "api",
     "common",
-    "minecraft-paper"
+    "minecraft-paper",
+    "resource-pack"
 ).forEach {
     include("${rootProject.name}-$it")
     project(":${rootProject.name}-$it").projectDir = file(it)
