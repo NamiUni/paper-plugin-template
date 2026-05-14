@@ -20,7 +20,6 @@
 package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
 import io.github.namiuni.paperplugintemplate.common.CommonLifecycle;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfiguration;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
