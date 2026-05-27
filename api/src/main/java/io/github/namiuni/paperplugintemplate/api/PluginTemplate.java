@@ -20,12 +20,13 @@
 package io.github.namiuni.paperplugintemplate.api;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
+import net.kyori.adventure.audience.ForwardingAudience;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @ApiStatus.NonExtendable
-public interface PluginTemplate {
+public interface PluginTemplate extends ForwardingAudience {
 
     PluginTemplateUserService userService();
 }

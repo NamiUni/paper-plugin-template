@@ -19,6 +19,7 @@
  */
 package io.github.namiuni.paperplugintemplate.common.infrastructure;
 
+import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
@@ -57,6 +58,7 @@ public final class InfrastructureModule extends AbstractModule {
 
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
+            .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .registerTypeAdapter(Instant.class, InstantTypeAdapter.INSTANCE)
             .registerTypeAdapter(UUID.class, UUIDTypeAdapter.INSTANCE)
             .create();

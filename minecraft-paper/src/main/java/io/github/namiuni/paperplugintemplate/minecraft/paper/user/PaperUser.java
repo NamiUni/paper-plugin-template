@@ -20,78 +20,142 @@
 package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
 import java.time.Instant;
 import java.util.Locale;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.UnaryOperator;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.audience.ForwardingAudience;
+import net.kyori.adventure.identity.Identified;
 import net.kyori.adventure.identity.Identity;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
-public record PaperUser(UserRecord userRecord) implements PluginTemplateUser, ForwardingAudience.Single {
+public final class PaperUser implements UserInternal, ForwardingAudience.Single {
 
-    public Optional<Player> player() {
-        return Optional.ofNullable(Bukkit.getPlayer(this.userRecord.uuid()));
+    private final Audience audience;
+    private final UUID uuid;
+    private final String name;
+    private final Instant lastSeen;
+
+    private final AtomicReference<Setting> setting;
+
+    public PaperUser(
+            final Audience audience,
+            final UUID uuid,
+            final String name,
+            final Instant lastSeen,
+            final Setting setting
+    ) {
+        this.audience = audience;
+        this.uuid = uuid;
+        this.name = name;
+        this.lastSeen = lastSeen;
+
+        this.setting = new AtomicReference<>(setting);
     }
 
     @Override
     public UUID uuid() {
-        return this.userRecord.uuid();
+        return this.audience.getOrDefault(Identity.UUID, this.uuid);
     }
 
     @Override
     public String name() {
-        return this.player()
-                .map(Player::getName)
-                .orElse(this.userRecord.name());
+        return this.audience.getOrDefault(Identity.NAME, this.name);
     }
 
     @Override
     public Component displayName() {
-        return this.player()
-                .map(Player::displayName)
-                .orElse(Component.text(this.name()));
+        return this.audience.getOrDefault(Identity.DISPLAY_NAME, Component.text(this.name()));
     }
 
     @Override
     public Locale locale() {
-        return this.player()
-                .map(Player::locale)
-                .orElse(Locale.US);
+        return this.audience.getOrDefault(Identity.LOCALE, Locale.US);
     }
 
     @Override
     public Instant lastSeen() {
-        return this.player()
-                .map(Player::getLastSeen)
-                .map(Instant::ofEpochMilli)
-                .orElse(this.userRecord.lastSeen());
+        if (this.audience instanceof final Player player) {
+            return Instant.ofEpochMilli(player.getLastSeen());
+        }
+
+        return this.lastSeen;
     }
 
     @Override
     public boolean isOnline() {
-        return this.player()
-                .map(Player::isOnline)
-                .orElse(false);
-    }
+        if (this.audience instanceof final Player player) {
+            return player.isOnline();
+        }
 
-    @Override
-    public Audience audience() {
-        return this.player()
-                .map(Audience.class::cast)
-                .orElse(Audience.empty());
+        return false;
     }
 
     @Override
     public Identity identity() {
-        return this.player()
-                .map(Player::identity)
-                .orElse(Identity.identity(this.uuid()));
+        if (this.audience instanceof final Identified identified) {
+            return identified.identity();
+        }
+
+        return Identity.identity(this.uuid());
+    }
+
+    @Override
+    public Setting getSetting() {
+        return this.setting.get();
+    }
+
+    @Override
+    public Setting editSetting(final UnaryOperator<Setting> current) {
+        return this.setting.updateAndGet(current);
+    }
+
+    @Override
+    public UserInternal withAudience(final Audience audience) {
+        return new PaperUser(audience, this.uuid(), this.name(), this.lastSeen(), this.setting.get());
+    }
+
+    @Override
+    public Audience audience() {
+        return this.audience;
+    }
+
+    @Override
+    public boolean equals(final @Nullable Object other) {
+        if (other instanceof final PluginTemplateUser that) {
+            if (that == this) {
+                return true;
+            }
+
+            return Objects.equals(that.uuid(), this.uuid());
+        }
+
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.uuid(), this.getSetting());
+    }
+
+    @Override
+    public String toString() {
+        return "PaperUser{" +
+                "audience=" + this.audience +
+                ", uuid=" + this.uuid() +
+                ", name=" + this.name() +
+                ", displayName=" + this.displayName() +
+                ", locale=" + this.locale() +
+                ", lastSeen=" + this.lastSeen() +
+                ", isOnline=" + this.isOnline() +
+                '}';
     }
 }

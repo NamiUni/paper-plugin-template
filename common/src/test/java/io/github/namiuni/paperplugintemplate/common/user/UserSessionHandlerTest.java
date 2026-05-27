@@ -140,7 +140,7 @@ class UserSessionHandlerTest {
         when(this.userService.loadUser(PLAYER_A))
                 .thenReturn(CompletableFuture.completedFuture(mock(PluginTemplateUser.class)));
 
-        this.eventBus.publish(new PlayerConnectEvent<>(PLAYER_A));
+        this.eventBus.publish(new PlayerConnectEvent(PLAYER_A));
 
         verify(this.userService).loadUser(PLAYER_A);
     }

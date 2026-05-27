@@ -19,5 +19,5 @@
   "commands.template.help.ui.showing_results_for_query": "Showing search results for query",
   "resourcepack.paperplugintemplate.description" : "PaperPluginTemplate",
   "connect.resourcepack.paperplugintemplate": "Please download the resource pack!",
-  "disconnect.loginFailedInfo.user_profile_could_not_be_loaded": "Failed to load your profile."
+  "connect.failure.load_user_profile": "Failed to load your profile."
 }

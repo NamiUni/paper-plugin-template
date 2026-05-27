@@ -57,11 +57,8 @@ public record UserConfiguration(
             ),
             new Messages(
                     Component.translatable(
-                            "disconnect.loginFailedInfo",
-                            Component.translatable(
-                                    "disconnect.loginFailedInfo.user_profile_could_not_be_loaded",
-                                    "Failed to load your profile."
-                            )
+                            "connect.failure.load_user_profile",
+                            "Failed to load your profile."
                     )
             ),
             new ResourcePack(
@@ -119,7 +116,7 @@ public record UserConfiguration(
     public record Messages(
 
             @Comment("Sent when a player's profile cannot be loaded during the pre-connect phase.")
-            Component joinFailureLoadProfile
+            Component connectFailureLoadProfile
     ) {
     }
 

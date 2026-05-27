@@ -20,11 +20,23 @@
 package io.github.namiuni.paperplugintemplate.common.user;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
+import java.time.Instant;
+import java.util.UUID;
+import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @FunctionalInterface
 public interface UserFactory {
 
-    PluginTemplateUser createUser(UserRecord userRecord);
+    UserInternal createUser(Audience audience, UUID uuid, String name, Instant lastSeen, PluginTemplateUser.Setting setting);
+
+    default UserInternal createUser(
+            final UUID uuid,
+            final String name,
+            final Instant lastSeen,
+            final PluginTemplateUser.Setting setting
+    ) {
+        return this.createUser(Audience.empty(), uuid, name, lastSeen, setting);
+    }
 }

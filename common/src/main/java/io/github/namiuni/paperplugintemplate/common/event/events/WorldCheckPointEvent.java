@@ -19,10 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.common.event.events;
 
-import java.util.Set;
-import java.util.UUID;
+import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record WorldCheckPointEvent(Set<UUID> onlinePlayerUuids) implements Event {
+public record WorldCheckPointEvent(Iterable<? extends Audience> onlinePlayers) implements Event {
 }

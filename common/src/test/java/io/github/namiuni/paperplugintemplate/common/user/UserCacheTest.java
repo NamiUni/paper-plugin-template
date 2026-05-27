@@ -29,6 +29,7 @@ import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.PrimaryConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.configurations.StorageConfiguration;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageType;
+import io.github.namiuni.paperplugintemplate.common.user.storage.UserRecord;
 import jakarta.inject.Provider;
 import java.time.Instant;
 import java.util.List;

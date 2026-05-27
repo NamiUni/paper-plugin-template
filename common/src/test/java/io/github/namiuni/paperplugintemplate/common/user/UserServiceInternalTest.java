@@ -31,6 +31,8 @@ import static org.mockito.Mockito.when;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.TestPlayer;
+import io.github.namiuni.paperplugintemplate.common.user.storage.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -71,14 +73,14 @@ class UserServiceInternalTest {
         final PluginTemplateUser user = mock(PluginTemplateUser.class);
         when(this.cache.getUser(UUID_A)).thenReturn(Optional.of(user));
 
-        assertEquals(user, this.service.getUser(UUID_A).orElseThrow());
+        assertEquals(user, this.service.getCachedUser(UUID_A).orElseThrow());
     }
 
     @Test
     void getUserReturnsEmptyWhenCacheMiss() {
         when(this.cache.getUser(UUID_A)).thenReturn(Optional.empty());
 
-        assertTrue(this.service.getUser(UUID_A).isEmpty());
+        assertTrue(this.service.getCachedUser(UUID_A).isEmpty());
     }
 
     @Test
@@ -86,7 +88,7 @@ class UserServiceInternalTest {
         final PluginTemplateUser cached = mock(PluginTemplateUser.class);
         when(this.cache.getUser(UUID_A)).thenReturn(Optional.of(cached));
 
-        assertEquals(cached, this.service.loadUser(PLAYER_A).join());
+        assertEquals(cached, this.service.loadUserOrCreate(PLAYER_A).join());
         verify(this.repository, never()).findById(any());
         verify(this.userFactory, never()).createUser(any(), any());
     }
@@ -100,7 +102,7 @@ class UserServiceInternalTest {
         when(this.cache.getPreloaded(UUID_A)).thenReturn(Optional.of(preloaded));
         when(this.userFactory.createUser(same(PLAYER_A), eq(preloaded))).thenReturn(createdUser);
 
-        assertEquals(createdUser, this.service.loadUser(PLAYER_A).join());
+        assertEquals(createdUser, this.service.loadUserOrCreate(PLAYER_A).join());
         verify(this.repository, never()).findById(any());
     }
 
@@ -113,7 +115,7 @@ class UserServiceInternalTest {
         when(this.cache.getPreloaded(UUID_A)).thenReturn(Optional.of(preloaded));
         when(this.userFactory.createUser(any(), any())).thenReturn(createdUser);
 
-        this.service.loadUser(PLAYER_A).join();
+        this.service.loadUserOrCreate(PLAYER_A).join();
 
         verify(this.cache).cacheUser(UUID_A, createdUser);
     }
@@ -128,7 +130,7 @@ class UserServiceInternalTest {
         when(this.repository.findById(UUID_A)).thenReturn(CompletableFuture.completedFuture(Optional.of(dbRecord)));
         when(this.userFactory.createUser(same(PLAYER_A), eq(dbRecord))).thenReturn(createdUser);
 
-        assertEquals(createdUser, this.service.loadUser(PLAYER_A).join());
+        assertEquals(createdUser, this.service.loadUserOrCreate(PLAYER_A).join());
         verify(this.repository).findById(UUID_A);
     }
 
@@ -139,7 +141,7 @@ class UserServiceInternalTest {
         when(this.repository.findById(UUID_A)).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         when(this.userFactory.createUser(any(), any())).thenReturn(mock(PluginTemplateUser.class));
 
-        this.service.loadUser(PLAYER_A).join();
+        this.service.loadUserOrCreate(PLAYER_A).join();
 
         verify(this.userFactory).createUser(same(PLAYER_A), any(UserRecord.class));
     }
@@ -151,7 +153,7 @@ class UserServiceInternalTest {
         when(this.repository.findById(UUID_A)).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         when(this.userFactory.createUser(any(), any())).thenReturn(mock(PluginTemplateUser.class));
 
-        this.service.loadUser(PLAYER_A).join();
+        this.service.loadUserOrCreate(PLAYER_A).join();
 
         verify(this.userFactory).createUser(
                 same(PLAYER_A),
@@ -168,7 +170,7 @@ class UserServiceInternalTest {
         when(this.repository.findById(UUID_A)).thenReturn(CompletableFuture.completedFuture(Optional.empty()));
         when(this.userFactory.createUser(any(), any())).thenReturn(createdUser);
 
-        this.service.loadUser(PLAYER_A).join();
+        this.service.loadUserOrCreate(PLAYER_A).join();
 
         verify(this.cache).cacheUser(UUID_A, createdUser);
     }
@@ -177,7 +179,7 @@ class UserServiceInternalTest {
     void deleteUserInvalidatesCacheBeforeRepositoryDelete() {
         when(this.repository.delete(UUID_A)).thenReturn(CompletableFuture.completedFuture(null));
 
-        this.service.deleteUser(UUID_A).join();
+        this.service.deleteUserIfPresent(UUID_A).join();
 
         verify(this.cache).invalidate(UUID_A);
         verify(this.repository).delete(UUID_A);
@@ -190,7 +192,7 @@ class UserServiceInternalTest {
         when(this.repository.delete(UUID_A)).thenReturn(failedFuture);
 
         try {
-            this.service.deleteUser(UUID_A).join();
+            this.service.deleteUserIfPresent(UUID_A).join();
         } catch (final Exception _) {
             // expected
         }

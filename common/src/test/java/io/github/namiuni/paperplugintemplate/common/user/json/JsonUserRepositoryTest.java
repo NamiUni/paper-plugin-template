@@ -26,7 +26,8 @@ import static org.mockito.Mockito.mock;
 
 import com.google.gson.GsonBuilder;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.storage.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.storage.JsonUserRepository;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.InstantTypeAdapter;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.UUIDTypeAdapter;
 import java.nio.file.Files;

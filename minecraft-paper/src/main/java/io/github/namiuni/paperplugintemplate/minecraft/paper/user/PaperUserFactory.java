@@ -21,8 +21,13 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper.user;
 
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
-import io.github.namiuni.paperplugintemplate.common.user.UserRecord;
+import io.github.namiuni.paperplugintemplate.common.user.UserInternal;
 import jakarta.inject.Inject;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
+import net.kyori.adventure.audience.Audience;
+import org.bukkit.Bukkit;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -33,7 +38,15 @@ public final class PaperUserFactory implements UserFactory {
     }
 
     @Override
-    public PluginTemplateUser createUser(final UserRecord userRecord) {
-        return new PaperUser(userRecord);
+    public UserInternal createUser(final Audience audience, final UUID uuid, final String name, final Instant lastSeen, final PluginTemplateUser.Setting setting) {
+        return new PaperUser(audience, uuid, name, lastSeen, setting);
+    }
+
+    @Override
+    public UserInternal createUser(final UUID uuid, final String name, final Instant lastSeen, final PluginTemplateUser.Setting setting) {
+        final Audience audience = Optional
+                .<Audience>ofNullable(Bukkit.getPlayer(uuid))
+                .orElse(Audience.empty());
+        return this.createUser(audience, uuid, name, lastSeen, setting);
     }
 }

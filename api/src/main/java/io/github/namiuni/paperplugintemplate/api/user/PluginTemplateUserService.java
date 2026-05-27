@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.api.user;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import net.kyori.adventure.audience.Audience;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
@@ -29,9 +30,16 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface PluginTemplateUserService {
 
-    Optional<PluginTemplateUser> onlineUser(UUID uuid);
 
-    CompletableFuture<PluginTemplateUser> loadUser(UUID uuid);
+    Optional<CompletableFuture<PluginTemplateUser>> getCachedUser(UUID uuid);
 
-    CompletableFuture<Void> deleteUser(UUID uuid);
+    CompletableFuture<PluginTemplateUser> loadUserOrCreate(Audience audience);
+
+    CompletableFuture<PluginTemplateUser> loadUserOrCreate(UUID uuid);
+
+    CompletableFuture<Optional<PluginTemplateUser>> loadUserIfPresent(UUID uuid);
+
+    CompletableFuture<Void> saveUserIfPresent(UUID uuid);
+
+    CompletableFuture<Void> deleteUserIfPresent(UUID uuid);
 }

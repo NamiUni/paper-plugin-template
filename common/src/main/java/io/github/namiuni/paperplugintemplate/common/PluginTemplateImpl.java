@@ -20,14 +20,20 @@
 package io.github.namiuni.paperplugintemplate.common;
 
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
+import io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal;
 import jakarta.inject.Inject;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-record PluginTemplateImpl(PluginTemplateUserService userService) implements PluginTemplate {
+record PluginTemplateImpl(UserServiceInternal userService) implements PluginTemplate {
 
     @Inject
     PluginTemplateImpl {
+    }
+
+    @Override
+    public Iterable<PluginTemplateUser> audiences() {
+        return this.userService.users();
     }
 }

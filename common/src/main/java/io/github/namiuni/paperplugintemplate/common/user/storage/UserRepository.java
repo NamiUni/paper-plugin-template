@@ -17,16 +17,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package io.github.namiuni.paperplugintemplate.common.user;
+package io.github.namiuni.paperplugintemplate.common.user.storage;
 
-import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record UserRecord(
-        UUID uuid,
-        String name,
-        Instant lastSeen
-) {
+public interface UserRepository extends AutoCloseable {
+
+    Optional<UserRecord> findById(UUID uuid);
+
+    void upsert(UserRecord userRecord);
+
+    void delete(UUID uuid);
 }

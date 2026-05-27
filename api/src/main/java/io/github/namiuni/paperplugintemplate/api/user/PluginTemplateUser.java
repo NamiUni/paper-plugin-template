@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.api.user;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.function.UnaryOperator;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
 import net.kyori.adventure.text.Component;
@@ -43,4 +44,11 @@ public interface PluginTemplateUser extends Audience, Identified {
     Instant lastSeen();
 
     boolean isOnline();
+
+    Setting getSetting();
+
+    Setting editSetting(UnaryOperator<Setting> current);
+
+    interface Setting {
+    }
 }
