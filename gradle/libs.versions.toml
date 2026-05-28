@@ -32,7 +32,7 @@ postgresql = "42.7.11"
 flyway = "12.6.2"
 
 # Test
-junit = "6.1.0-SNAPSHOT"
+junit = "6.1.0"
 mockito = "5.23.0"
 
 [libraries]
