@@ -111,7 +111,7 @@ tasks {
         jvmArgs("--sun-misc-unsafe-memory-access=allow")
         minecraftVersion("26.1.2")
         downloadPlugins {
-            url("https://ci.lucko.me/job/LuckPerms-Folia/lastSuccessfulBuild/artifact/bukkit/loader/build/libs/LuckPerms-Bukkit-${libs.versions.luckperms.get()}.jar")
+            url("https://download.luckperms.net/1640/bukkit/loader/LuckPerms-Bukkit-${libs.versions.luckperms.get()}.jar")
             modrinth("miniplaceholders", "4zOT6txC")
             hangar("PlaceholderAPI", "2.12.2")
         }

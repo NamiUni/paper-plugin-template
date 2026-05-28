@@ -19,9 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.common.event.events;
 
-import java.util.UUID;
+import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record PlayerDisconnectEvent(UUID uuid) implements Event {
+public record PlayerDisconnectEvent(Audience audience) implements Event {
 }

@@ -22,7 +22,7 @@ package io.github.namiuni.paperplugintemplate.common;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplateProvider;
 import io.github.namiuni.paperplugintemplate.common.command.CommandRegistrar;
-import io.github.namiuni.paperplugintemplate.common.user.UserRepository;
+import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -44,7 +44,6 @@ public final class CommonLifecycle {
             final PluginTemplate plugin,
             final ComponentLogger logger
     ) {
-
         this.userRepository = userRepository;
         this.commandRegistrar = commandRegistrar;
         this.plugin = plugin;

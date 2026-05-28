@@ -22,6 +22,7 @@ package io.github.namiuni.paperplugintemplate.minecraft.paper.command;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.audience.Audience;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
@@ -47,17 +48,23 @@ public final class PaperCommandSource implements CommandSource {
 
     @Override
     public Audience sender() {
-        if (this.source.getSender() instanceof final Player player) {
-            return this.userService.onlineUser(player.getUniqueId()).orElseThrow();
+        final Audience sender = this.source.getSender();
+        if (sender instanceof final Player player) {
+            return this.userService.getCachedUser(player.getUniqueId())
+                    .<Audience>map(CompletableFuture::join)
+                    .orElse(player);
         }
-        return this.source.getSender();
+        return sender;
     }
 
     @Override
     public @Nullable Audience executor() {
-        if (this.source.getExecutor() instanceof final Player player) {
-            return this.userService.onlineUser(player.getUniqueId()).orElseThrow();
+        final Audience executor = this.source.getExecutor();
+        if (executor instanceof final Player player) {
+            return this.userService.getCachedUser(player.getUniqueId())
+                    .<Audience>map(CompletableFuture::join)
+                    .orElse(player);
         }
-        return this.source.getExecutor();
+        return executor;
     }
 }

@@ -28,8 +28,9 @@ import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationLoader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfiguration;
-import io.github.namiuni.paperplugintemplate.common.user.json.JsonUserRepository;
-import io.github.namiuni.paperplugintemplate.common.user.sql.JdbiUserRepository;
+import io.github.namiuni.paperplugintemplate.common.user.storage.JdbiUserRepository;
+import io.github.namiuni.paperplugintemplate.common.user.storage.JsonUserRepository;
+import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;

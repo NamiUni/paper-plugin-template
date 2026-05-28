@@ -26,9 +26,8 @@ import io.github.namiuni.paperplugintemplate.common.event.events.PlayerPreConnec
 import io.github.namiuni.paperplugintemplate.common.event.events.WorldCheckPointEvent;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import jakarta.inject.Inject;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.List;
+import net.kyori.adventure.audience.Audience;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -49,35 +48,27 @@ public final class UserSessionAdapter implements Listener {
         this.eventBus = eventBus;
     }
 
-    @EventHandler(priority = EventPriority.MONITOR)
+    @EventHandler(priority = EventPriority.NORMAL)
     private void onPreConnect(final AsyncPlayerConnectionConfigureEvent event) {
         final var connection = event.getConnection();
-        if (!connection.isConnected()) {
-            return;
-        }
-        final UUID uuid = connection.getProfile().getId();
-        if (uuid == null) {
-            return;
-        }
+        final Audience audience = connection.getAudience();
 
-        this.eventBus.publish(new PlayerPreConnectEvent(uuid, connection.getAudience(), connection::disconnect));
+        this.eventBus.publish(new PlayerPreConnectEvent(audience, connection::disconnect));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     private void onJoin(final PlayerJoinEvent event) {
-        this.eventBus.publish(new PlayerConnectEvent<>(event.getPlayer()));
+        this.eventBus.publish(new PlayerConnectEvent(event.getPlayer()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     private void onQuit(final PlayerQuitEvent event) {
-        this.eventBus.publish(new PlayerDisconnectEvent(event.getPlayer().getUniqueId()));
+        this.eventBus.publish(new PlayerDisconnectEvent(event.getPlayer()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     private void onWorldSave(final WorldSaveEvent event) {
-        final Set<UUID> uuids = event.getWorld().getPlayers().stream()
-                .map(Player::getUniqueId)
-                .collect(Collectors.toUnmodifiableSet());
-        this.eventBus.publish(new WorldCheckPointEvent(uuids));
+        final List<Player> players = event.getWorld().getPlayers();
+        this.eventBus.publish(new WorldCheckPointEvent(players));
     }
 }
