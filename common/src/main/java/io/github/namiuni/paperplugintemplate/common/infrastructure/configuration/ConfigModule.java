@@ -21,9 +21,11 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.configuratio
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.DurationSerializer;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackInfoSerializer;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.serializer.ResourcePackRequestSerializer;
 import jakarta.inject.Singleton;
+import java.time.Duration;
 import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
 import net.kyori.adventure.serializer.configurate4.ConfigurateComponentSerializer;
@@ -32,7 +34,7 @@ import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 
 @NullMarked
-public final class ConfigurationModule extends AbstractModule {
+public final class ConfigModule extends AbstractModule {
 
     @Provides
     @Singleton
@@ -44,9 +46,10 @@ public final class ConfigurationModule extends AbstractModule {
                 .serializers();
 
         return TypeSerializerCollection.builder()
-                .registerAll(kyori)
+                .register(Duration.class, DurationSerializer.INSTANCE)
                 .register(ResourcePackInfo.class, ResourcePackInfoSerializer.INSTANCE)
                 .register(ResourcePackRequest.class, ResourcePackRequestSerializer.INSTANCE)
+                .registerAll(kyori)
                 .build();
     }
 }

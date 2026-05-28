@@ -20,7 +20,7 @@
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
 import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.command.CommandConfiguration;
+import io.github.namiuni.paperplugintemplate.common.command.CommandConfig;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
 import io.github.namiuni.paperplugintemplate.common.permission.PluginPermissions;
 import jakarta.inject.Inject;
@@ -51,13 +51,13 @@ import org.jspecify.annotations.NullMarked;
 public final class HelpCommand implements CommandFactory {
 
     private final CommandManager<CommandSource> manager;
-    private final Provider<CommandConfiguration> config;
+    private final Provider<CommandConfig> config;
     private final Metadata metadata;
 
     @Inject
     HelpCommand(
             final CommandManager<CommandSource> manager,
-            final Provider<CommandConfiguration> config,
+            final Provider<CommandConfig> config,
             final Metadata metadata
     ) {
         this.manager = manager;
@@ -88,7 +88,7 @@ public final class HelpCommand implements CommandFactory {
     }
 
     private MinecraftHelp<CommandSource> buildHelp() {
-        final CommandConfiguration.Admin.Help.Colors colors = this.config.get().admin().help().colors();
+        final CommandConfig.Admin.Help.Colors colors = this.config.get().admin().help().colors();
         return MinecraftHelp.<CommandSource>builder()
                 .commandManager(this.manager)
                 .audienceProvider(CommandSource::sender)

@@ -19,27 +19,27 @@
  */
 package io.github.namiuni.paperplugintemplate.common.infrastructure.configuration;
 
-import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.util.concurrent.atomic.AtomicReference;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
+import org.spongepowered.configurate.ConfigurateException;
 
 @Singleton
 @NullMarked
-public final class ConfigurationHolder<T extends Record> implements Provider<T>, Reloadable<T> {
+public final class ConfigHolder<T extends Record> implements Provider<T> {
 
-    private final ConfigurationLoader<T> configLoader;
+    private final ConfigLoader<T> configLoader;
     private final AtomicReference<T> config;
     private final ComponentLogger logger;
 
     @Inject
-    ConfigurationHolder(
-            final ConfigurationLoader<T> configLoader,
+    ConfigHolder(
+            final ConfigLoader<T> configLoader,
             final ComponentLogger logger
-    ) {
+    ) throws ConfigurateException {
         this.configLoader = configLoader;
         this.logger = logger;
 
@@ -48,7 +48,11 @@ public final class ConfigurationHolder<T extends Record> implements Provider<T>,
         this.logger.info("Configuration loaded: {}", configLoader.configName());
     }
 
-    public T reload() throws UncheckedConfigurateException {
+    public String configName() {
+        return this.configLoader.configName();
+    }
+
+    public T reload() throws ConfigurateException {
         this.logger.info("Reloading configuration: {}...", this.configLoader.configName());
         final T loaded = this.configLoader.loadConfiguration();
         this.config.set(loaded);

@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import net.kyori.adventure.resource.ResourcePackInfo;
 import net.kyori.adventure.resource.ResourcePackRequest;
 import net.kyori.adventure.text.Component;
@@ -37,7 +37,7 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 @ConfigSerializable
 @ConfigName("user.conf")
 @ConfigHeader("")
-public record UserConfiguration(
+public record UserConfig(
 
         @Comment("In-memory player-profile cache settings.")
         Cache cache,
@@ -49,11 +49,10 @@ public record UserConfiguration(
         ResourcePack resourcePack
 ) {
 
-    public static final UserConfiguration DEFAULT = new UserConfiguration(
+    public static final UserConfig DEFAULT = new UserConfig(
             new Cache(
                     100L,
-                    TimeUnit.MINUTES.toNanos(15L),
-                    30L
+                    Duration.ofMinutes(15)
             ),
             new Messages(
                     Component.translatable(
@@ -79,6 +78,7 @@ public record UserConfiguration(
                             .build()
             )
     );
+
     private static final String BUILD_HASH_RESOURCE = "/resource-pack.sha1";
 
     @ConfigSerializable
@@ -88,16 +88,11 @@ public record UserConfiguration(
             long maximumSize,
 
             @Comment("""
-                    Duration in nanoseconds before an offline player's cache entry expires
-                    after their last access. Does not affect online players.""")
-            long expireAfterOffline,
-
-            @Comment("""
-                    Duration in seconds before a pre-login profile entry expires.
-                    This cache bridges the gap between the async pre-connect phase
-                    and the synchronous join phase. Increase if players are frequently
-                    disconnected due to slow storage on high-latency servers.""")
-            long preloadExpireSeconds
+                    How long an offline player's cache entry is retained after last access.
+                    Online players are never expired regardless of this value.
+                    Examples: 15m, 1h, 30m
+                    """)
+            Duration expireAfterOffline
     ) {
     }
 
@@ -121,7 +116,7 @@ public record UserConfiguration(
     }
 
     private static String loadBuildHash() {
-        try (var in = ResourcePack.class.getResourceAsStream(BUILD_HASH_RESOURCE)) {
+        try (final var in = ResourcePack.class.getResourceAsStream(BUILD_HASH_RESOURCE)) {
             return in != null ? readString(in) : "";
         } catch (final IOException _) {
             return "";
