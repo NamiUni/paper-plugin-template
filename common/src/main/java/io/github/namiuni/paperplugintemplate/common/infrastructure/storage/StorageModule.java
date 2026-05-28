@@ -23,7 +23,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
-import com.google.inject.multibindings.Multibinder;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
@@ -31,12 +30,10 @@ import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigHolder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigLoader;
-import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.flywaydb.core.Flyway;
@@ -56,12 +53,11 @@ public final class StorageModule extends AbstractModule {
     @Singleton
     @SuppressWarnings("unused")
     HikariDataSource dataSource(
-            final Provider<StorageConfig> storageConfig,
+            final StorageConfig storageConfig,
             final @DataDirectory Path dataDirectory,
             final Metadata metadata
     ) {
-        final StorageConfig storage = storageConfig.get();
-        final StorageConfig.Pool pool = storage.pool();
+        final StorageConfig.Pool pool = storageConfig.pool();
         final HikariConfig config = new HikariConfig();
         config.setPoolName(metadata.name());
         config.setMaximumPoolSize(pool.maximumPoolSize());
@@ -71,7 +67,7 @@ public final class StorageModule extends AbstractModule {
         config.setConnectionTimeout(pool.connectionTimeout().toMillis());
         config.setThreadFactory(Thread.ofVirtual().name(metadata.name() + "-Hikari-Pool", 0).factory());
 
-        switch (storage.type()) {
+        switch (storageConfig.type()) {
             case H2 -> {
                 final Path dbFile = dataDirectory.toAbsolutePath().resolve("database");
                 config.setJdbcUrl("jdbc:h2:file:%s;MODE=MySQL;DB_CLOSE_DELAY=-1".formatted(dbFile));
@@ -79,19 +75,19 @@ public final class StorageModule extends AbstractModule {
             }
             case MYSQL -> {
                 config.setJdbcUrl("jdbc:mysql://%s:%d/%s?useSSL=false&autoReconnect=true&characterEncoding=utf8"
-                        .formatted(storage.host(), storage.port(), storage.database()));
-                config.setUsername(storage.username());
-                config.setPassword(storage.password());
+                        .formatted(storageConfig.host(), storageConfig.port(), storageConfig.database()));
+                config.setUsername(storageConfig.username());
+                config.setPassword(storageConfig.password());
                 config.setDriverClassName("com.mysql.cj.jdbc.Driver");
             }
             case POSTGRESQL -> {
                 config.setJdbcUrl("jdbc:postgresql://%s:%d/%s"
-                        .formatted(storage.host(), storage.port(), storage.database()));
-                config.setUsername(storage.username());
-                config.setPassword(storage.password());
+                        .formatted(storageConfig.host(), storageConfig.port(), storageConfig.database()));
+                config.setUsername(storageConfig.username());
+                config.setPassword(storageConfig.password());
                 config.setDriverClassName("org.postgresql.Driver");
             }
-            default -> throw new IllegalStateException("Unexpected SQL storage type: " + storage.type());
+            default -> throw new IllegalStateException("Unexpected SQL storage type: " + storageConfig.type());
         }
 
         return new HikariDataSource(config);
@@ -100,8 +96,8 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    StorageDialect storageDialect(final Provider<StorageConfig> storageConfig) {
-        return switch (storageConfig.get().type()) {
+    StorageDialect storageDialect(final StorageConfig storageConfig) {
+        return switch (storageConfig.type()) {
             case H2, MYSQL -> new StorageDialect.MySQL();
             case POSTGRESQL -> new StorageDialect.PostgreSQL();
             case JSON -> throw new IllegalArgumentException("StorageType.JSON has no SQL dialect");
@@ -113,8 +109,7 @@ public final class StorageModule extends AbstractModule {
     @SuppressWarnings("unused")
     Jdbi jdbi(
             final HikariDataSource dataSource,
-            final StorageDialect dialect,
-            final Set<JdbiConfigurer> configurers
+            final StorageDialect dialect
     ) {
         final QualifiedArgumentFactory instantArgument = (_, value, _) -> {
             if (!(value instanceof final Instant instant)) {
@@ -135,8 +130,6 @@ public final class StorageModule extends AbstractModule {
         if (dialect instanceof StorageDialect.PostgreSQL) {
             jdbi.installPlugin(new PostgresPlugin());
         }
-
-        configurers.forEach(configurer -> configurer.configure(jdbi, dialect));
 
         return jdbi;
     }
@@ -177,8 +170,8 @@ public final class StorageModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        Multibinder.newSetBinder(this.binder(), JdbiConfigurer.class);
-        this.bind(new TypeLiteral<ConfigHolder<StorageConfig>>() { }).asEagerSingleton();
-        this.bind(StorageConfig.class).toProvider(new TypeLiteral<ConfigHolder<StorageConfig>>() { });
+        this.bind(StorageConfig.class)
+                .toProvider(new TypeLiteral<ConfigHolder<StorageConfig>>() { })
+                .asEagerSingleton();
     }
 }

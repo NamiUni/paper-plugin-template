@@ -29,6 +29,7 @@ import org.spongepowered.configurate.CommentedConfigurationNode;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationNode;
 import org.spongepowered.configurate.hocon.HoconConfigurationLoader;
+import org.spongepowered.configurate.loader.ConfigurationLoader;
 import org.spongepowered.configurate.serialize.TypeSerializerCollection;
 
 @NullMarked
@@ -39,7 +40,7 @@ public final class ConfigLoader<T extends Record> {
     private final String configName;
     private final ComponentLogger logger;
 
-    private final org.spongepowered.configurate.loader.ConfigurationLoader<CommentedConfigurationNode> configLoader;
+    private final ConfigurationLoader<CommentedConfigurationNode> configLoader;
 
     public ConfigLoader(
             final Class<T> configClass,
@@ -71,19 +72,15 @@ public final class ConfigLoader<T extends Record> {
                 .build();
     }
 
-    T loadConfiguration() throws UncheckedConfigurateException {
+    T loadConfiguration() throws ConfigurateException {
         this.logger.debug("[{}] Reading {} from disk...", ConfigLoader.class.getSimpleName(), this.configName);
         final ConfigurationNode node;
-        try {
-            node = this.configLoader.load();
-            final T config = node.get(this.configClass, this.defaultConfig);
-            this.logger.debug("[{}] Loaded configuration: {}", ConfigHolder.class.getSimpleName(), config);
-            this.configLoader.save(node);
-            this.logger.debug("[{}] Wrote defaults back to {} (shouldCopyDefaults).", ConfigLoader.class.getSimpleName(), this.configName);
-            return config;
-        } catch (final ConfigurateException exception) {
-            throw new UncheckedConfigurateException(exception);
-        }
+        node = this.configLoader.load();
+        final T config = node.get(this.configClass, this.defaultConfig);
+        this.logger.debug("[{}] Loaded configuration: {}", ConfigHolder.class.getSimpleName(), config);
+        this.configLoader.save(node);
+        this.logger.debug("[{}] Wrote defaults back to {} (shouldCopyDefaults).", ConfigLoader.class.getSimpleName(), this.configName);
+        return config;
     }
 
     String configName() {

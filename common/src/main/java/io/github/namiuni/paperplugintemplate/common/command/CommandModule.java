@@ -25,10 +25,8 @@ import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigHolder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigLoader;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfig;
 import io.github.namiuni.paperplugintemplate.common.user.UserConfig;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
@@ -64,9 +62,8 @@ public final class CommandModule extends AbstractModule {
         this.bind(new TypeLiteral<ConfigHolder<CommandConfig>>() { }).asEagerSingleton();
         this.bind(CommandConfig.class).toProvider(new TypeLiteral<ConfigHolder<CommandConfig>>() { });
 
-        final Multibinder<Reloadable<?>> binder = Multibinder.newSetBinder(this.binder(), Key.get(new TypeLiteral<>() { }));
+        final Multibinder<ConfigHolder<?>> binder = Multibinder.newSetBinder(this.binder(), Key.get(new TypeLiteral<>() { }));
         binder.addBinding().to(Key.get(new TypeLiteral<ConfigHolder<CommandConfig>>() { }));
-        binder.addBinding().to(Key.get(new TypeLiteral<ConfigHolder<StorageConfig>>() { }));
         binder.addBinding().to(Key.get(new TypeLiteral<ConfigHolder<UserConfig>>() { }));
     }
 }
