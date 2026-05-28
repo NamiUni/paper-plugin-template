@@ -29,15 +29,15 @@ import org.jspecify.annotations.NullMarked;
 
 @Singleton
 @NullMarked
-public final class ConfigurationHolder<T extends Record> implements Provider<T>, Reloadable<T> {
+public final class ConfigHolder<T extends Record> implements Provider<T>, Reloadable<T> {
 
-    private final ConfigurationLoader<T> configLoader;
+    private final ConfigLoader<T> configLoader;
     private final AtomicReference<T> config;
     private final ComponentLogger logger;
 
     @Inject
-    ConfigurationHolder(
-            final ConfigurationLoader<T> configLoader,
+    ConfigHolder(
+            final ConfigLoader<T> configLoader,
             final ComponentLogger logger
     ) {
         this.configLoader = configLoader;

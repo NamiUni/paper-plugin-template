@@ -23,7 +23,7 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.AbstractModule;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationModule;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigModule;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageModule;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.InstantTypeAdapter;
 import io.github.namiuni.paperplugintemplate.common.utilities.gson.serializations.UUIDTypeAdapter;
@@ -85,7 +85,7 @@ public final class InfrastructureModule extends AbstractModule {
         this.bind(MiniMessage.class).toInstance(MINI_MESSAGE);
         this.bind(Gson.class).toInstance(GSON);
 
-        this.install(new ConfigurationModule());
+        this.install(new ConfigModule());
         this.install(new StorageModule());
     }
 }

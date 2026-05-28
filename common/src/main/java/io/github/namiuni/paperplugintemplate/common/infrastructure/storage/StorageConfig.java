@@ -21,7 +21,7 @@ package io.github.namiuni.paperplugintemplate.common.infrastructure.storage;
 
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigHeader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.annotations.ConfigName;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Comment;
@@ -30,7 +30,7 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 @ConfigSerializable
 @ConfigName("storage.conf")
 @ConfigHeader("")
-public record StorageConfiguration(
+public record StorageConfig(
         @Comment("""
                 Storage type. Available options: H2, MYSQL, POSTGRESQL, JSON
                 H2         - Embedded SQL database. No external server required.
@@ -59,19 +59,19 @@ public record StorageConfiguration(
         Pool pool
 ) {
 
-    public static final StorageConfiguration DEFAULT = new StorageConfiguration(
+    public static final StorageConfig DEFAULT = new StorageConfig(
             StorageType.H2,
             "localhost",
             3306,
             "paper_plugin_template", // TODO: change the database name
             "server",
             "",
-            new StorageConfiguration.Pool(
+            new StorageConfig.Pool(
                     8,
                     8,
-                    TimeUnit.MINUTES.toMillis(30L),
-                    TimeUnit.MINUTES.toMillis(0L),
-                    TimeUnit.MINUTES.toMillis(30L)
+                    Duration.ofMinutes(30),
+                    Duration.ZERO,
+                    Duration.ofSeconds(30)
             )
     );
 
@@ -91,19 +91,24 @@ public record StorageConfiguration(
             int minimumIdle,
 
             @Comment("""
-                    Maximum lifetime of a connection in the pool (milliseconds).
+                    Maximum lifetime of a connection in the pool.
                     Must be shorter than the database's wait_timeout value.
+                    Examples: 30m, 1h, 1h30m
                     """)
-            long maximumLifetime,
+            Duration maximumLifetime,
 
             @Comment("""
-                    Interval between keepalive queries on idle connections (milliseconds).
-                    Set to 0 to disable keepalive.
+                    Interval between keepalive queries on idle connections.
+                    Set to 0s to disable keepalive.
+                    Examples: 0s, 1m, 5m
                     """)
-            long keepaliveTime,
+            Duration keepaliveTime,
 
-            @Comment("Maximum milliseconds a caller waits for a connection before an exception is thrown.")
-            long connectionTimeout
+            @Comment("""
+                    Maximum time a caller waits for a connection before an exception is thrown.
+                    Examples: 30s, 1m
+                    """)
+            Duration connectionTimeout
     ) {
     }
 }

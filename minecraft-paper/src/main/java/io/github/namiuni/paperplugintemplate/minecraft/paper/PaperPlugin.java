@@ -20,7 +20,7 @@
 package io.github.namiuni.paperplugintemplate.minecraft.paper;
 
 import io.github.namiuni.paperplugintemplate.common.CommonLifecycle;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfig;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import java.util.Set;
@@ -39,13 +39,13 @@ public final class PaperPlugin extends JavaPlugin {
 
     private final CommonLifecycle commonLifecycle;
     private final Set<Listener> listeners;
-    private final Provider<StorageConfiguration> storageConfig;
+    private final Provider<StorageConfig> storageConfig;
 
     @Inject
     PaperPlugin(
             final CommonLifecycle commonLifecycle,
             final Set<Listener> listeners,
-            final Provider<StorageConfiguration> storageConfig
+            final Provider<StorageConfig> storageConfig
     ) {
         this.commonLifecycle = commonLifecycle;
         this.listeners = listeners;

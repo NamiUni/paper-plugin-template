@@ -20,7 +20,7 @@
 package io.github.namiuni.paperplugintemplate.common.command.commands;
 
 import io.github.namiuni.paperplugintemplate.common.Metadata;
-import io.github.namiuni.paperplugintemplate.common.command.CommandConfiguration;
+import io.github.namiuni.paperplugintemplate.common.command.CommandConfig;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.UncheckedConfigurateException;
@@ -41,7 +41,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public final class ReloadCommand implements CommandFactory {
 
-    private final Provider<CommandConfiguration> config;
+    private final Provider<CommandConfig> config;
     private final Set<Reloadable<?>> reloadable;
     private final CommandManager<CommandSource> manager;
     private final Metadata metadata;
@@ -49,7 +49,7 @@ public final class ReloadCommand implements CommandFactory {
 
     @Inject
     ReloadCommand(
-            final Provider<CommandConfiguration> config,
+            final Provider<CommandConfig> config,
             final Set<Reloadable<?>> reloadable,
             final CommandManager<CommandSource> manager,
             final Metadata metadata,

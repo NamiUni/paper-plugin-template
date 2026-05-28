@@ -26,10 +26,10 @@ import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.Multibinder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.Reloadable;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationLoader;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfiguration;
-import io.github.namiuni.paperplugintemplate.common.user.UserConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigHolder;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigLoader;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfig;
+import io.github.namiuni.paperplugintemplate.common.user.UserConfig;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
@@ -45,14 +45,14 @@ public final class CommandModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    ConfigurationLoader<CommandConfiguration> configLoader(
+    ConfigLoader<CommandConfig> configLoader(
             final @DataDirectory Path dataDirectory,
             final TypeSerializerCollection typeSerializers,
             final ComponentLogger logger
     ) {
-        return new ConfigurationLoader<>(
-                CommandConfiguration.class,
-                CommandConfiguration.DEFAULT,
+        return new ConfigLoader<>(
+                CommandConfig.class,
+                CommandConfig.DEFAULT,
                 dataDirectory,
                 typeSerializers,
                 logger
@@ -61,12 +61,12 @@ public final class CommandModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        this.bind(new TypeLiteral<ConfigurationHolder<CommandConfiguration>>() { }).asEagerSingleton();
-        this.bind(CommandConfiguration.class).toProvider(new TypeLiteral<ConfigurationHolder<CommandConfiguration>>() { });
+        this.bind(new TypeLiteral<ConfigHolder<CommandConfig>>() { }).asEagerSingleton();
+        this.bind(CommandConfig.class).toProvider(new TypeLiteral<ConfigHolder<CommandConfig>>() { });
 
         final Multibinder<Reloadable<?>> binder = Multibinder.newSetBinder(this.binder(), Key.get(new TypeLiteral<>() { }));
-        binder.addBinding().to(Key.get(new TypeLiteral<ConfigurationHolder<CommandConfiguration>>() { }));
-        binder.addBinding().to(Key.get(new TypeLiteral<ConfigurationHolder<StorageConfiguration>>() { }));
-        binder.addBinding().to(Key.get(new TypeLiteral<ConfigurationHolder<UserConfiguration>>() { }));
+        binder.addBinding().to(Key.get(new TypeLiteral<ConfigHolder<CommandConfig>>() { }));
+        binder.addBinding().to(Key.get(new TypeLiteral<ConfigHolder<StorageConfig>>() { }));
+        binder.addBinding().to(Key.get(new TypeLiteral<ConfigHolder<UserConfig>>() { }));
     }
 }

@@ -32,13 +32,13 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 @ConfigSerializable
 @ConfigName("command.conf")
 @ConfigHeader("")
-public record CommandConfiguration(Admin admin) {
+public record CommandConfig(Admin admin) {
 
-    public static final CommandConfiguration DEFAULT = new CommandConfiguration(
-            new CommandConfiguration.Admin(
+    public static final CommandConfig DEFAULT = new CommandConfig(
+            new CommandConfig.Admin(
                     Component.translatable("commands.template.description", ""), // TODO
                     List.of("template", "papertemplate", "plugintemplate"),
-                    new CommandConfiguration.Admin.Reload(
+                    new CommandConfig.Admin.Reload(
                             Component.translatable("commands.template.reload.description", "Reloads plugin configuration."),
                             List.of(),
                             Map.ofEntries(
@@ -46,7 +46,7 @@ public record CommandConfiguration(Admin admin) {
                                     Map.entry("failure", Component.translatable("commands.template.reload.failure", "Failed to reload configuration. See the console for details."))
                             )
                     ),
-                    new CommandConfiguration.Admin.Help(
+                    new CommandConfig.Admin.Help(
                             Component.translatable("commands.template.help.description", "Displays help for plugin commands."),
                             List.of(),
                             Map.ofEntries(
@@ -64,7 +64,7 @@ public record CommandConfiguration(Admin admin) {
                                     Map.entry("page_out_of_range", Component.translatable("commands.template.help.page_out_of_range", "Error: Page <page> is not in range. Must be in range [1, <max_pages>]")),
                                     Map.entry("showing_results_for_query", Component.translatable("commands.template.help.showing_results_for_query", "Showing search results for query"))
                             ),
-                            new CommandConfiguration.Admin.Help.Colors(
+                            new CommandConfig.Admin.Help.Colors(
                                     "#2D7D9A",
                                     "#49E1E8",
                                     "#E3008C",

@@ -29,8 +29,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.common.Metadata;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationLoader;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigHolder;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigLoader;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
@@ -56,19 +56,19 @@ public final class StorageModule extends AbstractModule {
     @Singleton
     @SuppressWarnings("unused")
     HikariDataSource dataSource(
-            final Provider<StorageConfiguration> storageConfig,
+            final Provider<StorageConfig> storageConfig,
             final @DataDirectory Path dataDirectory,
             final Metadata metadata
     ) {
-        final StorageConfiguration storage = storageConfig.get();
-        final StorageConfiguration.Pool pool = storage.pool();
+        final StorageConfig storage = storageConfig.get();
+        final StorageConfig.Pool pool = storage.pool();
         final HikariConfig config = new HikariConfig();
         config.setPoolName(metadata.name());
         config.setMaximumPoolSize(pool.maximumPoolSize());
         config.setMinimumIdle(pool.minimumIdle());
-        config.setMaxLifetime(pool.maximumLifetime());
-        config.setKeepaliveTime(pool.keepaliveTime());
-        config.setConnectionTimeout(pool.connectionTimeout());
+        config.setMaxLifetime(pool.maximumLifetime().toMillis());
+        config.setKeepaliveTime(pool.keepaliveTime().toMillis());
+        config.setConnectionTimeout(pool.connectionTimeout().toMillis());
         config.setThreadFactory(Thread.ofVirtual().name(metadata.name() + "-Hikari-Pool", 0).factory());
 
         switch (storage.type()) {
@@ -100,7 +100,7 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    StorageDialect storageDialect(final Provider<StorageConfiguration> storageConfig) {
+    StorageDialect storageDialect(final Provider<StorageConfig> storageConfig) {
         return switch (storageConfig.get().type()) {
             case H2, MYSQL -> new StorageDialect.MySQL();
             case POSTGRESQL -> new StorageDialect.PostgreSQL();
@@ -161,14 +161,14 @@ public final class StorageModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    ConfigurationLoader<StorageConfiguration> configLoader(
+    ConfigLoader<StorageConfig> configLoader(
             final @DataDirectory Path dataDirectory,
             final TypeSerializerCollection typeSerializers,
             final ComponentLogger logger
     ) {
-        return new ConfigurationLoader<>(
-                StorageConfiguration.class,
-                StorageConfiguration.DEFAULT,
+        return new ConfigLoader<>(
+                StorageConfig.class,
+                StorageConfig.DEFAULT,
                 dataDirectory,
                 typeSerializers,
                 logger
@@ -178,7 +178,7 @@ public final class StorageModule extends AbstractModule {
     @Override
     protected void configure() {
         Multibinder.newSetBinder(this.binder(), JdbiConfigurer.class);
-        this.bind(new TypeLiteral<ConfigurationHolder<StorageConfiguration>>() { }).asEagerSingleton();
-        this.bind(StorageConfiguration.class).toProvider(new TypeLiteral<ConfigurationHolder<StorageConfiguration>>() { });
+        this.bind(new TypeLiteral<ConfigHolder<StorageConfig>>() { }).asEagerSingleton();
+        this.bind(StorageConfig.class).toProvider(new TypeLiteral<ConfigHolder<StorageConfig>>() { });
     }
 }

@@ -41,14 +41,14 @@ public final class UserSessionHandler {
 
     private final UserRepository repository;
     private final UserServiceInternal userService;
-    private final Provider<UserConfiguration> userConfig;
+    private final Provider<UserConfig> userConfig;
     private final ComponentLogger logger;
 
     @Inject
     UserSessionHandler(
             final UserRepository repository,
             final UserServiceInternal userService,
-            final Provider<UserConfiguration> userConfig,
+            final Provider<UserConfig> userConfig,
             final ComponentLogger logger,
             final EventBus eventBus
     ) {
@@ -85,7 +85,7 @@ public final class UserSessionHandler {
                     }
                 })
                 .thenAccept(user -> {
-                    final UserConfiguration.ResourcePack packConfig = this.userConfig.get().resourcePack();
+                    final UserConfig.ResourcePack packConfig = this.userConfig.get().resourcePack();
                     user.sendResourcePacks(packConfig.request());
                 });
     }

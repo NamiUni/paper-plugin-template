@@ -25,9 +25,9 @@ import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationHolder;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigurationLoader;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfiguration;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigHolder;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigLoader;
+import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfig;
 import io.github.namiuni.paperplugintemplate.common.user.storage.JdbiUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.JsonUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
@@ -45,7 +45,7 @@ public final class UserModule extends AbstractModule {
     @Singleton
     @SuppressWarnings("unused")
     UserRepository userRepository(
-            final ConfigurationHolder<StorageConfiguration> config,
+            final ConfigHolder<StorageConfig> config,
             final Provider<JsonUserRepository> json,
             final Provider<JdbiUserRepository> jdbi
     ) {
@@ -58,14 +58,14 @@ public final class UserModule extends AbstractModule {
     @Provides
     @Singleton
     @SuppressWarnings("unused")
-    ConfigurationLoader<UserConfiguration> configLoader(
+    ConfigLoader<UserConfig> configLoader(
             final @DataDirectory Path dataDirectory,
             final TypeSerializerCollection typeSerializers,
             final ComponentLogger logger
     ) {
-        return new ConfigurationLoader<>(
-                UserConfiguration.class,
-                UserConfiguration.DEFAULT,
+        return new ConfigLoader<>(
+                UserConfig.class,
+                UserConfig.DEFAULT,
                 dataDirectory,
                 typeSerializers,
                 logger
@@ -75,7 +75,7 @@ public final class UserModule extends AbstractModule {
     @Override
     protected void configure() {
         this.bind(PluginTemplateUserService.class).to(UserServiceInternal.class).in(Scopes.SINGLETON);
-        this.bind(new TypeLiteral<ConfigurationHolder<UserConfiguration>>() { }).asEagerSingleton();
-        this.bind(UserConfiguration.class).toProvider(new TypeLiteral<ConfigurationHolder<UserConfiguration>>() { });
+        this.bind(new TypeLiteral<ConfigHolder<UserConfig>>() { }).asEagerSingleton();
+        this.bind(UserConfig.class).toProvider(new TypeLiteral<ConfigHolder<UserConfig>>() { });
     }
 }

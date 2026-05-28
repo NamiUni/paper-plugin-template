@@ -30,6 +30,7 @@ import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import jakarta.inject.Inject;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,7 +57,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
     UserServiceInternal(
             final UserRepository repository,
             final UserFactory userFactory,
-            final Provider<UserConfiguration> config,
+            final Provider<UserConfig> config,
             final Metadata metadata,
             final MojangAPI mojangAPI
     ) {
@@ -68,7 +69,7 @@ public final class UserServiceInternal implements PluginTemplateUserService {
                 Thread.ofVirtual().name(metadata.name() + "-User-Pool", 0).factory()
         );
 
-        final var cacheSettings = config.get().cache();
+        final UserConfig.Cache cacheSettings = config.get().cache();
         this.cache = Caffeine.newBuilder()
                 .maximumSize(cacheSettings.maximumSize())
                 .executor(this.executor)
@@ -107,17 +108,17 @@ public final class UserServiceInternal implements PluginTemplateUserService {
                 .get(uuid, _ -> {
                     // TODO: impl Setting
                     final var currentRecord = this.repository.findById(uuid)
-                             .orElseGet(() -> new UserRecord(
-                                     uuid,
-                                     this.mojangAPI.findName(uuid).orElse("Unknown"),
-                                     Instant.ofEpochMilli(0))
-                             );
+                            .orElseGet(() -> new UserRecord(
+                                    uuid,
+                                    this.mojangAPI.findName(uuid).orElse("Unknown"),
+                                    Instant.ofEpochMilli(0))
+                            );
                     final var user = this.userFactory.createUser(
-                             audience,
-                             currentRecord.uuid(),
-                             currentRecord.name(),
-                             currentRecord.lastSeen(),
-                             new PluginTemplateUser.Setting() { }
+                            audience,
+                            currentRecord.uuid(),
+                            currentRecord.name(),
+                            currentRecord.lastSeen(),
+                            new PluginTemplateUser.Setting() { }
                     );
                     final var updatedRecord = UserRecord.from(user);
                     if (!Objects.equals(currentRecord, updatedRecord)) {
@@ -136,11 +137,11 @@ public final class UserServiceInternal implements PluginTemplateUserService {
                 .orElseGet(() -> this.cache.get(uuid, _ -> {
                     // TODO: impl Setting
                     final var currentRecord = this.repository.findById(uuid)
-                             .orElseGet(() -> new UserRecord(
-                                     uuid,
-                                     this.mojangAPI.findName(uuid).orElse("Unknown"),
-                                     Instant.ofEpochMilli(0))
-                             );
+                            .orElseGet(() -> new UserRecord(
+                                    uuid,
+                                    this.mojangAPI.findName(uuid).orElse("Unknown"),
+                                    Instant.ofEpochMilli(0))
+                            );
                     final var user = this.userFactory.createUser(
                             uuid,
                             currentRecord.name(),
@@ -207,8 +208,8 @@ public final class UserServiceInternal implements PluginTemplateUserService {
 
         private final long offlineExpireNanos;
 
-        OnlineAwareExpiry(final long offlineExpireNanos) {
-            this.offlineExpireNanos = offlineExpireNanos;
+        OnlineAwareExpiry(final Duration offlineExpire) {
+            this.offlineExpireNanos = offlineExpire.toNanos();
         }
 
         @Override
