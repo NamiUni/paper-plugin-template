@@ -19,24 +19,26 @@
  */
 package io.github.namiuni.paperplugintemplate.minecraft.paper.command;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
+import io.github.namiuni.paperplugintemplate.common.command.Commander;
+import io.github.namiuni.paperplugintemplate.common.command.SimpleCommander;
+import io.github.namiuni.paperplugintemplate.common.command.UserCommander;
+import io.github.namiuni.paperplugintemplate.common.user.UserService;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import java.util.concurrent.CompletableFuture;
+import java.util.Optional;
 import net.kyori.adventure.audience.Audience;
-import org.bukkit.entity.Player;
+import net.kyori.adventure.identity.Identity;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public final class PaperCommandSource implements CommandSource {
 
     private final CommandSourceStack source;
-    private final PluginTemplateUserService userService;
+    private final UserService userService;
 
     public PaperCommandSource(
             final CommandSourceStack source,
-            final PluginTemplateUserService userService
+            final UserService userService
     ) {
         this.source = source;
         this.userService = userService;
@@ -47,24 +49,30 @@ public final class PaperCommandSource implements CommandSource {
     }
 
     @Override
-    public Audience sender() {
-        final Audience sender = this.source.getSender();
-        if (sender instanceof final Player player) {
-            return this.userService.getCachedUser(player.getUniqueId())
-                    .<Audience>map(CompletableFuture::join)
-                    .orElse(player);
+    public Commander sender() {
+        final var sender = this.source.getSender();
+        final var uuid = sender.get(Identity.UUID);
+        if (uuid.isPresent()) {
+            final var user = this.userService.getUser(uuid.get()).orElseThrow();
+            return new UserCommander(sender, user);
         }
-        return sender;
+
+        return new SimpleCommander(sender);
     }
 
     @Override
-    public @Nullable Audience executor() {
+    public Optional<Commander> executor() {
         final Audience executor = this.source.getExecutor();
-        if (executor instanceof final Player player) {
-            return this.userService.getCachedUser(player.getUniqueId())
-                    .<Audience>map(CompletableFuture::join)
-                    .orElse(player);
+        if (executor == null) {
+            return Optional.empty();
         }
-        return executor;
+
+        final var uuid = executor.get(Identity.UUID);
+        if (uuid.isPresent()) {
+            final var user = this.userService.getUser(uuid.get()).orElseThrow();
+            return Optional.of(new UserCommander(executor, user));
+        }
+
+        return Optional.of(new SimpleCommander(executor));
     }
 }

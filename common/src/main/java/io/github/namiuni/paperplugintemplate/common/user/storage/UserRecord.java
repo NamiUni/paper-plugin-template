@@ -28,9 +28,10 @@ import org.jspecify.annotations.NullMarked;
 public record UserRecord(
         UUID uuid,
         String name,
-        Instant lastSeen
+        Instant lastSeen,
+        PluginTemplateUser.Setting setting
 ) {
     public static UserRecord from(final PluginTemplateUser user) {
-        return new UserRecord(user.uuid(), user.name(), user.lastSeen());
+        return new UserRecord(user.uuid(), user.name(), user.lastSeen(), user.setting());
     }
 }

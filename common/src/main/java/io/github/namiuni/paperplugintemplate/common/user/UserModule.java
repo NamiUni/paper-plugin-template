@@ -19,21 +19,27 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.DataDirectory;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigHolder;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.configuration.ConfigLoader;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageConfig;
 import io.github.namiuni.paperplugintemplate.common.user.storage.JdbiUserRepository;
 import io.github.namiuni.paperplugintemplate.common.user.storage.JsonUserRepository;
+import io.github.namiuni.paperplugintemplate.common.user.storage.UserRecord;
 import io.github.namiuni.paperplugintemplate.common.user.storage.UserRepository;
 import jakarta.inject.Provider;
 import jakarta.inject.Singleton;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import java.util.UUID;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
 import org.spongepowered.configurate.serialize.TypeSerializerCollection;
@@ -45,11 +51,11 @@ public final class UserModule extends AbstractModule {
     @Singleton
     @SuppressWarnings("unused")
     UserRepository userRepository(
-            final ConfigHolder<StorageConfig> config,
+            final StorageConfig config,
             final Provider<JsonUserRepository> json,
             final Provider<JdbiUserRepository> jdbi
     ) {
-        return switch (config.get().type()) {
+        return switch (config.type()) {
             case JSON -> json.get();
             case H2, MYSQL, POSTGRESQL -> jdbi.get();
         };
@@ -72,9 +78,30 @@ public final class UserModule extends AbstractModule {
         );
     }
 
+    @Provides
+    @Singleton
+    @SuppressWarnings("unused")
+    Cache<UUID, Optional<UserRecord>> storageCache(final UserConfig userConfig) {
+        return Caffeine.newBuilder()
+                .expireAfterWrite(Duration.of(30L, ChronoUnit.SECONDS))
+                .build();
+    }
+
+    @Provides
+    @Singleton
+    @SuppressWarnings("unused")
+    Cache<UUID, PluginTemplateUser> userCache(
+            final UserConfig userConfig,
+            final OnlineAwareExpiry onlineAwareExpiry
+    ) {
+        return Caffeine.newBuilder()
+                .maximumSize(userConfig.cache().maximumSize())
+                .expireAfter(onlineAwareExpiry)
+                .build();
+    }
+
     @Override
     protected void configure() {
-        this.bind(PluginTemplateUserService.class).to(UserServiceInternal.class).in(Scopes.SINGLETON);
         this.bind(new TypeLiteral<ConfigHolder<UserConfig>>() { }).asEagerSingleton();
         this.bind(UserConfig.class).toProvider(new TypeLiteral<ConfigHolder<UserConfig>>() { });
     }

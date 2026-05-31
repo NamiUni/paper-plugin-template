@@ -19,14 +19,13 @@
  */
 package io.github.namiuni.paperplugintemplate.common.command;
 
-import net.kyori.adventure.audience.Audience;
+import java.util.Optional;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public interface CommandSource {
 
-    Audience sender();
+    Commander sender();
 
-    @Nullable Audience executor();
+    Optional<Commander> executor();
 }

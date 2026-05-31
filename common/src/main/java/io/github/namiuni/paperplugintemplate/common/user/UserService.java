@@ -19,24 +19,39 @@
  */
 package io.github.namiuni.paperplugintemplate.common.user;
 
+import com.github.benmanes.caffeine.cache.Cache;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import java.time.Instant;
+import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
+import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
-import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
+@Singleton
 @NullMarked
-@FunctionalInterface
-public interface UserFactory {
+public final class UserService {
 
-    UserInternal createUser(Audience audience, UUID uuid, String name, Instant lastSeen, PluginTemplateUser.Setting setting);
+    private final Cache<UUID, PluginTemplateUser> cache;
 
-    default UserInternal createUser(
-            final UUID uuid,
-            final String name,
-            final Instant lastSeen,
-            final PluginTemplateUser.Setting setting
-    ) {
-        return this.createUser(Audience.empty(), uuid, name, lastSeen, setting);
+    @Inject
+    UserService(final Cache<UUID, PluginTemplateUser> cache) {
+        this.cache = cache;
+    }
+
+    public void putUser(final PluginTemplateUser user) {
+        this.cache.put(user.uuid(), user);
+    }
+
+    public void removeUser(final UUID uuid) {
+        this.cache.invalidate(uuid);
+    }
+
+    public Optional<PluginTemplateUser> getUser(final UUID uuid) {
+        return Optional.ofNullable(this.cache.getIfPresent(uuid));
+    }
+
+    public Collection<PluginTemplateUser> getUsers() {
+        return this.cache.asMap().values();
     }
 }

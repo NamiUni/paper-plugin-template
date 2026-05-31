@@ -21,17 +21,20 @@ package io.github.namiuni.paperplugintemplate.api.user;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.function.UnaryOperator;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.identity.Identified;
+import net.kyori.adventure.pointer.Pointered;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @ApiStatus.NonExtendable
-public interface PluginTemplateUser extends Audience, Identified {
+public interface PluginTemplateUser extends Pointered, Identified {
+
+    Optional<Audience> audience();
 
     UUID uuid();
 
@@ -43,11 +46,7 @@ public interface PluginTemplateUser extends Audience, Identified {
 
     Instant lastSeen();
 
-    boolean isOnline();
-
-    Setting getSetting();
-
-    Setting editSetting(UnaryOperator<Setting> current);
+    Setting setting();
 
     interface Setting {
     }
