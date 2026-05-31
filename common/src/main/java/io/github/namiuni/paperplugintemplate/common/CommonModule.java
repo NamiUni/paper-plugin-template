@@ -31,7 +31,6 @@ import io.github.namiuni.paperplugintemplate.common.event.EventBus;
 import io.github.namiuni.paperplugintemplate.common.event.SimpleEventBus;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.InfrastructureModule;
 import io.github.namiuni.paperplugintemplate.common.user.UserModule;
-import io.github.namiuni.paperplugintemplate.common.user.UserSessionHandler;
 import java.nio.file.Path;
 import net.kyori.adventure.text.logger.slf4j.ComponentLogger;
 import org.jspecify.annotations.NullMarked;
@@ -61,7 +60,6 @@ public final class CommonModule extends AbstractModule {
         this.bind(Metadata.class).toInstance(this.metadata);
         this.bind(EventBus.class).to(SimpleEventBus.class).in(Scopes.SINGLETON);
         this.bind(PluginTemplate.class).to(PluginTemplateImpl.class).in(Scopes.SINGLETON);
-        this.bind(UserSessionHandler.class).asEagerSingleton();
         this.bindCommands();
 
         this.install(new InfrastructureModule(this.logger, this.dataDirectory, this.pluginResource));

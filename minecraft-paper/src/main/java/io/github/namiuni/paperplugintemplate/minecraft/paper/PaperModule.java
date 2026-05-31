@@ -23,12 +23,10 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Scopes;
 import com.google.inject.multibindings.Multibinder;
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
 import io.github.namiuni.paperplugintemplate.common.command.CommandSource;
-import io.github.namiuni.paperplugintemplate.common.user.UserFactory;
+import io.github.namiuni.paperplugintemplate.common.user.UserService;
 import io.github.namiuni.paperplugintemplate.minecraft.paper.command.PaperCommandSource;
-import io.github.namiuni.paperplugintemplate.minecraft.paper.user.PaperUserFactory;
-import io.github.namiuni.paperplugintemplate.minecraft.paper.user.UserSessionAdapter;
+import io.github.namiuni.paperplugintemplate.minecraft.paper.user.PaperSessionHandler;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import jakarta.inject.Singleton;
@@ -52,7 +50,7 @@ final class PaperModule extends AbstractModule {
 
     @Provides
     @Singleton
-    CommandManager<CommandSource> commandManager(final PluginTemplateUserService userService) {
+    CommandManager<CommandSource> commandManager(final UserService userService) {
         final SenderMapper<CommandSourceStack, CommandSource> senderMapper = SenderMapper.create(
                 paperSource -> new PaperCommandSource(paperSource, userService),
                 pluginSource -> ((PaperCommandSource) pluginSource).paperSource()
@@ -67,12 +65,12 @@ final class PaperModule extends AbstractModule {
     @Override
     protected void configure() {
         this.bind(JavaPlugin.class).to(PaperPlugin.class).in(Scopes.SINGLETON);
-        this.bind(UserFactory.class).to(PaperUserFactory.class).in(Scopes.SINGLETON);
+
         this.bindAdapters();
     }
 
     private void bindAdapters() {
         final Multibinder<Listener> multibinder = Multibinder.newSetBinder(this.binder(), Listener.class);
-        multibinder.addBinding().to(UserSessionAdapter.class).in(Scopes.SINGLETON);
+        multibinder.addBinding().to(PaperSessionHandler.class).in(Scopes.SINGLETON);
     }
 }

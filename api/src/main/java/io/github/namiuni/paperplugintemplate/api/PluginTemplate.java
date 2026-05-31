@@ -19,7 +19,9 @@
  */
 package io.github.namiuni.paperplugintemplate.api;
 
-import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUserService;
+import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
+import java.util.Optional;
+import java.util.UUID;
 import net.kyori.adventure.audience.ForwardingAudience;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -28,5 +30,5 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface PluginTemplate extends ForwardingAudience {
 
-    PluginTemplateUserService userService();
+    Optional<PluginTemplateUser> getUser(UUID uuid);
 }

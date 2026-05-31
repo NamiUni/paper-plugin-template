@@ -21,19 +21,31 @@ package io.github.namiuni.paperplugintemplate.common;
 
 import io.github.namiuni.paperplugintemplate.api.PluginTemplate;
 import io.github.namiuni.paperplugintemplate.api.user.PluginTemplateUser;
-import io.github.namiuni.paperplugintemplate.common.user.UserServiceInternal;
+import io.github.namiuni.paperplugintemplate.common.user.UserService;
 import jakarta.inject.Inject;
+import java.util.Optional;
+import java.util.UUID;
+import net.kyori.adventure.audience.Audience;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-record PluginTemplateImpl(UserServiceInternal userService) implements PluginTemplate {
+record PluginTemplateImpl(UserService userService) implements PluginTemplate {
 
     @Inject
     PluginTemplateImpl {
     }
 
     @Override
-    public Iterable<PluginTemplateUser> audiences() {
-        return this.userService.users();
+    public Iterable<? extends Audience> audiences() {
+        return this.userService.getUsers().stream()
+                .map(PluginTemplateUser::audience)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .toList();
+    }
+
+    @Override
+    public Optional<PluginTemplateUser> getUser(final UUID uuid) {
+        return this.userService.getUser(uuid);
     }
 }

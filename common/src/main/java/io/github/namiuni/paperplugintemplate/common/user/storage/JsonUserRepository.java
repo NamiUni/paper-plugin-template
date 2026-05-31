@@ -73,6 +73,7 @@ public final class JsonUserRepository implements UserRepository {
     public Optional<UserRecord> findById(final UUID uuid) {
         final ReentrantReadWriteLock.ReadLock lock = this.lockFor(uuid).readLock();
         lock.lock();
+
         try {
             final Path file = this.fileFor(uuid);
             if (!Files.exists(file)) {

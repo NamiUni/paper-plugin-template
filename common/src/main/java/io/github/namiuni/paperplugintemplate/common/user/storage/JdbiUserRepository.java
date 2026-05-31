@@ -21,8 +21,7 @@ package io.github.namiuni.paperplugintemplate.common.user.storage;
 
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.DatabaseMigrator;
-import io.github.namiuni.paperplugintemplate.common.infrastructure.storage.StorageDialect;
-import io.github.namiuni.paperplugintemplate.common.utilities.UUIDCodec;
+import io.github.namiuni.paperplugintemplate.common.user.UserSettingImpl;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.Optional;
@@ -54,13 +53,17 @@ public final class JdbiUserRepository implements UserRepository {
             final ComponentLogger logger,
             final Jdbi jdbi,
             final HikariDataSource dataSource,
-            final StorageDialect dialect,
             final DatabaseMigrator migrator
     ) {
         this.logger = logger;
         this.jdbi = jdbi;
         this.dataSource = dataSource;
-        this.rowMapper = rowMapperFor(dialect);
+        this.rowMapper = (rs, _) -> new UserRecord(
+                rs.getObject(UUID, UUID.class),
+                rs.getString(NAME),
+                Instant.ofEpochMilli(rs.getLong(LAST_SEEN)),
+                UserSettingImpl.DEFAULT);
+
         migrator.migrate();
     }
 
@@ -68,26 +71,25 @@ public final class JdbiUserRepository implements UserRepository {
     public Optional<UserRecord> findById(final UUID uuid) {
         return this.jdbi.withHandle(handle -> handle
                 .createQuery(SQL_FIND_BY_UUID)
-                    .bind(UUID, uuid)
-                    .map(this.rowMapper)
-                .findFirst()
-        );
+                .bind(UUID, uuid)
+                .map(this.rowMapper)
+                .findFirst());
     }
 
     @Override
-    public void upsert(final UserRecord record) {
+    public void upsert(final UserRecord userRecord) {
         this.jdbi.useTransaction(handle -> {
             final int updated = handle.createUpdate(SQL_UPDATE)
-                    .bindMethods(record)
+                    .bindMethods(userRecord)
                     .execute();
             if (updated == 0) {
                 try {
                     handle.createUpdate(SQL_INSERT)
-                            .bindMethods(record)
+                            .bindMethods(userRecord)
                             .execute();
                 } catch (final Exception _) {
                     handle.createUpdate(SQL_UPDATE)
-                            .bindMethods(record)
+                            .bindMethods(userRecord)
                             .execute();
                 }
             }
@@ -96,11 +98,10 @@ public final class JdbiUserRepository implements UserRepository {
 
     @Override
     public void delete(final UUID uuid) {
-        this.jdbi.useHandle(handle -> {
-            handle.createUpdate(SQL_DELETE)
-                    .bind(UUID, uuid)
-                    .execute();
-        });
+        this.jdbi.useHandle(handle -> handle
+                .createUpdate(SQL_DELETE)
+                .bind(UUID, uuid)
+                .execute());
     }
 
     @Override
@@ -108,20 +109,5 @@ public final class JdbiUserRepository implements UserRepository {
         this.logger.info("Closing HikariCP connection pool...");
         this.dataSource.close();
         this.logger.info("Connection pool closed.");
-    }
-
-    private static RowMapper<UserRecord> rowMapperFor(final StorageDialect dialect) {
-        return switch (dialect) {
-            case StorageDialect.MySQL() -> (rs, _) -> new UserRecord(
-                    UUIDCodec.uuidFromBytes(rs.getBytes(UUID)),
-                    rs.getString(NAME),
-                    Instant.ofEpochMilli(rs.getLong(LAST_SEEN))
-            );
-            case StorageDialect.PostgreSQL() -> (rs, _) -> new UserRecord(
-                    rs.getObject(UUID, UUID.class),
-                    rs.getString(NAME),
-                    Instant.ofEpochMilli(rs.getLong(LAST_SEEN))
-            );
-        };
     }
 }
